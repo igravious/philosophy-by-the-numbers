@@ -200,12 +200,10 @@ class Philosopher < Shadow
 			normalized_measure = (mention/max_mention * rank/max_rank) * source_sum
 		end
 		
-		# Update the philosopher's measure
-		self.update!(measure: raw_measure)
-		
-		# Create a snapshot
-		MetricSnapshot.create_snapshot_for_philosopher(
+		# Create a snapshot with the calculated values (don't override the database record)
+		MetricSnapshot.create_snapshot_for_philosopher_with_measure(
 			self, 
+			raw_measure,
 			algorithm_version: algorithm_version, 
 			danker_info: danker_info
 		)

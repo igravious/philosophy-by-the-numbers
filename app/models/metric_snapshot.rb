@@ -43,6 +43,26 @@ class MetricSnapshot < ActiveRecord::Base
     )
   end
   
+  def self.create_snapshot_for_philosopher_with_measure(philosopher, calculated_measure, algorithm_version: '2.0', danker_info: {})
+    # Capture the exact weights configuration used for this calculation
+    weights_config = CanonicityWeights.active.for_version(algorithm_version)
+                                     .select(:source_name, :weight_value, :description)
+                                     .map { |w| { w.source_name => { value: w.weight_value.to_f, description: w.description } } }
+                                     .reduce(&:merge)
+    
+    create!(
+      philosopher_id: philosopher.id,
+      calculated_at: Time.current,
+      measure: calculated_measure,
+      measure_pos: nil, # Will be calculated later based on ranking
+      danker_version: danker_info[:version],
+      danker_file: danker_info[:file],
+      algorithm_version: algorithm_version,
+      weights_config: JSON.pretty_generate(weights_config),
+      notes: "Calculated using Linear Weighted Combination algorithm v#{algorithm_version} (snapshot only)"
+    )
+  end
+  
   def parsed_weights_config
     return {} if weights_config.blank?
     JSON.parse(weights_config)
