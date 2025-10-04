@@ -1,0 +1,9 @@
+OK
+
+ID | Entity | Label | Born | Died | Works | LC | M | PageRank | Measure |I M I C K W O R D S| Position
+---|--------|-------|------|------|-------|----|---|----------|---------|-------------------|---------
+<% if @shadows.present? %>
+  <%= render @shadows %>
+<% else %>
+  <p>No shadows available.</p>
+<% end %>

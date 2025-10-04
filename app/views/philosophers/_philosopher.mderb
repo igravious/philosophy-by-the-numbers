@@ -1,0 +1,20 @@
+<%
+	# label stuff
+	w_label, w_lang, en_label, label = philosopher.show_label(@lang, @entity_qid.nil?)
+	# werk stüff
+	ready_works_count = ::Text.where(id: Writing.where(author_id: Author.where(english_name: en_label)).pluck(:text_id)).count
+	link_to_ready_works = link_to ready_works_count, texts_url(author_name: en_label), method: :patch
+	link_to_all_works = link_to philosopher.works.count, philosopher_works_url(philosopher.id, lang: @lang)
+	id = philosopher.id
+	ent = wikidata_entity_url_markdown(philosopher.entity_id)
+	lbl = label.nil? ? '…' : wikipedia_entity_url_markdown(w_label, w_lang, label)
+	an_id = philosophers_path({an_id: philosopher.id})
+	by = philosopher.birth_year
+	dy = philosopher.death_year
+	lc = philosopher.linkcount
+	m = philosopher.mention
+	pr = sprintf("%.3f",philosopher.danker.nil? ? 0.0 : philosopher.danker)
+	msr = sprintf("%d", philosopher.measure.to_i)
+	pos = philosopher.measure_pos
+%>
+[<%= id %>](<%= an_id %>) | <%= ent %> | <%= lbl %> | <%= by %> | <%= dy %> | f | <%= lc %> | <%= m %> | <%= pr %> | <%= msr %> | k | <%= pos %>

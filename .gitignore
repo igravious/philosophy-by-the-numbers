@@ -67,3 +67,8 @@
 
 # Large SQL dumps
 /db/3rd_party/insight/philosophy.sql
+
+# Python virtual environment
+/.venv/
+__pycache__/
+*.pyc
