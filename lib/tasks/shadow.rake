@@ -1434,35 +1434,70 @@ begin
 			# time taken dropped from 2 hours to 1 minute by sorting and doing a binary search
 			# i'm kinda bad-ass at times
 			#
-			desc "Danker ranks"
+			desc "Danker ranks - loads latest danker data with snapshot tracking"
 			task :danker, [:cond] => :environment do |task, arg|
 				begin
+					# Ensure we have the latest danker data
+					puts "Checking for latest danker data..."
+					system("rake danker:update")
+					
 					shadows = select(arg.cond)
 					exit if shadows.nil?
 					total = shadows.length
 					bar = progress_bar(total, FORCE)
-					# bar = progress_bar(total)
-					# puts bar.inspect
-					# fn = Dir[Rails.root.join('db','danker','**.rank')][-1]
-					fn = Dir[Rails.root.join('db','danker','**.c.alphanum.csv')][-1]
-					# f = File.open(fn)
+					
+					# Use the latest symlinked data
+					danker_latest_dir = Rails.root.join('db', 'danker', 'latest')
+					unless danker_latest_dir.exist?
+						STDERR.puts "ERROR: No danker data found. Run 'rake danker:update' first."
+						exit 1
+					end
+					
+					# Find the CSV file in the latest directory
+					csv_files = Dir.glob(danker_latest_dir.join('*.c.alphanum.csv'))
+					if csv_files.empty?
+						STDERR.puts "ERROR: No CSV file found in #{danker_latest_dir}"
+						exit 1
+					end
+					
+					fn = csv_files.first
+					danker_version = danker_latest_dir.readlink.to_s
+					
+					puts "Using danker data: #{danker_version}"
+					puts "Data file: #{File.basename(fn)}"
+					
 					shadows.each do |shade|
 						update_progress(bar)
 						ent = shade.entity_id
-						# urk = f.find {|line| line =~ /Q#{ent}\t/}
-						# urk = `LC_ALL=C fgrep "Q#{ent}\t" #{fn}`
-						# urk = `egrep "^Q#{ent}\t" #{fn}`
 						urk = `look Q#{ent}, #{fn}`
 						q = "Q#{ent}".ljust(9)
 						r = "#{shade.dbpedia_pagerank}".ljust(8)
-						# s = urk.split("\t")[1].to_f
 						s = urk.split(",")[1].to_f
 						puts "#{q} #{r} #{s}" if bar.nil?
-						# shade.update(dbpedia_pagerank: urk)
+						
+						# Update the danker score
+						old_danker = shade.danker
 						shade.update(danker: s)
+						
+						# Create snapshot if value changed
+						if old_danker != s
+							MetricSnapshot.create!(
+								philosopher_id: shade.id,
+								calculated_at: Time.current,
+								measure: shade.measure,
+								measure_pos: shade.measure_pos,
+								danker_version: danker_version,
+								danker_file: File.basename(fn),
+								algorithm_version: 'danker_import',
+								notes: "Danker score updated from #{old_danker} to #{s}"
+							)
+						end
 					end
-				rescue
-					STDERR.puts $!
+					
+					puts "\n✓ Danker import completed using version #{danker_version}"
+				rescue => e
+					STDERR.puts "ERROR: #{e.message}"
+					STDERR.puts e.backtrace.first(5)
 				end
 			end
 
@@ -1951,59 +1986,52 @@ begin
 				end
 			end
 
-			desc "SPARQLy philosophical investigations (of the danker measureful variety)"
+			desc "SPARQLy philosophical investigations (of the danker measureful variety) with snapshot tracking"
 			task metric: :environment do
 				Shadow.none
 				total = Philosopher.all.size
 				bar = progress_bar(total, FORCE)
-
-				max_mention = (Philosopher.order('mention desc').first.mention)*1.0
-				min_mention = 0.0 # if no mention, reduce to zero!
-				unranked = Philosopher.where(danker: nil)
-				ranked = Philosopher.where.not(danker: nil)
-				max_rank = Philosopher.order('danker desc').first.danker # desc (first)
-				min_rank = (ranked.order('danker asc').first.danker)/2.0  # asc (first) / 2.0
 				
-				# Oxford Dictionary of Philosophy                    Q7755796  
-				# Philosophical Library Dictionary of Philosophy     Q3700851
-				# Routledge Encyclopedia of Philosophy               Q249821
-				# Stanford Encyclopedia of Philosophy                Q824553
-				# Cambridge Dictionary of Philosophy                 Q1761588
-				# Thomson Gale Encyclopedia of Philosophy            Q1340157
-				# Internet Encyclopedia of Philosophy                Q259513
-				# DBpedia – Philosophical Figures                    Q465    
-				# Indiana Philosophy Ontology – Thinkers             QQ6023365
-				# Wikidata – Philosophical Figures                   Q2013    
-				# Philosophy Pages Philosophical Dictionary          Q         
-				
-				Philosopher.order(:entity_id).each do |phil|
-					all_bonus = 0.13
-					runes     = phil.runes     ? 0.0  : 0.0 # because biased
-					inphobool = phil.inphobool ? 0.15 : (all_bonus=0.0) # I
-					borchert  = phil.borchert  ? 0.25 : (all_bonus=0.0) # M 
-					internet  = phil.internet  ? 0.05 : (all_bonus=0.0) # I
-					cambridge = phil.cambridge ? 0.2  : (all_bonus=0.0) # C
-					kemerling = phil.kemerling ? 0.1  : (all_bonus=0.0) # K because sole affair
-					populate  = phil.populate  ? 0.02 : (all_bonus=0.0) # W as a philosopher
-					oxford    = phil.oxford    ? 0.2  : (all_bonus=0.0) # O
-					routledge = phil.routledge ? 0.25 : (all_bonus=0.0) # R
-					dbpedia   = phil.dbpedia   ? 0.01 : (all_bonus=0.0) # D as a philosopher
-					stanford  = phil.stanford  ? 0.15 : (all_bonus=0.0) # S ~same amount as K
-
-					if phil.mention.nil? or phil.mention == 0 or ((phil.capacities.pluck(:entity_id) & [413, 41217, 269323]).length > 1) # hacky!
-						mention = min_mention
-					else
-						mention = phil.mention
-					end
-					if phil.danker.nil?
-						rank = min_rank
-					else
-						rank = phil.danker
-					end
-					tmp = ((mention/max_mention * rank/max_rank) * (runes+ borchert+ internet+ cambridge+ kemerling+ populate+ oxford+ routledge+ dbpedia+ inphobool+ stanford+ all_bonus) * 10000000)
-					phil.update(measure: tmp)
-					q = "Q#{phil.entity_id}".ljust(9); update_progress(bar, "#{q} #{tmp}")
+				# Determine danker version info
+				danker_latest_dir = Rails.root.join('db', 'danker', 'latest')
+				danker_info = if danker_latest_dir.exist?
+					{
+						version: danker_latest_dir.readlink.to_s,
+						file: Dir.glob(danker_latest_dir.join('*.csv')).first&.then { |f| File.basename(f) }
+					}
+				else
+					{ version: 'unknown', file: 'unknown' }
 				end
+				
+				algorithm_version = '2.0'
+				calculation_time = Time.current
+				
+				puts "Starting canonicity metric calculation:"
+				puts "  Algorithm version: #{algorithm_version}"
+				puts "  Danker version: #{danker_info[:version]}"
+				puts "  Danker file: #{danker_info[:file]}"
+				puts "  Calculation time: #{calculation_time}"
+				puts ""
+
+				Philosopher.order(:entity_id).each do |phil|
+					update_progress(bar)
+					
+					# Calculate using the model method which handles snapshots
+					begin
+						measure = phil.calculate_canonicity_measure(
+							algorithm_version: algorithm_version,
+							danker_info: danker_info
+						)
+						
+						q = "Q#{phil.entity_id}".ljust(9)
+						puts "#{q} #{measure}" if bar.nil?
+					rescue => e
+						STDERR.puts "Error calculating measure for philosopher #{phil.id}: #{e.message}"
+					end
+				end
+				
+				puts "\n✓ Canonicity metric calculation completed"
+				puts "✓ Created #{total} snapshots for algorithm v#{algorithm_version}"
 			end
 
 			def unpack_one(res)

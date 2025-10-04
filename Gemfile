@@ -131,8 +131,6 @@ group :development, :test do
  # The most awesome Pry
  gem 'pry'
 
- gem 'web-console'
-
  gem 'ffi-hunspell'
  
  # Call 'byebug' anywhere in the code to stop execution and get a debugger console
@@ -143,4 +141,8 @@ group :development, :test do
 
  # Spring speeds up development by keeping your application running in the background. Read more: https://github.com/rails/spring
  # gem 'spring'
+end
+
+group :development do
+ gem 'web-console'
 end

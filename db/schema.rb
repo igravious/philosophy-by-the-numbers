@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20210611210334) do
+ActiveRecord::Schema.define(version: 20251004222349) do
 
   create_table "actual_texts", force: :cascade do |t|
     t.string   "URL",         limit: 255
@@ -41,6 +41,19 @@ ActiveRecord::Schema.define(version: 20210611210334) do
     t.string   "date_of_birth", limit: 255
     t.string   "when_died",     limit: 255
   end
+
+  create_table "canonicity_weights", force: :cascade do |t|
+    t.string   "algorithm_version",                                        null: false
+    t.string   "source_name",                                              null: false
+    t.decimal  "weight_value",      precision: 8, scale: 6,                null: false
+    t.string   "description"
+    t.boolean  "active",                                    default: true
+    t.datetime "created_at",                                               null: false
+    t.datetime "updated_at",                                               null: false
+  end
+
+  add_index "canonicity_weights", ["algorithm_version", "active"], name: "index_canonicity_weights_on_algorithm_version_and_active"
+  add_index "canonicity_weights", ["algorithm_version", "source_name"], name: "index_canonicity_weights_on_algorithm_version_and_source_name", unique: true
 
   create_table "capacities", force: :cascade do |t|
     t.integer  "entity_id"
@@ -161,6 +174,25 @@ ActiveRecord::Schema.define(version: 20210611210334) do
   end
 
   add_index "meta_filters", ["filter"], name: "index_meta_filters_on_filter", unique: true
+
+  create_table "metric_snapshots", force: :cascade do |t|
+    t.integer  "philosopher_id",                    null: false
+    t.datetime "calculated_at",                     null: false
+    t.float    "measure"
+    t.integer  "measure_pos"
+    t.string   "danker_version"
+    t.string   "danker_file"
+    t.string   "algorithm_version", default: "1.0"
+    t.text     "notes"
+    t.datetime "created_at",                        null: false
+    t.datetime "updated_at",                        null: false
+    t.text     "weights_config"
+  end
+
+  add_index "metric_snapshots", ["algorithm_version"], name: "index_metric_snapshots_on_algorithm_version"
+  add_index "metric_snapshots", ["calculated_at"], name: "index_metric_snapshots_on_calculated_at"
+  add_index "metric_snapshots", ["philosopher_id", "calculated_at"], name: "index_metric_snapshots_on_philosopher_id_and_calculated_at"
+  add_index "metric_snapshots", ["philosopher_id"], name: "index_metric_snapshots_on_philosopher_id"
 
   create_table "names", force: :cascade do |t|
     t.integer  "shadow_id",  null: false

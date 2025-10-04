@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+require_relative '../config/suppress_warnings'
 APP_PATH = File.expand_path('../../config/application', __FILE__)
 require_relative '../config/boot'
 require 'rails/commands'

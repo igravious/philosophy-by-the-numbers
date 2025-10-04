@@ -1,17 +1,16 @@
+
 class Shadow < ActiveRecord::Base
-	has_many :names, :dependent => :destroy
+  has_many :names, dependent: :destroy
+  accepts_nested_attributes_for :names
+  include DateTimeMethods
 
-	accepts_nested_attributes_for :names
-
-	include DateTimeMethods
-
-	def get_year(date_sym)
-		y = nil
-		if not self[date_sym].blank?
-			 y = Date._parse(self[date_sym])[:year].to_i
-		end
-		y
-	end
+  def get_year(date_sym)
+    y = nil
+    unless self[date_sym].blank?
+      y = Date._parse(self[date_sym])[:year].to_i
+    end
+    y
+  end
 
 	def do_q(the_sym)
 	end
@@ -88,10 +87,11 @@ end
 # https://medium.com/@jbmilgrom/active-record-many-to-many-self-join-table-e0992c27c1e
 	
 class Philosopher < Shadow
-	# source: :work matches with the belongs_to :work in the Expression join model 
-	has_many :works, through: :route_a, source: :work
-	# route_a “names” the X join model for accessing through the work association
-	has_many :route_a, foreign_key: :creator_id, class_name: "Expression"
+		has_many :metric_snapshots, foreign_key: :philosopher_id, dependent: :destroy
+		# source: :work matches with the belongs_to :work in the Expression join model 
+		has_many :works, through: :route_a, source: :work
+		# route_a “names” the X join model for accessing through the work association
+		has_many :route_a, foreign_key: :creator_id, class_name: "Expression"
 
 	def join_attribute
 		{creator_id: self.id}
@@ -146,6 +146,71 @@ class Philosopher < Shadow
 				"(#{b}–#{d})"
 			end
 		end
+	end
+	
+	def calculate_canonicity_measure(algorithm_version: '2.0', danker_info: {})
+		# Get global max/min values for normalization
+		max_mention = (Philosopher.order('mention desc').first&.mention || 1.0) * 1.0
+		min_mention = 0.0 # if no mention, reduce to zero!
+		
+		unranked = Philosopher.where(danker: nil)
+		ranked = Philosopher.where.not(danker: nil)
+		max_rank = Philosopher.order('danker desc').first&.danker || 1.0 # desc (first)
+		min_rank = (ranked.order('danker asc').first&.danker || 0.1) / 2.0  # asc (first) / 2.0
+		
+		# Load configurable source weights
+		weights = CanonicityWeights.weights_for_version(algorithm_version)
+		
+		# Calculate individual source contributions using Linear Weighted Combination
+		source_contributions = {}
+		%w[runes inphobool borchert internet cambridge kemerling populate oxford routledge dbpedia stanford].each do |source|
+			source_contributions[source] = self.send(source.to_sym) ? weights[source].to_f : 0.0
+		end
+		
+		# All bonus only applies if philosopher has at least one authoritative source
+		has_sources = source_contributions.values.sum > 0
+		source_contributions['all_bonus'] = has_sources ? weights['all_bonus'].to_f : 0.0
+
+		# Handle edge cases for mention and danker
+		mention = if self.mention.nil? || self.mention == 0 || ((self.capacities.pluck(:entity_id) & [413, 41217, 269323]).length > 1) # hacky!
+			min_mention
+		else
+			self.mention
+		end
+		
+		rank = if self.danker.nil?
+			min_rank
+		else
+			self.danker
+		end
+		
+		# Calculate total source weight (Linear Weighted Combination)
+		total_source_weight = source_contributions.values.sum
+		
+		# Calculate the raw measure for database storage (scaled for user-friendly display)
+		raw_measure = ((mention/max_mention * rank/max_rank) * total_source_weight * 10_000_000)
+		
+		# Calculate normalized measure for return value (0-1 range)
+		source_sum = total_source_weight
+		
+		# Handle edge case where all values could be zero
+		if max_mention == 0 || max_rank == 0 || source_sum == 0
+			normalized_measure = 0.0
+		else
+			normalized_measure = (mention/max_mention * rank/max_rank) * source_sum
+		end
+		
+		# Update the philosopher's measure
+		self.update!(measure: raw_measure)
+		
+		# Create a snapshot
+		MetricSnapshot.create_snapshot_for_philosopher(
+			self, 
+			algorithm_version: algorithm_version, 
+			danker_info: danker_info
+		)
+		
+		normalized_measure
 	end
 
 	def self.phil_null
