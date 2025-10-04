@@ -1,0 +1,131 @@
+<script async defer src="https://hypothes.is/embed.js"></script>
+
+<p>
+  <strong>Remote Url:</strong>
+	<%= link_to @file.URL, @file.URL, target: '_blank' %>
+</p>
+
+<p>
+<<<<<<< HEAD
+  <strong>Cached File:</strong>
+	<%= link_to File.basename(@file.cache_file.blank? ? '' : @file.cache_file), cache_fyle_path(@file), target: '_blank' %>
+=======
+  <strong>Remote Url:</strong>
+	<%= link_to @file.URL, @file.URL, target: '_blank' %>
+>>>>>>> e3b06b4 (Super big commit, but the whole app needs rewriting :()
+</p>
+
+<p>
+  <strong>Cached File:</strong>
+	<%= link_to File.basename(@file.cache_file), cache_fyle_path(@file), target: '_blank' %>
+</p>
+
+<p>
+  <strong>Type negotiation:</strong>
+  <%= @file.type_in_English %>
+</p>
+
+<p>
+  <strong>What:</strong>
+  <%= @file.what %>
+</p>
+
+<% if !@file.type_negotiation.nil? %>
+	<% if @file.cache_file.blank? %>
+
+<<<<<<< HEAD
+		<%# form_for @file, url: {action: 'cache'}, method: 'post' do |f| %>
+		<%= form_tag cache_fyle_path(@file), method: 'post' do |f| %>
+=======
+		<%= form_for @file, url: {action: 'cache'}, method: 'post' do |f| %>
+>>>>>>> e3b06b4 (Super big commit, but the whole app needs rewriting :()
+			<% if @file.errors.any? %>
+				<div id="error_explanation">
+					<h2><%= pluralize(@file.errors.count, "error") %> prohibited this file from being saved:</h2>
+
+					<ul>
+					<% @file.errors.full_messages.each do |msg| %>
+						<li><%= msg %></li>
+					<% end %>
+					</ul>
+				</div>
+			<% end %>
+
+			<div class="actions">
+				<%# f.submit 'Cache file contents' %>
+				<%= submit_tag 'Cache file contents' %>
+				<%= link_to 'List of files', fyles_path %>
+			</div>
+		<% end %>
+
+	<% else %>
+		<!-- shouldn't these be up yonder? -->
+		<p>
+		<strong>Text:</strong>
+			<%= t=::Text.find_by_fyle_id @file.id; t.nil? ? link_to('New Text', from_fyle_text_path(@file)) : link_to('Used by this file', text_path(t))  %>
+		</p>
+		
+		<p>
+		<%= link_to 'Edit this file', edit_fyle_path(@file) %> |
+		<%= link_to 'Original contents', original_fyle_path(@file) %> |
+		<%= link_to 'List of files', fyles_path %>
+		</p>
+
+		<div class="container">
+			<div class="row">
+	  		<div class="col-*-*"></div>
+			</div>
+			<div class="row">
+	  		<div class=""></div>
+	  		<div class="two-third">
+		<em>Actual contents ✓</em><button id='save_button' style='display: none;' onclick='javascript:save_me($("#edit_me"))'>Save</button>
+		<script type="text/javascript">
+			// https://rainsoft.io/6-ways-to-declare-javascript-functions/
+
+			// fn() expr
+			var edit_me = function($el) {
+				var is_editable=$el.is('.editable');
+				if(!is_editable) {
+					$el.prop('contenteditable',true).toggleClass('editable')
+					$('#save_button').show()
+				}
+			}
+			
+			var save_me = function($el) {
+				$.ajax({
+            headers : {
+                'Accept' : 'application/json; charset=utf-8',
+                'Content-Type' : 'application/json; charset=utf-8'
+            },
+            url : '<%= @file.id %>/save',
+            type : 'PATCH',
+            data : JSON.stringify({content: $el.text()}),
+            success : function(response, textStatus, jqXhr) {
+								console.log("File Successfully Patched!");
+								$el.fadeIn(100).fadeOut(100).fadeIn(100).fadeOut(100).fadeIn(100);
+            },
+            error : function(jqXHR, textStatus, errorThrown) {
+                // log the error to the console
+                console.log("The following error occured: " + textStatus, errorThrown);
+            },
+            complete : function() {
+                console.log("File Patch Ran");
+            }
+        });
+			}
+		</script>
+		<pre id='edit_me' onclick='javascript:edit_me($("#edit_me"))'>
+<%# File.basename(@file.cache_file) %>
+<%= @file.snarf.force_encoding("UTF-8") %>
+		</pre>
+				</div>
+				<div class=""><a href="#" class="back-to-top" style="display: inline;">
+				 
+						<i class="fa fa-arrow-circle-up"></i>
+				 
+				</a></div>
+			</div>
+		</div>
+
+	<% end %>
+<% end %>

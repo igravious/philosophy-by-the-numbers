@@ -1,0 +1,53 @@
+== README
+
+This README would normally document whatever steps are necessary to get the
+application up and running.
+
+Things you may want to cover:
+
+* Ruby version
+
+* System dependencies
+
+* Configuration
+
+* Database creation
+
+* Database initialization
+
+* How to run the test suite
+
+* Services (job queues, cache servers, search engines, etc.)
+
+* Deployment instructions
+
+* ...
+
+Please feel free to use a different markup language if you do not plan to run
+<tt>rake doc:app</tt>.
+
+== START HERE
+
+Assets, and the asset pipeline. If you get bower to store its assets
+under vendor/assets/FOO, say vendor/assets/bower_components/ using
+.bowerrc
+See http://guides.rubyonrails.org/asset_pipeline.html#asset-organization
+
+=> lib/tasks/resolve.rake
+   bin/rake resolve:paths
+
+* app/views/layouts/application.html.erb
+
+* app/assets/stylesheets/application.css
+	. = app/assets/stylesheets (app scaffolding styles),
+	    *= require_self
+	    *= require_tree .
+	or  lib/assets/stylesheets (local) - empty
+	or  vendor/assets/stylesheets (3rd-party),
+	or  vendor/assets/stylesheets of plugins
+
+* vendor/assets/stylesheets/bower-sprockets.scss cuz of *= bower-sprockets in app/assets/stylesheets/application.css
+
+* vendor/assets/bower_components/???/bower.jown
+  	main = FOO, "main": "releases/picnic.min.css" for instance
+  	<%= stylesheet_link_tag "FOO", media: "all" %> back in app/views/layouts/application.html.erb

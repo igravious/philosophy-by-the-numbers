@@ -1,0 +1,13 @@
+<h1>Editing dictionary</h1>
+
+<!-- http://stackoverflow.com/questions/450903/how-to-make-div-not-larger-than-its-contents -->
+<div style='display: inline-block;'>
+	<%= render 'form' %>
+
+	<hr>
+</div>
+
+<div>
+	<%= link_to 'Show', @dictionary %> |
+	<%= link_to 'Back', dictionaries_path %>
+</div>

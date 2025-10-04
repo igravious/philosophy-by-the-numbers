@@ -1,0 +1,16 @@
+
+	<span class="field">
+		<%= label_tag :metric, "limit to: " %>
+		<span id='metric_feedback'><%= @metric %></span>
+				<input
+				id="metric"
+				name="metric"
+				type="range"
+				min="0"
+				max="780"
+				step=10
+				value="<%= @metric %>"
+				onchange="$('#metric_feedback').text($(this).val());return true;"
+		/>
+		<%# text_field_tag(:metric, @metric) %>
+	</span>

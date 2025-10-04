@@ -1,0 +1,3010 @@
+begin
+	def barf(e, ctx)
+		# no need to pass in $! ?
+		STDERR.puts "#{ctx}: #{e.inspect}"
+	 	STDERR.puts e.backtrace.select {|l| l.to_s[File.basename(__FILE__)]}
+	end
+
+	FORCE=true
+
+	def progress_bar(total, force=false, objects='records')
+		@progress = 0
+		@total = total
+		bar = nil
+		if not system("[ -t 1 ]") or force
+			require 'progress_bar'
+			bar = ProgressBar.new(total, :bar, :counter, :percentage, :elapsed, :eta)
+		end
+		str = "About to process #{@total} #{objects}"
+		if bar.nil?
+			puts str
+		else
+			STDERR.puts str
+		end
+		bar
+	end
+
+	def update_progress(bar, msg='')
+		if not bar.nil?
+			bar.increment!
+		else
+			@progress += 1
+			if msg.empty?
+				STDERR.puts "Processing #{@progress} of #{@total}"
+			else
+				STDERR.puts "#{msg} – processing #{@progress} of #{@total}"
+			end
+		end
+		true
+	end
+
+	namespace :shadow do
+
+		###
+		#
+		# SPARQLy
+		#
+		###
+
+		THESE_PHILOSOPHERS = "
+		PREFIX wd: <http://www.wikidata.org/entity/>
+		PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+		PREFIX wikibase: <http://wikiba.se/ontology#>
+		PREFIX p: <http://www.wikidata.org/prop/>
+		PREFIX ps: <http://www.wikidata.org/prop/statement/>
+		PREFIX pq: <http://www.wikidata.org/prop/qualifier/>
+		PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+		PREFIX bd: <http://www.bigdata.com/rdf#>
+		PREFIX schema: <http://schema.org/>
+
+		SELECT ?entity ?entityLabel (COUNT(DISTINCT ?sitelink) AS ?linkcount) WHERE {
+		  ?entity wdt:P31 wd:Q5 .
+		  {{?entity p:P106 ?l0 . ?l0 ps:P106 wd:Q4964182 .} UNION {?entity p:P101 ?l0 . ?l0 ps:P101 wd:Q4964182 .} UNION {?entity p:P39 ?l0 . ?l0 ps:P39 wd:Q4964182 .}}
+		  OPTIONAL {
+		    ?sitelink schema:about ?entity .
+		  }
+		  SERVICE wikibase:label {
+		    bd:serviceParam wikibase:language 'en, nl, fr, de, es, it, sv, da, ru, ca, ja, hu, pl, fi, cs, zh, fa, sk, uk, ar, he, et, sl, bg, el, hr, la, hy, zh-cn, sr, az, lv, krc' .
+		  }
+		}
+		GROUP BY ?entity ?entityLabel
+		ORDER BY DESC(?linkcount)
+		".freeze
+
+		# bd:serviceParam wikibase:language 'en','nl','fr','de','es','it','sv','nb','da','nn','ru','ca','ja','hu','pl','pt','fi','cs','zh','fa','sk','eo','uk','ar','tr','ro','he','et','eu','sl','oc','cy','ko','gl','bg','id','el','hr','la' .
+
+		#Works of type philosophy
+		THESE_PHILOSOPHICAL_WORKS = "
+    #Works of type philosophy (Q5891 = philosophy) (Q22811234 = branch of philosophy)
+    # what = what sort of work it is: literary work, written work, scholarly article, review article, et cetera
+    # genre = the branch of philosophy of the work
+    # TODO handle multiple whats and multiple genres :/
+    SELECT DISTINCT ?item ?itemLabel ?work ?workLabel (strlen(str(?workLabel)) AS ?len) ?linkCount # ?what ?whatLabel ?genre ?genreLabel 
+    WHERE {
+      {
+        SELECT ?work ?genre ?item ?what (COUNT(?sitelink) AS ?linkCount) WHERE {
+          ?work wdt:P136 ?genre.
+          ?genre wdt:P31 wd:Q5891.
+          ?work wdt:P50 ?item.
+          OPTIONAL {?work wdt:P31 ?what.}
+          OPTIONAL {?sitelink schema:about ?work.}
+        } GROUP BY ?work ?genre ?item ?what
+      }
+      UNION
+      {
+        SELECT ?work ?genre ?item ?what (COUNT(?sitelink) AS ?linkCount) WHERE {
+          ?work wdt:P136 ?genre.
+          ?genre wdt:P279 wd:Q5891.
+          ?work wdt:P50 ?item.
+          OPTIONAL {?work wdt:P31 ?what.}
+          OPTIONAL {?sitelink schema:about ?work.}
+        } GROUP BY ?work ?genre ?item ?what
+      }
+      UNION
+      {
+        SELECT ?work ?genre ?item ?what (COUNT(?sitelink) AS ?linkCount) WHERE {
+          ?work wdt:P136 ?genre.
+          ?genre wdt:P279 ?subgenre.
+          ?subgenre wdt:P279 wd:Q5891.
+          ?work wdt:P50 ?item.
+          OPTIONAL {?work wdt:P31 ?what.}
+          OPTIONAL {?sitelink schema:about ?work.}
+        } GROUP BY ?work ?genre ?item ?what
+      }
+      UNION
+      {
+        SELECT ?work ?genre ?item ?what (COUNT(?sitelink) AS ?linkCount) WHERE {
+          ?work wdt:P136 ?genre.
+          ?genre wdt:P31 wd:Q22811234.
+          ?work wdt:P50 ?item.
+          OPTIONAL {?work wdt:P31 ?what.}
+          OPTIONAL {?sitelink schema:about ?work.}
+        } GROUP BY ?work ?genre ?item ?what
+      }
+      UNION
+      {
+        SELECT ?work ?genre ?item ?what (COUNT(?sitelink) AS ?linkCount) WHERE {
+          ?work wdt:P921 ?genre.
+          ?genre wdt:P31 wd:Q5891.
+          ?work wdt:P50 ?item.
+          OPTIONAL {?work wdt:P31 ?what.}
+          OPTIONAL {?sitelink schema:about ?work.}
+        } GROUP BY ?work ?genre ?item ?what
+      }
+      UNION
+      {
+        SELECT ?work ?genre ?item ?what (COUNT(?sitelink) AS ?linkCount) WHERE {
+          ?work wdt:P921 ?genre.
+          ?genre wdt:P279 wd:Q5891.
+          ?work wdt:P50 ?item.
+          OPTIONAL {?work wdt:P31 ?what.}
+          OPTIONAL {?sitelink schema:about ?work.}
+        } GROUP BY ?work ?genre ?item ?what
+      }
+      UNION
+      {
+        SELECT ?work ?genre ?item ?what (COUNT(?sitelink) AS ?linkCount) WHERE {
+          ?work wdt:P921 ?genre.
+          ?genre wdt:P279 ?subgenre.
+          ?subgenre wdt:P279 wd:Q5891.
+          ?work wdt:P50 ?item.
+          OPTIONAL {?work wdt:P31 ?what.}
+          OPTIONAL {?sitelink schema:about ?work.}
+        } GROUP BY ?work ?genre ?item ?what
+      }
+      UNION
+      {
+        SELECT ?work ?genre ?item ?what (COUNT(?sitelink) AS ?linkCount) WHERE {
+          ?work wdt:P921 ?genre.
+          ?genre wdt:P31 wd:Q22811234.
+          ?work wdt:P50 ?item.
+          OPTIONAL {?work wdt:P31 ?what.}
+          OPTIONAL {?sitelink schema:about ?work.}
+        } GROUP BY ?work ?genre ?item ?what 
+      }
+      FILTER (?genre != wd:Q9350) # genre != yoga
+      FILTER (?what != wd:Q13442814) # && ?linkCount != 0) # isn't a \"scholarly\" article
+      FILTER (?what != wd:Q7318358) # isn't a review article
+      FILTER (?what != wd:Q871232) # isn't an editorial
+      FILTER (?what != wd:Q1348305) # isn't an erratum
+      FILTER (?linkCount != 0)
+      SERVICE wikibase:label { bd:serviceParam wikibase:language 'en'. }
+    }
+		".freeze
+		
+		OLD_DEEZ_PHIL_VURKS = "
+		#Works of type philosophy (Q5891 = philosophy) (Q22811234 = branch of philosophy)
+		SELECT DISTINCT ?item ?itemLabel ?work ?workLabel (strlen(str(?workLabel)) AS ?len) ?genre ?genreLabel ?linkCount WHERE {
+  		{
+    		SELECT ?work ?genre ?item (COUNT(?sitelink) AS ?linkCount) WHERE {
+      		?work wdt:P136 ?genre.
+      		?genre wdt:P279 wd:Q5891.
+      		?work wdt:P50 ?item.
+      		OPTIONAL {?sitelink schema:about ?work.}
+    		} GROUP BY ?work ?genre ?item
+  		}
+  		UNION
+  		{
+    		SELECT ?work ?genre ?item (COUNT(?sitelink) AS ?linkCount) WHERE {
+      		?work wdt:P136 ?genre.
+      		?genre wdt:P31 wd:Q22811234.
+      		?work wdt:P50 ?item.
+      		OPTIONAL {?sitelink schema:about ?work.}
+    		} GROUP BY ?work ?genre ?item
+  		}
+			UNION
+  		{
+    		SELECT ?work ?genre ?item (COUNT(?sitelink) AS ?linkCount) WHERE {
+      		?work wdt:P921 ?genre.
+      		?genre wdt:P279 wd:Q5891.
+      		?work wdt:P50 ?item.
+      		OPTIONAL {?sitelink schema:about ?work.}
+    		} GROUP BY ?work ?genre ?item
+  		}
+  		UNION
+  		{
+    		SELECT ?work ?genre ?item (COUNT(?sitelink) AS ?linkCount) WHERE {
+      		?work wdt:P921 ?genre.
+      		?genre wdt:P31 wd:Q22811234.
+      		?work wdt:P50 ?item.
+      		OPTIONAL {?sitelink schema:about ?work.}
+    		} GROUP BY ?work ?genre ?item
+  		}
+  		SERVICE wikibase:label { bd:serviceParam wikibase:language 'en'. }
+		}
+		".freeze
+		
+		# (COUNT(DISTINCT ?wLabel) AS ?whatCount) # 'ow many whats
+		# notable works by philosophers from Wikidata
+		THESE_WORKS_BY_PHILOSOPHERS = "
+		# notable works by philosophers from Wikidata
+    SELECT DISTINCT
+      ?item
+      ?work ?workLabel
+      # ?wLabel
+      (strlen(str(?workLabel)) AS ?len)
+      (COUNT(DISTINCT ?sitelink) AS ?linkCount) # indication of how well known
+      # (SAMPLE(?wLabel) AS ?whatLabel)
+      (GROUP_CONCAT(DISTINCT ?wLabel; separator=\"; \") AS ?whatLabel)  # concat what sort of thing it is labels
+      # (SAMPLE(?v) AS ?viaf) # some have more than one viaf? ignore all but one
+      # (GROUP_CONCAT(DISTINCT ?v; separator=\"; \") AS ?viaf)  # pick one label
+      (MIN(?v) AS ?viaf)
+    WHERE {
+      ?item wdt:P31 wd:Q5 . # is a human
+      {{?item p:P106 ?l0. ?l0 ⎈ps:P106 wd:Q4964182.} UNION {?item p:P101 ?l0. ?l0 ps:P101 wd:Q4964182.} UNION {?item p:P39 ?l0. ?l0 ps:P39 wd:Q4964182.}} # a philosopher who is human
+      { ?item wdt:P800 ?work .} UNION { ?work p:P50  ?c0 . ?c0 ps:P50 ?item .} # notable work UNION authored
+      { ?work rdfs:label ?workLabel . FILTER (lang(?workLabel) = 'en') } # only get works with English titles, why?
+      OPTIONAL { ?work p:P214  ?c0 . ?c0 ps:P214 ?v .} # viaf ID
+      OPTIONAL { ?sitelink schema:about ?work .} # count these for a measure of noteworthiness
+      OPTIONAL { ?work wdt:P31 ?w . ?w rdfs:label ?wLabel . FILTER (lang(?wLabel) = 'en') }
+      FILTER (?w != wd:Q3305213) FILTER (?w != wd:Q2263612) FILTER (?w != wd:Q219423) # ignore visual arts
+      FILTER (?w != wd:Q23058953) FILTER (?w != wd:Q23058950) FILTER (?w != wd:Q23011722) # ignore Ted talks
+      FILTER (?w != wd:Q5292) FILTER (?w != wd:Q3331189) # ignore editions
+    }
+    GROUP BY ?item ?work ?workLabel # ?wLabel
+    ORDER BY ?len DESC(?linkCount)
+		".freeze
+
+		# interpolated entities !
+
+		ATTR_ = "
+		PREFIX wd: <http://www.wikidata.org/entity/>
+		PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+		PREFIX schema: <http://schema.org/>
+		PREFIX wikibase: <http://wikiba.se/ontology#>
+
+		SELECT ?same
+		    (GROUP_CONCAT(DISTINCT ?birth;separator=';') AS ?births)
+		    (GROUP_CONCAT(DISTINCT ?death;separator=';') AS ?deaths)
+		    ?viaf ?floruit ?period ?gender
+		    ?work_lang ?pub_dates ?title ?country ?copyright ?image
+		    ?britannica ?philtopic ?philrecord
+		    ?qLabel (COUNT(DISTINCT ?sitelink) AS ?linkcount)
+		WHERE {
+		  BIND (wd:%{interpolated_entity} AS ?q)
+		  OPTIONAL { ?q owl:sameAs ?same .}
+		  OPTIONAL {{?q p:P569  ?c00 . ?c00 ps:P569  ?birth .} UNION {?q wdt:P569 ?birth .} }
+		  OPTIONAL {{?q p:P570  ?c01 . ?c01 ps:P570  ?death .} UNION {?q wdt:P570 ?death .} }
+		  OPTIONAL { ?q p:P1317 ?c02 . ?c02 ps:P1317 ?floruit   .}
+		  OPTIONAL { ?q p:P2348 ?c03 . ?c03 ps:P2348 ?period    .}
+		  OPTIONAL { ?q p:P21   ?c04 . ?c04 ps:P21   ?gender    .}
+		  OPTIONAL { ?q p:P27   ?c05 . ?c05 ps:P27   ?citizen   .}
+		  OPTIONAL { ?q p:P214  ?c06 . ?c06 ps:P214  ?viaf      .}
+		  OPTIONAL { ?q p:P407  ?c10 . ?c10 ps:P407  ?work_lang .} #
+		  OPTIONAL { ?q p:P577  ?c11 . ?c11 ps:P577  ?pub_dates .} #
+		  OPTIONAL { ?q p:P1476 ?c12 . ?c12 ps:P1476 ?title     .} #
+		  OPTIONAL { ?q p:P495  ?c13 . ?c13 ps:P495  ?country   .} # country of origin of work
+		  OPTIONAL { ?q p:P6216 ?c14 . ?c14 ps:P6216 ?copyright .} #
+		  OPTIONAL { ?q p:P18   ?c15 . ?c15 ps:P18   ?image     .} #
+		  OPTIONAL { ?q p:P1417 ?c16 . ?c16 ps:P1417 ?britannica.}
+		  OPTIONAL { ?q p:P3235 ?c17 . ?c17 ps:P3235 ?philtopic .}
+		  OPTIONAL { ?q p:P3732 ?c18 . ?c18 ps:P3732 ?philrecord.}
+		  OPTIONAL { ?sitelink schema:about ?q .}
+		  SERVICE wikibase:label {
+		    bd:serviceParam wikibase:language 'en,nl,fr,de,es,it,sv,da,ru,ca,ja,hu,pl,fi,cs,zh,fa,sk,uk,ar,he,et,sl,bg,el,hr,la,hy,zh-cn,sr,az,lv,krc' .
+		    ?q rdfs:label ?qLabel .
+		  }
+		}
+		GROUP BY ?same ?births ?deaths ?viaf ?floruit ?period ?gender ?work_lang ?pub_dates ?title ?country ?copyright ?image ?britannica ?philtopic ?philrecord ?qLabel
+		".freeze
+
+		# SUBJECT_
+		# PREDICATE_
+		# OBJECT_
+		DATUM_ = "
+		PREFIX wd: <http://www.wikidata.org/entity/>
+		PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+		PREFIX p: <http://www.wikidata.org/prop/>
+		PREFIX ps: <http://www.wikidata.org/prop/statement/>
+		PREFIX schema: <http://schema.org/>
+		PREFIX wikibase: <http://wikiba.se/ontology#>
+
+		SELECT
+		  ?same
+		  ?q
+		  ?qLabel
+		  ?datum
+		  ?datumLabel
+		WHERE {
+		  BIND (wd:%{interpolated_entity}    AS ?q)
+		  BIND (p:%{interpolated_property}   AS ?p)
+		  BIND (ps:%{interpolated_property} AS ?ps)
+		  OPTIONAL { ?q owl:sameAs ?same        .}
+		  OPTIONAL { ?q ?p ?c00 . ?c00 ?ps ?datum.}
+		  SERVICE wikibase:label {
+		    bd:serviceParam wikibase:language 'en,nl,fr,de,es,it,sv,da,ru,ca,ja,hu,pl,fi,cs,zh,fa,sk,uk,ar,he,et,sl,bg,el,hr,la,hy,zh-cn,sr,az,lv,krc' .
+		    ?q rdfs:label ?qLabel .
+		    ?datum rdfs:label ?datumLabel .
+		  }
+		}
+		GROUP BY ?same ?q ?qLabel ?datum ?datumLabel
+		".freeze
+
+		# ?data has been check to not be null :/
+		DATUM_INSTANCE_ = "
+		PREFIX wd: <http://www.wikidata.org/entity/>
+		PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+		PREFIX schema: <http://schema.org/>
+		PREFIX wikibase: <http://wikiba.se/ontology#>
+
+		SELECT
+		  ?same
+		  ?q
+		  ?qLabel
+		  ?data
+		  ?dataLabel
+		  ?instance
+		  ?instanceLabel
+		WHERE {
+		  BIND (wd:%{interpolated_entity}    AS ?q)
+		  BIND (p:%{interpolated_property}   AS ?p)
+		  BIND (ps:%{interpolated_property} AS ?ps)
+		  OPTIONAL { ?q owl:sameAs ?same        .}
+		  OPTIONAL { ?q ?p ?c00 . ?c00 ?ps ?data.}
+		  OPTIONAL { ?data wdt:P31 ?instance    .}
+		  SERVICE wikibase:label {
+		    bd:serviceParam wikibase:language 'en,nl,fr,de,es,it,sv,da,ru,ca,ja,hu,pl,fi,cs,zh,fa,sk,uk,ar,he,et,sl,bg,el,hr,la,hy,zh-cn,sr,az,lv,krc' .
+		    ?q rdfs:label ?qLabel .
+		    ?data rdfs:label ?dataLabel .
+		    ?instance rdfs:label ?instanceLabel .
+		  }
+		}
+		GROUP BY ?same ?q ?qLabel ?data ?dataLabel ?instance ?instanceLabel
+		".freeze
+
+		ASSOC_COUNTRY_ = "
+		PREFIX wd: <http://www.wikidata.org/entity/>
+		PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+		PREFIX schema: <http://schema.org/>
+		PREFIX wikibase: <http://wikiba.se/ontology#>
+
+		SELECT DISTINCT
+		  ?q
+		  ?qLabel
+		  ?connector
+		  ?connectorLabel
+		WHERE {
+		  BIND (wd:%{interpolated_entity} AS ?q)
+		  { ?q ?foo ?connector. ?connector wdt:P31 wd:Q6256}
+		  SERVICE wikibase:label {
+		    bd:serviceParam wikibase:language 'en,nl,fr,de,es,it,sv,da,ru,ca,ja,hu,pl,fi,cs,zh,fa,sk,uk,ar,he,et,sl,bg,el,hr,la,hy,zh-cn,sr,az,lv,krc' .
+		    ?q rdfs:label ?qLabel .
+		    ?connector rdfs:label ?connectorLabel .
+		    ?foo rdfs:label ?fooLabel .
+		  }
+		}
+		GROUP BY ?same ?q ?qLabel ?connector ?connectorLabel ?foo ?fooLabel
+		".freeze
+
+		ROLE_ = "
+		PREFIX wd: <http://www.wikidata.org/entity/>
+		PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+		PREFIX schema: <http://schema.org/>
+		PREFIX wikibase: <http://wikiba.se/ontology#>
+
+		SELECT ?same
+				?role
+		    ?qLabel
+				?roleLabel
+		WHERE {
+		  BIND (wd:%{interpolated_entity} AS ?q)
+		  OPTIONAL { ?q owl:sameAs ?same .}
+		  OPTIONAL {
+				{ ?q p:P106  ?stmt1 . ?stmt1 ps:P106  ?role .}
+				UNION
+		  	{ ?q p:P101  ?stmt2 . ?stmt2 ps:P101  ?role .}
+				UNION
+		  	{ ?q p:P106  ?stmt3 . ?stmt3 pq:P101  ?role .}
+				UNION
+		  	{ ?q p:P101  ?stmt4 . ?stmt4 pq:P106  ?role .}
+			}
+		  OPTIONAL { ?sitelink schema:about ?q .}
+		  SERVICE wikibase:label {
+		    bd:serviceParam wikibase:language 'en,nl,fr,de,es,it,sv,da,ru,ca,ja,hu,pl,fi,cs,zh,fa,sk,uk,ar,he,et,sl,bg,el,hr,la,hy,zh-cn,sr,az,lv,krc' .
+		    ?q rdfs:label ?qLabel .
+		    ?role rdfs:label ?roleLabel .
+		  }
+		}
+		GROUP BY ?same ?role ?roleLabel ?qLabel
+		".freeze
+
+		LABEL = "
+		SELECT ?label ?linkcount WHERE {
+		  {
+		    SELECT (COUNT(DISTINCT ?sitelink) AS ?linkcount) WHERE {
+		      ?sitelink schema:about wd:%{interpolated_entity} .
+		    }
+		  }
+		  {
+		    SELECT ?label WHERE {
+		      wd:%{interpolated_entity} rdfs:label ?label .
+		    }
+		  }
+		}
+		".freeze
+
+		HITS1 = "
+		PREFIX wd: <http://www.wikidata.org/entity/>
+		PREFIX schema: <http://schema.org/>
+
+		SELECT (COUNT(DISTINCT ?desc) AS ?hits) WHERE {
+		  wd:%{interpolated_entity} schema:description ?desc . FILTER (CONTAINS(lcase(str(?desc)),'%{interpolated_filter}')) .
+		}
+		".freeze
+
+		HITS2 = "
+		PREFIX wd: <http://www.wikidata.org/entity/>
+		PREFIX schema: <http://schema.org/>
+
+		SELECT (COUNT(DISTINCT ?desc) AS ?hits) WHERE {
+		  wd:%{interpolated_entity} schema:description ?desc . FILTER(%{interpolated_filter}) .
+		}
+		".freeze
+
+		FIND_BY_NAME = "
+		#old method for sitelink count
+		SELECT ?s ?same ?birth ?death ?floruit ?period ?desc (COUNT(DISTINCT ?sitelink) as ?linkcount)
+		WHERE
+		{
+		  ?s wdt:P31 wd:Q5 .
+		  ?s rdfs:label \"%{interpolated_entity}\"@en .
+		  OPTIONAL { ?s owl:sameAs ?same }
+		  OPTIONAL { {?s p:P569 ?c1 . ?c1 ps:P569  ?birth .} UNION {?s wdt:P569 ?birth .} }
+		  OPTIONAL { {?s p:P570 ?c2 . ?c2 ps:P570  ?death .} UNION {?s wdt:P570 ?death .} }
+		  OPTIONAL { ?s p:P1317 ?c3 . ?c3 ps:P1317 ?floruit .}
+		  OPTIONAL { ?s p:P2348 ?c4 . ?c4 ps:P2348 ?period .}
+		  OPTIONAL { ?sitelink schema:about ?s .}
+		  OPTIONAL { ?s rdfs:label ?desc filter (lang(?desc) = 'en'). }
+		} GROUP BY ?s ?same ?birth ?death ?floruit ?period ?desc ORDER BY DESC(?linkcount) LIMIT 1
+		".freeze
+
+		FIND_BY_ID = "
+		#old method for sitelink count
+		SELECT ?s ?same ?birth ?death ?floruit ?period ?desc (COUNT(DISTINCT ?sitelink) as ?linkcount)
+		WHERE
+		{
+		  BIND (wd:%{interpolated_entity} AS ?s)
+		  OPTIONAL { ?s owl:sameAs ?same }
+		  OPTIONAL { {?s p:P569 ?c1 . ?c1 ps:P569  ?birth .} UNION {?s wdt:P569 ?birth .} }
+		  OPTIONAL { {?s p:P570 ?c2 . ?c2 ps:P570  ?death .} UNION {?s wdt:P570 ?death .} }
+		  OPTIONAL { ?s p:P1317 ?c3 . ?c3 ps:P1317 ?floruit .}
+		  OPTIONAL { ?s p:P2348 ?c4 . ?c4 ps:P2348 ?period .}
+		  OPTIONAL { ?sitelink schema:about ?s .}
+		  OPTIONAL { ?s rdfs:label ?desc filter (lang(?desc) = 'en'). }
+		} GROUP BY ?s ?same ?birth ?death ?floruit ?period ?desc ORDER BY DESC(?linkcount) LIMIT 1
+		".freeze
+
+		###
+		#
+		# Helper Functions
+		#
+		##
+
+		def show_work_stuff(res)
+			res.each_with_index do |val, idx|
+				phil       = val.bindings[:item]
+				work       = val.bindings[:work]
+				name       = val.bindings[:workLabel].to_s
+				what       = val.bindings[:whatLabel].to_s
+				count      = val.bindings[:linkcount].to_i
+				p_entity   = phil.to_s.split('entity/').last
+				w_entity   = work.to_s.split('entity/').last
+				#site,title= Wikidata::API::wiki_title(entity)
+				#rating    = mention_one(entity)
+				index      = sprintf(" %05d ", idx)
+				#mentions  = sprintf("|%10s|", "#"*(rating))
+				site_links = sprintf("[%03d]", count)
+				# {"entities"=>{"Q3175911"=>{"type"=>"item", "id"=>"Q3175911", "sitelinks"=>{}}}, "success"=>1}
+				#if name == title
+				#	puts "#{index} #{site_links} #{entity.ljust(9)} #{mentions} #{site.rjust(10)}: #{title}"
+				#else
+					puts "#{index} #{site_links} #{w_entity.ljust(9)} by #{p_entity.ljust(9)} “#{name}” #{what}"
+				#end
+			end
+		end
+
+		def show_philosophical_stuff(res)
+			Shadow.none
+			max_mention = ((Philosopher.order('mention desc').first.mention)*1.0)+10.0 # head room
+			f1 = []
+			f2 = []
+			f3 = []
+			filters { |filter1, filter2, filter3|
+				f1.push(filter1)
+				f2.push(filter2)
+				f3.push(filter3)
+			}
+			res.each_with_index do |val, idx|
+				phil       = val.bindings[:entity]
+				name       = val.bindings[:entityLabel].to_s
+				count      = val.bindings[:linkcount].to_i
+				entity     = phil.to_s.split('entity/').last
+				site,title = Wikidata::API::wiki_title(entity)
+				mentions   = 0
+				start = Time.now
+				f1.length.times {|i|
+					mentions += mention_one(entity, [f1[i], f2[i]]).sum
+				}
+				finish = Time.now
+				puts "Filtering took #{finish-start} seconds"
+				index      = sprintf(" %05d ", idx)
+				rating     = sprintf("|%10s|", "#"*(mentions/max_mention*10))
+				site_links = sprintf("[%03d]", count)
+				# {"entities"=>{"Q3175911"=>{"type"=>"item", "id"=>"Q3175911", "sitelinks"=>{}}}, "success"=>1}
+				if name == title
+					puts "#{index} #{site_links} #{entity.ljust(9)} #{rating} #{site.rjust(10)}: #{title}"
+				else
+					puts "#{index} #{site_links} #{entity.ljust(9)} #{rating} #{site.rjust(10)}: #{title} (#{name})"
+				end
+			end
+		end
+
+		# TODO put exception handling here?
+		def interpolated_entity(sparql_query, substitution_hash)
+			require 'knowledge'
+			include Knowledge
+			w = Wikidata::Client.new
+			q = sparql_query % substitution_hash
+			# puts q.gsub("\t",'')
+			# exit
+			res = w.query(q) # take the first answer! :/
+			while not res.bindings[:same].nil?
+				entity = res.bindings[:same].first.to_s.split('/').last
+				puts "Properties: you splitting on #{entity}"
+				substitution_hash[:interpolated_entity] = entity # must have at least that element
+				q = sparql_query % substitution_hash
+				res = w.query(q) # res is result set
+			end
+			res
+		end
+
+		def labels(shadow_id, entity)
+			substitution_hash = {interpolated_entity: entity}
+			res = interpolated_entity(LABEL, substitution_hash)
+			if 0 == res.length
+				{linkcount: 0, names_attributes: []}
+			else
+				{
+					linkcount: res.bindings[:linkcount].first.to_i,
+		 			names_attributes: res.collect{|r|
+						Name.new(shadow_id: shadow_id, label: r.bindings[:label].to_s, lang: r.bindings[:label].language).attributes
+					}
+				}
+			end
+		end
+
+		def datum_instance(entity, property)
+			substitution_hash = {interpolated_entity: entity, interpolated_property: property}
+			interpolated_entity(DATUM_INSTANCE_, substitution_hash)
+		end
+
+		def object(entity_id, property_id)
+			require 'knowledge'
+			include Knowledge
+			w = Wikidata::Client.new
+			entity = 'Q'+entity_id.to_s
+			property = 'P'+property_id.to_s
+			q = DATUM_ % {interpolated_entity: entity, interpolated_property: property}
+			begin
+				# puts q.gsub("\t",'')
+				# exit
+				res = w.query(q) # take the first answer! :/
+				while not res.bindings[:same].nil?
+					new_entity = res.bindings[:same].first.to_s.split('/').last
+					puts "Properties: you splitting on #{new_entity} from #{entity}"
+					entity = new_entity
+					q = DATUM_ % {interpolated_entity: entity, interpolated_property: property}
+					res = w.query(q) # res is result set
+				end
+				len = res.length
+				if len > 1
+					### res = datum_instance(entity, property) # if this doesn't return more than one god help me
+					res.each {|rec|
+						# puts "---"
+						yield rec
+					}
+				elsif 0 == len
+					#
+				else
+					# puts "+++"
+					rec = res.first
+					if rec.bindings[:datum].nil?
+						# do nothin' (don't store anything)
+					else
+						### res = datum_instance(entity, property) # if this returns zero or more than one god help me
+						### rec = res.first
+						yield rec
+					end
+				end
+			rescue ActiveRecord::RecordNotUnique => huh
+				#... specific error handler
+				puts "Record collision: #{rec.inspect}"
+			rescue Net::OpenTimeout
+				puts q.gsub("\t",'')
+				puts "Open Timeout for datum(entity, property) => `datum(#{entity_id}, #{property_id})`"
+			rescue Net::ReadTimeout
+				puts q.gsub("\t",'')
+				puts "Read Timeout for datum(entity, property) => `datum(#{entity_id}, #{property_id})`"
+			rescue
+				#... catch all error handler
+				binding.pry
+			else
+				#... executes when no error
+			ensure
+				#... always executed
+			end
+			len
+		end
+
+		def properties(entity)
+			begin
+				substitution_hash = {interpolated_entity: entity}
+				res = interpolated_entity(ATTR_, substitution_hash)
+				if res.length > 1
+					# how to store multiple result lines? (birth dates or death dates trigger this scenario?)
+					# [3] pry(main)> res.bindings[:viaf]
+					# => [#<RDF::Literal:0x4a9aebc("268271999")>, #<RDF::Literal:0x4a62710("7524651")>]
+					Rails.logger.info "res.length > 1 for entity:#{entity} → res:#{res.inspect}"
+				end
+				# res.bindings[:"#{entity}Label"].first.to_s
+				if 0 == res.length
+					{linkcount: 0}
+				else
+					{ # 17
+					linkcount:                                         res.bindings[:linkcount].first.to_i,
+						floruit: (res.bindings[:floruit].nil?    ? nil : res.bindings[:floruit].first.to_s),
+						 period: (res.bindings[:period].nil?     ? nil : res.bindings[:period].first.to_s),
+						 births: (res.bindings[:births].nil?     ? nil : res.bindings[:births].first.to_s), # these have to be plural
+						 deaths: (res.bindings[:deaths].nil?     ? nil : res.bindings[:deaths].first.to_s), # "
+						   viaf: (res.bindings[:viaf].nil?       ? nil : res.bindings[:viaf].first.to_s),
+						citizen: (res.bindings[:citizen].nil?    ? nil : res.bindings[:citizen].first.to_s),
+						 gender: (res.bindings[:gender].nil?     ? nil : res.bindings[:gender].first.to_s.split('entity/').last),
+				  work_lang: (res.bindings[:work_lang].nil?  ? nil : res.bindings[:work_lang].first.to_s.split('entity/').last),
+				  pub_dates: (res.bindings[:pub_dates].nil?  ? nil : res.bindings[:pub_dates].first.to_s), # must be plural
+			  	    title: (res.bindings[:title].nil?      ? nil : res.bindings[:title].first.to_s),
+						country: (res.bindings[:country].nil?    ? nil : res.bindings[:country].first.to_s.split('entity/').last),
+					copyright: (res.bindings[:copyright].nil?  ? nil : res.bindings[:copyright].first.to_s.split('entity/').last),
+						  image: (res.bindings[:image].nil?      ? nil : res.bindings[:image].first.to_s),
+				 britannica: (res.bindings[:britannica].nil? ? nil : res.bindings[:britannica].first.to_s),
+				  philtopic: (res.bindings[:philtopic].nil?  ? nil : res.bindings[:philtopic].first.to_s),
+				 philrecord: (res.bindings[:philrecord].nil? ? nil : res.bindings[:philrecord].first.to_s)
+					}
+					# Date._parse(res.bindings[:birth].first.to_s)
+					# => {:zone=>"Z", :hour=>0, :min=>0, :sec=>0, :year=>-550, :mon=>1, :mday=>1, :offset=>0}
+				end
+			rescue
+				binding.pry
+			end
+		end
+
+		def roles(entity)
+			begin
+				substitution_hash = {interpolated_entity: entity}
+				res = interpolated_entity(ROLE_, substitution_hash)
+				if res.length > 1
+					# how to store multiple result lines?
+					Rails.logger.info "res.length > 1 for entity:#{entity} → res:#{res.inspect}"
+				end
+				# res.bindings[:"#{entity}Label"].first.to_s
+				if 0 == res.length
+					{}
+				else
+					{
+						   role: (res.bindings[:role].nil?    ? nil : res.bindings[:role]),
+						   roleLabel: (res.bindings[:roleLabel].nil?    ? nil : res.bindings[:roleLabel])
+					}
+					# Date._parse(res.bindings[:birth].first.to_s)
+					# => {:zone=>"Z", :hour=>0, :min=>0, :sec=>0, :year=>-550, :mon=>1, :mday=>1, :offset=>0}
+				end
+			rescue
+				binding.pry
+			end
+		end
+
+		###
+		#
+		# Entry point
+		#
+		###
+
+		namespace :philosopher do
+
+			desc "Print help"
+			task help: :environment do
+				puts ''
+				#rake shadow:philosopher:additional       # SPARQLy philosophical investigations (show additional ones)
+				#rake shadow:philosopher:count[cond]      # SPARQLy philosophical investigations (of the tallying variety)
+				#rake shadow:philosopher:danker[cond]     # SPARQLy philosophical investigations (of the danker variety)
+				#rake shadow:philosopher:explore1         # SPARQLy philosophical investigations (length)
+				#rake shadow:philosopher:explore2         # SPARQLy philosophical investigations (show stuff)
+				#rake shadow:philosopher:flesh[cond]      # SPARQLy philosophical investigations (flesh out entity properties)
+				#rake shadow:philosopher:dumbprop         # SPARQLy philosophical investigations (of the dumb prop variety)
+				#rake shadow:philosopher:smartprop        # SPARQLy philosophical investigations (of the smart prop variety)
+				#rake shadow:philosopher:labels[cond]     # SPARQLy philosophical investigations (flesh out entity labels)
+				#rake shadow:philosopher:measure          # SPARQLy philosophical investigations (of the measureful variety)
+				#rake shadow:philosopher:mentions[cond]   # SPARQLy philosophical investigations (of the mentioning variety)
+				#rake shadow:philosopher:metric           # SPARQLy philosophical investigations (of the metrical variety)
+				#rake shadow:philosopher:pagerank[cond]   # SPARQLy philosophical investigations (of the pageranking variety)
+				#rake shadow:philosopher:populate[force]  # SPARQLy philosophical investigations (populate database)
+				#rake shadow:philosopher:year             # SPARQLy philosophical investigations (of the yearly variety)
+				puts 'populate'
+				puts 'year'
+				puts 'danker'
+				puts 'measure'
+				puts 'order2'
+				puts ''
+			end
+
+			desc "SPARQLy P.I. (length)"
+			task explore1: :environment do
+				require 'knowledge'
+				include Knowledge
+				w = Wikidata::Client.new
+				str = THESE_PHILOSOPHERS
+				puts '# SPARQL for Wikidata philosopher query'
+				puts str.gsub("\t",'')
+				res = w.query(THESE_PHILOSOPHERS)
+				puts "response length: #{res.length}"
+			end
+
+			desc "SPARQLy philosophical investigations (show stuff)"
+			task explore2: :environment do
+				require 'knowledge'
+				include Knowledge
+				w = Wikidata::Client.new
+				puts "About to execute Wikidata query"
+				start = Time.now
+				res = w.query(THESE_PHILOSOPHERS)
+				finish = Time.now
+				puts "Query took #{finish-start} seconds"
+				show_philosophical_stuff(res)
+			end
+
+			desc "SPARQLy philosophical investigations (populate database)"
+			task :populate, [:force] => :environment do |task, arg|
+				begin
+					require 'knowledge'
+					include Knowledge
+					w = Wikidata::Client.new
+					str = THESE_PHILOSOPHERS
+					res = w.query(str)
+					Shadow.none
+					new = 0
+					total = res.length
+					bar = progress_bar(total, FORCE)
+					external = res.each do |val|
+						phil   = val.bindings[:entity]
+						entity = phil.to_s.split('entity/').last
+						id     = entity[1..-1].to_i
+						raise 'bad entity' if 0 >= id
+						#s = Philosopher.find_or_create_by!(entity_id: id)
+						#s.save!
+						if not Philosopher.find_by(entity_id: id)
+							label = val.bindings[:entityLabel]
+							lang = label.language.nil? ? '' : "@#{label.language}"
+							s = "https://www.wikidata.org/wiki/Q#{id.to_s.ljust(8)} with label '#{label}#{lang}'"
+							if not arg.force.nil? and ("true" == arg.force.downcase or 't' == arg.force.downcase)
+								Philosopher.create!(entity_id: id, populate: true)
+								puts "Creating! " + s
+							else
+								puts "Would have created: " + s
+							end
+							new += 1
+						end
+						update_progress(bar)
+					end.length
+					existing = Philosopher.all.length
+					str = "#{external} philosopher wikidata records in total. #{existing} existing ones. #{new} new ones."
+					if bar.nil?
+						puts str
+					else
+						STDERR.puts str
+					end
+				rescue
+					barf $!, 'shadow:populate urk'
+				end
+			end # task populate
+
+			desc "SPARQLy philosophical investigations (show additional ones)"
+			task additional: :environment do
+				begin
+					require 'knowledge'
+					include Knowledge
+					w = Wikidata::Client.new
+					res = w.query(THESE_PHILOSOPHERS)
+					Shadow.none
+					extra = 0
+					these = []
+					match = []
+					res.each do |val|
+						phil   = val.bindings[:entity]
+						entity = phil.to_s.split('entity/').last
+						id     = entity[1..-1].to_i
+						raise 'bad entity' if 0 >= id
+						these.push(id)
+					end
+					existing = Philosopher.all
+					ids = existing.pluck(:entity_id)
+					these.each { |id|
+						if ids.include?(id)
+							match.push(id)
+						else
+							extra += 1
+							n = Name.first_shadow_by_lang_order(id)
+							if n.nil?
+								label = ''
+								lang = ''
+							else
+								label = n.label
+								lang = "@#{n.lang}"
+							end
+							# puts "Found extra https://www.wikidata.org/wiki/Q#{e.entity_id.to_s.ljust(8)} with label '#{label}#{lang}'"
+						end
+					}
+					puts "#{res.length} wikidata philosopher records in total. #{match.length} matching ones. => #{extra} extra ones."
+					existing.each { |e|
+						if match.include?(e.entity_id)
+							#
+						else
+							n = Name.first_shadow_by_lang_order(e.id)
+							if n.nil?
+								label = ''
+								lang = ''
+							else
+								label = n.label
+								lang = "@#{n.lang}"
+							end
+							# if they're not mentioned anywhere else
+							if not e.borchert and not e.internet and not e.cambridge and not e.kemerling and not e.oxford and not e.routledge and not e.dbpedia and not e.inphobool and not e.stanford
+								# if they have no pages in the wikiverse
+								if 0 == e.linkcount 
+									if 0 == e.works.count
+										puts "Found obsolete https://www.wikidata.org/wiki/Q#{e.entity_id.to_s.ljust(8)} with label '#{label}#{lang}'"
+									end
+								end
+							end
+						end
+					}
+					puts "#{existing.length} existing philosopher records in total. #{match.length} similar ones. => #{existing.length-match.length} obsolete ones."
+				rescue
+					barf $!, 'shadow:extra urk'
+				end
+			end # task extra
+
+			def select(cond)
+				if cond.nil?
+					p = nil
+					puts "'ranked'          Philosopher.order(measure: :desc)"
+					puts "'philosophers'    Philosopher.all.order(:entity_id)"
+					puts "'works'           Work.all.order(:entity_id)"
+					puts "'pagerank_n'      Philosopher.order(:entity_id).where(danker: nil)"
+					puts "'metric_n'        Philosopher.where(metric: nil)"
+					puts "'measure_n'       Philosopher.where(measure: nil)"
+					puts "'mention_z'       Philosopher.where(mention: 0)"
+					puts "'linkcount_z'     Philosopher.where(linkcount: 0)"
+					puts "'linkcount_n'     Philosopher.where(linkcount: nil)"
+					puts "'linkcount_n_z'   Philosopher.where(linkcount: [0, nil])"
+					puts "'birth_n'         Philosopher.where(birth: nil)"
+					puts "'death_n'         Philosopher.where(death: nil)"
+					puts "'extra'           Philosopher.where(populate: false)"
+					puts "'c_today'         Philosopher.created_today()"
+					puts "'u_today'         Philosopher.updated_today()"
+					puts "'c_hour'          Philosopher.created_this_hour()"
+					puts "'u_hour'          Philosopher.updated_this_hour()"
+					puts "/P\\d+/            P::Smart.where(type: P::/P\\d+/)" # wrong indent cuz of the \\
+					puts "/D\\d+/            P::Smart.where(type: P::/D\\d+/)" # wrong indent cuz of the \\
+					puts "/Q\\d+/            Shadow.find_by(entity_id: cond.to_i)" # wrong indent cuz of the \\
+					puts "/\\d+/             Shadow.find(cond.to_i)" # wrong indent cuz of the \\
+					puts "[bool_cond]       Philosopher.where(populate: false, :\"bool_cond\" => true)"
+				else
+					Shadow.none
+					case cond
+					when 'ranked'
+						p = Philosopher.order(measure: :desc)
+					when 'philosophers'
+						p = Philosopher.all.order(:entity_id)
+					when 'works'
+						p = Work.all.order(:entity_id)
+					when 'pagerank_n'
+						p = Philosopher.order(:entity_id).where(danker: nil)
+					when 'metric_n'
+						p = Philosopher.where(metric: nil)
+					when 'measure_n'
+						p = Philosopher.where(measure: nil)
+					when 'mention_z'
+						p = Philosopher.where(mention: 0)
+					when 'linkcount_z'
+						p = Philosopher.where(linkcount: 0)
+					when 'linkcount_n'
+						p = Philosopher.where(linkcount: nil)
+					when 'linkcount_n_z'
+						p = Philosopher.where(linkcount: [0, nil])
+					when 'birth_n'
+						p = Philosopher.where(birth: nil)
+					when 'death_n'
+						p = Philosopher.where(death: nil)
+					when 'extra'
+						p = Philosopher.where(populate: false)
+					when 'c_today'
+						p = Philosopher.created_today
+					when 'u_today'
+						p = Philosopher.updated_today
+					when 'c_hour'
+						p = Philosopher.created_this_hour
+					when 'u_hour'
+						p = Philosopher.updated_this_hour
+					when /P\d+/
+						p = P::Smart.where(type: 'P::'+cond).henry.pluck(:object_id).uniq.map{|el|Struct.new(:entity_id).new(el)} # brutal
+					when /D\d+/
+						p = P::Smart.where(type: 'P::'+cond).pluck(:object_id).uniq.map{|el|Struct.new(:entity_id).new(el)} # brutal
+					when /Q\d+/
+						p = Shadow.where(entity_id: cond[1..-1].to_i)
+					when /\d+/
+						p = Shadow.where(id: cond.to_i)
+					else
+						if not Philosopher.columns_hash[cond].nil? and Philosopher.columns_hash[cond].type == :boolean
+							p = Philosopher.where(populate: false, :"#{cond}" => true)
+						else
+							p = nil
+						end
+					end
+				end
+				p
+			end
+
+			def birth_death(q, attrs)
+				do_date(q, attrs, :birth)
+				do_date(q, attrs, :death)
+				attrs
+			end
+
+			def do_date(q, attrs, date_sym)
+				plural = date_sym.to_s.pluralize.to_sym
+				approx = (date_sym.to_s+'_approx').to_sym
+				explod_birth = [] 
+				explod_birth = attrs[plural].split(';') unless attrs[plural].blank?
+				if 1 == explod_birth.length
+					attrs[date_sym] = attrs[plural].dup # if there's only one i'm pretty sure this is ok
+				else
+					explod_birth.delete_if{|e| 0 == (e =~ /^t\d+/) }
+					if 0 == explod_birth.length
+						# um, how to do this?
+					elsif 1 == explod_birth.length
+						attrs[date_sym] = attrs[plural].dup # if there's only one i'm pretty sure this is ok
+					elsif 2 == explod_birth.length
+						# check that the years are within X of each other
+						begin
+							b0 = Date._parse(explod_birth[0])[:year]
+							b1 = Date._parse(explod_birth[1])[:year]
+							b_diff = (b0 - b1).abs
+							if 0 == b_diff
+								attrs[date_sym] = explod_birth[0].dup
+							elsif b_diff <= 30 # uh, um, eyeballed it
+								if b0 > b1
+									attrs[date_sym] = explod_birth.dup.reverse.join(';')
+								else
+									attrs[date_sym] = explod_birth.dup.join(';')
+								end
+							else
+								puts "#{q} #{date_sym} diff too big – #{b_diff}"
+							end
+						rescue
+							puts "#{q} ornery #{date_sym} – #{$!}"
+						end
+					else
+						b_s = []
+						explod_birth.each{|e| b_s.push(Date._parse(e)[:year])}
+						attrs[date_sym] = b_s.sum / b_s.length
+						attrs[approx] = true
+					end
+				end
+				attrs.delete(plural)
+
+				attrs
+			end
+
+			desc "SPARQLy philosophical investigations (flesh out entity properties)"
+			task :flesh, [:cond] => :environment do |task, arg|
+				begin
+					phils = select(arg.cond)
+					exit if phils.nil?
+					count = 0
+					disp_count = '%03d'
+					total = phils.length
+					bar = progress_bar(total, FORCE)
+					disp_total = '%0'+(total.to_s.length.to_s)+'d'
+					num = 0
+					phils.each do |entity|
+						attrs = properties("Q#{entity.entity_id}")
+						puts attrs
+						show=false
+						l=' '
+						if entity.linkcount != attrs[:linkcount]
+							l='L'
+							show=true
+						end
+						b=' '
+						unless entity.birth.nil? and attrs[:births].blank?
+							begin
+								if entity.birth != attrs[:births]
+									b='B'
+									show=true
+								end
+							rescue
+								b='b'
+								show=true
+							end
+						end
+						d=' '
+						unless entity.death.nil? and attrs[:deaths].blank?
+							begin
+								if entity.death != attrs[:deaths]
+									d='D'
+									show=true
+								end
+							rescue
+								d='d'
+								show=true
+							end
+						end
+						num += 1
+						q="Q#{entity.entity_id}".ljust(9)
+						if show
+							count += 1
+							puts "#{sprintf(disp_count,count)} of #{sprintf(disp_total,num)}/#{total} #{q} [#{l}#{b}#{d}] #{attrs}"
+						end
+						attrs = birth_death(q, attrs)
+						p attrs
+						#
+						#entity.update_attributes(attrs)
+						update_progress(bar)
+					end
+					puts "#{count} records changed?"
+				rescue
+					barf $!, 'shadow:properties urk'
+				end
+			end # task properties
+
+			def langorder(force, ids=[])
+				lo = Name.all.group(:lang).order('count_all desc').count #   column_alias_for("count(*)")                 # => "count_all"
+				lo.delete('en_match')
+				total = lo.length
+				bar = progress_bar(total, force, 'languages')
+				lo.each {|v|
+					if 0 == ids.length
+						Name.where(lang: v[0]).update_all({langorder: v[1]})
+					else
+						Name.where(shadow_id: ids, lang: v[0]).update_all({langorder: v[1]})
+					end
+					update_progress(bar)
+				}
+			end
+
+			def update_labels(e)
+				attrs_with_count = labels(e.id, "Q#{e.entity_id}")
+				puts "~~~ #{attrs_with_count[:names_attributes].length} labels"
+				# {:linkcount=>32,
+				#  :names_attributes=> 
+				#   [{"id"=>nil, "shadow_id"=>19287, "label"=>"A Vindication of the Rights of Woman", "lang"=>"en", "created_at"=>nil, "updated_at"=>nil, "langorder"=>nil},
+				#    {…}]}
+				puts attrs_with_count[:names_attributes].select{|attrs| 'en' == attrs['lang']}
+				# how to just update?
+				Name.where(shadow_id: e.id).delete_all
+				e.update_attributes(attrs_with_count)
+			end
+
+			# if there's no description they don't show up in bin/rake -T
+			# rake shadow:philosopher:labels[cond]
+			#
+			# Name.uniq.pluck(:lang)
+			# Name.uniq.pluck(:shadow_id)
+			# Name.all.group(:lang).count
+			# Name.all.group(:lang).order('count_all desc').count
+			#
+			desc "SPARQLy philosophical investigations (flesh out entity labels)"
+			task :phil_labels, [:cond] => :environment do |task, arg|
+				begin
+					phils = select(arg.cond)
+					exit if phils.nil?
+					total = phils.length
+					bar = progress_bar(total, FORCE)
+					phils.each do |entity|
+						update_labels(entity)
+						update_progress(bar)
+					end
+					langorder(FORCE)
+				rescue
+					barf $!, 'shadow:labels urk'
+				end
+			end # task labels
+
+			def xlate(e, l)
+				#l = Name.distinct(:lang).limit(10).pluck(:lang)
+				lbls = l.collect{|v| "?#{v}Label"}.join(" ").gsub('-','_')
+				svcs = l.collect{|v|
+					"SERVICE wikibase:label {\n\tbd:serviceParam wikibase:language '#{v}' .\n\twd:#{e} rdfs:label ?#{v.gsub('-','_')}Label .\n} hint:Prior hint:runLast false."
+				}.join("\n")
+				"SELECT #{lbls} WHERE {\n#{svcs}\n}\nGROUP BY #{lbls}"
+			end
+
+			def xlate2(e, l)
+				#l = Name.distinct(:lang).limit(10).pluck(:lang)
+				lbls = l.collect{|v| "?#{v}Label"}.join(" ").gsub('-','_')
+				svcs = l.collect{|v| lbl='?'+v.gsub('-','_')+'Label'; "OPTIONAL {wd:#{e} rdfs:label #{lbl} FILTER (lang(#{lbl}) = '#{v}')}."}.join("\n")
+				"SELECT #{lbls} WHERE {\n#{svcs}\n}\nGROUP BY #{lbls}"
+			end
+
+			def check_date(p, birth, death)
+				begin
+					new_b = Date._parse(p.birth)[:year]
+				rescue
+					new_b = nil
+				end
+				begin
+					new_d = Date._parse(p.death)[:year]
+				rescue
+					new_d = nil
+				end
+				begin
+					if (birth == new_b) and (death == new_d)
+						return true
+					elsif (birth == new_b) and (death == new_d+1)
+						return true
+					elsif (birth == new_b) and (death == new_d-1)
+						return true
+					elsif (birth == new_b+1) and (death == new_d)
+						return true
+					elsif (birth == new_b-1) and (death == new_d)
+						return true
+					end
+					return false
+				rescue
+					return false
+				end
+			end
+
+			def make_append(p)
+				begin
+					append = " (#{Date._parse(p.birth)[:year]}"
+				rescue
+					append = " ("
+				end
+				begin
+					append += "/#{Date._parse(p.death)[:year]})"
+				rescue
+					append += "/)"
+				end
+			end
+
+			desc "SPARQLy philosophical investigations (of the individual dbpedia variety)"
+			task :subject_info, [:cond,:dbp] => :environment do |task, arg|
+				require 'knowledge'
+				include Knowledge
+				p arg.cond
+				p arg.dbp
+				SUBJECT_TO_DBO = {
+					'school'   => DBpedia::DBO_PHILOSOPHICAL_SCHOOL,
+					'interest' => DBpedia::DBO_MAIN_INTEREST,
+					'subject'  => DBpedia::DCT_SUBJECT
+				}
+				SUBJECT_TO_KLASS = { # TODO P::Smart.dbpedia_property()
+					'school'   => P::D1,
+					'interest' => P::D2,
+					'subject'  => P::D3
+				}
+				if arg.dbp.nil? || !SUBJECT_TO_DBO.key?(arg.dbp)
+					puts 'Subject must be one of: '+SUBJECT_TO_DBO.keys.join(',')
+					exit
+				end
+				dbo = SUBJECT_TO_DBO[arg.dbp]
+				p dbo
+				prop_klass = SUBJECT_TO_KLASS[arg.dbp]
+				prop_klass.connection
+				p prop_klass
+				LAST_RUN = 'tmp/.last_run_'+(prop_klass.to_s.sub('::','_'))
+				p LAST_RUN
+				begin
+					puts "reading file: #{LAST_RUN}"
+					file_data_lines = File.read(LAST_RUN)
+					phils = file_data_lines.each_line.collect{|l| Struct.new(:entity_id).new(l.strip.to_i)}
+					puts "unlinking file: #{LAST_RUN}"
+					File.unlink(LAST_RUN)
+					puts "restarting"
+				rescue
+					puts "not restarting"
+					phils = select(arg.cond)
+					exit if phils.nil?
+				end
+				puts "before ==> #{phils.size}"
+				entity_ids = prop_klass.pluck(:entity_id).uniq
+				puts "Already processed #{entity_ids.size} records"
+				phils = phils.select {|phil| !entity_ids.include?(phil.entity_id )}
+				puts "after ==> #{phils.size}"
+				puts "creating file: #{LAST_RUN}"
+				File.new(LAST_RUN, "w")
+				bar = progress_bar(phils.size, FORCE)
+
+				# prop_klass.delete_all
+
+				phils.each do |phil|
+					# p phil
+					e = phil.entity_id.to_s
+					q = 'Q'+e
+					# p q # mind your p's and q's
+					begin
+						subject_info = DBpedia::entity_property_values q
+						prop_klass.where(entity_id: phil.entity_id).delete_all
+						# pp subject_info
+						# Q16895642 => http://dbpedia.org/ontology/philosophicalSchool
+						# P737 (influenced by) => http://dbpedia.org/ontology/influencedBy
+						# P2348 (time period) => http://dbpedia.org/ontology/era
+						# P276 (location) => http://dbpedia.org/ontology/region
+						subject_info.each { |solution|
+							prop = solution[:p]
+							if prop == dbo
+								res_label = solution[:o].to_s.split('resource/').last
+								object_id = if solution[:w].nil?
+									nil
+								else
+									solution[:w]
+								end
+								dbp = prop_klass.new
+								dbp.entity_id = phil.entity_id
+								q = Knowledge::Wikipedia::API::wikibase_item({pageids: object_id})
+								dbp.object_id = q[1..-1] unless q.nil?
+								dbp.object_label = res_label # have to get wikidata object id from dbpedia res
+								dbp.save!
+							end
+						}
+						update_progress(bar)
+					rescue
+						File.write(LAST_RUN, "#{e}\n", File.size(LAST_RUN), mode: 'a')
+						puts $!
+					end
+				end
+			end
+
+			desc "SPARQLy philosophical investigations (of the dbpedia variety)"
+			task dbpedia: :environment do
+				require 'knowledge'
+				include Knowledge
+				phil_ranks = DBpedia::pagerank_of_philosophers
+				longest = 0
+				# many of these map to Gregorian
+				# Conversion of Hijri A.H. (Islamic) and A.D. Christian (Gregorian) dates
+				# http://www.muslimphilosophy.com/ip/hijri.htm
+				amend_date = {
+					'Abd al-Husayn Sharaf al-Din al-Musawi' => [1873,1957],
+					'Abd-al-Baqi al-Zurqani'  => [1611,1688],
+					'Abd-Allah ibn Numayr'   => [nil,814],
+					'Abu Bakr al-Sajistani'  => [nil,941],
+					'Abu Yusuf'           => [735,798],
+					'Aenesidemus'         => [-79,-9],
+					'Agnodice'            => [-400,-400],
+					'Anthony Weston'      => [1974,nil],
+					'Apollonius of Tyana' => [100,200],
+					"Atiyya ibn Sa'd"     => [nil,729],
+					'Bannanje Govindacharya'  => [1936,nil],
+					'Carl Cohen'          => [1931,nil],
+					'Cleopatra the Alchemist' => [300,300],
+					'David Hume'          => [1711,1776],
+					'Duran Çetin'         => [1964,nil],
+					'Edward Feser'        => [1968,nil],
+					'Elena Oznobkina'     => [1959,2010],
+					'François Zourabichvili' => [1965,2006],
+					'Gusainji'            => [1516,nil],
+					'Hammam ibn Munabbih' => [nil,719],
+					'Hamza Makhdoom'      => [1494,1576],
+					'Ibn Abd al-Hadi'     => [1305,1343],
+					'Ibn Abi Asim'        => [821,900],
+					'Ibn Battah'          => [916,997],
+					'Imam Muhammad Anwaarullah Farooqui'    => [1849,1918],
+					'Ioane Petritsi'      => [1100,1200],
+					'Irfan Abidi'         => [1950,1997],
+					'Jayanta Bhatta'      => [900,900],
+					"Ka'ab al-Ahbar"      => [nil,652],
+					'Kanada'              => [-200,-200],
+					'Laozi'               => [-600,-500],
+					'Leucippus'           => [-500,-500],
+					'Mirza Mazhar Jan-e-Janaan' => [1699,1781],
+					'Moinuddin Chishti'   => [1142,1236],
+					'Muhammad Usman Damani'     => [1828,1897],
+					'Muhsin al-Hakim'     => [1889,1970],
+					'Paul Thagard'        => [1950,nil],
+					'Pāṇini'              => [-600,-400],
+					'Philip Lindholm'     => [nil,nil],
+					'Pseudo-Dionysius the Areopagite' => [500,600],
+					'Roberta Klatzky'     => [1947,nil],
+					'Sufyan al-Thawri'    => [716,778],
+					'Yusuf ibn Abd al-Rahman al-Mizzi' => [1256,1342],
+					'Zenon Pylyshyn'      => [1937,nil]
+				}
+				phil_ranks.each do |phil_rank|
+					s = phil_rank.bindings[:s].to_s.split('resource/').last
+					if s.length > longest
+						longest = s.length
+					end
+				end
+				longest += 12 # accommodate (b-d)
+				nam = 0
+				w = Wikidata::Client.new
+				Shadow.none
+				reach = false
+				#many = []
+				#count_many = 0
+				missing = 0
+				batch = []
+				total = phil_ranks.length
+				bar = progress_bar(total, FORCE)
+				phil_ranks.each do |phil_rank|
+					update_progress(bar)
+					s = phil_rank.bindings[:s].to_s.split('resource/').last
+					#if many.include?(s)
+					#	count_many += 1
+					#else
+					#	many.push(s)
+					#end
+					idx = (s =~ /^(.+)_\(.+\)/)
+					if 0 == idx
+						s = $1
+					end
+					s = s.gsub('_',' ')
+					#if not reach
+					#	if amend_date.first[0] == s
+					#		reach = true
+					#	else
+					#		next
+					#	end
+					#end
+					v = phil_rank.bindings[:v].to_s.to_f
+					b = phil_rank.bindings[:b].nil? ? nil : phil_rank.bindings[:b].to_s.to_i
+					d = phil_rank.bindings[:d].nil? ? nil : phil_rank.bindings[:d].to_s.to_i
+					wiki = phil_rank.bindings[:w].to_s.split('wiki/').last
+					ee = wikibase_item({titles: wiki})
+					if ee.nil?
+						missing += 1
+						next
+					end
+
+					#if amend_date.key?(s)
+					#	b = amend_date[s][0]
+					#	d = amend_date[s][1]
+					#end
+
+					#if (not b.nil?) and (b == '' or (b >= 0 and b <= 31))
+					#	binding.pry
+					#end
+					#if (not d.nil?) and (d == '' or (d >= 0 and d <= 31))
+					#	binding.pry
+					#end
+					t = " (#{b}–#{d})"
+					# check in original population
+
+					#if q_name.key?(s+t)
+					if true # :)
+						#e = q_name[s+t]
+						#if e != ee
+						#	binding.pry
+						#end
+						e = ee
+						append = " https://www.wikidata.org/wiki/#{e}"
+						begin
+							id = e[1..-1].to_i
+							p = Philosopher.find_by!(entity_id: id) # is it in the population?
+							if not p.dbpedia
+								discard = p.update(dbpedia: true, dbpedia_pagerank: v)
+							end
+						rescue ActiveRecord::RecordNotFound => oops # nope
+							q = FIND_BY_ID % {interpolated_entity: e}
+							res = w.query(q)
+							attrs = res.bindings
+							same = attrs[:same]
+							lc = attrs[:linkcount].first.to_i
+							attrs = birth_death(attrs)
+							p = Philosopher.new(entity_id: id, birth: attrs[:birth], death: attrs[:death], linkcount: lc, dbpedia: true, dbpedia_pagerank: v)
+							#if check_date(p,b,d)
+								p.save!
+							#elsif amend_date.key?(s)
+							#	b = amend_date[s][0]
+							#	d = amend_date[s][1]
+							#	t1 = " → (#{b}–#{d})"
+							#	batch.push("∞ #{s+t+t1} #{other_b}/#{other_d}")
+							#else
+							#	batch.push(s+t)
+							#end
+						end
+						next # a huge chunk was taken out
+					end
+
+				end
+				pp batch
+				puts "#{phil_ranks.length} unique records"
+				puts "updated #{Philosopher.where(dbpedia: true).count}"
+				puts "failed to insert #{batch.length}"
+				puts "#{missing} missing"
+				puts
+				puts "dbpedia ones created today: #{Philosopher.created_today.where(dbpedia: true).length} (may not have been this session)"
+				# where is the begin?
+			end
+
+			#
+			# LC_COLLATE=C sort -d db/danker/2019-05-10.all.links.rank > db/danker/2019-05-10.all.links.c.alphanum
+			# sed 's/\t/,/g' db/danker/2019-05-10.all.links.c.alphanum > db/danker/2019-05-10.all.links.c.alphanum.csv
+			#
+			# time taken dropped from 2 hours to 1 minute by sorting and doing a binary search
+			# i'm kinda bad-ass at times
+			#
+			desc "Danker ranks"
+			task :danker, [:cond] => :environment do |task, arg|
+				begin
+					shadows = select(arg.cond)
+					exit if shadows.nil?
+					total = shadows.length
+					bar = progress_bar(total, FORCE)
+					# bar = progress_bar(total)
+					# puts bar.inspect
+					# fn = Dir[Rails.root.join('db','danker','**.rank')][-1]
+					fn = Dir[Rails.root.join('db','danker','**.c.alphanum.csv')][-1]
+					# f = File.open(fn)
+					shadows.each do |shade|
+						update_progress(bar)
+						ent = shade.entity_id
+						# urk = f.find {|line| line =~ /Q#{ent}\t/}
+						# urk = `LC_ALL=C fgrep "Q#{ent}\t" #{fn}`
+						# urk = `egrep "^Q#{ent}\t" #{fn}`
+						urk = `look Q#{ent}, #{fn}`
+						q = "Q#{ent}".ljust(9)
+						r = "#{shade.dbpedia_pagerank}".ljust(8)
+						# s = urk.split("\t")[1].to_f
+						s = urk.split(",")[1].to_f
+						puts "#{q} #{r} #{s}" if bar.nil?
+						# shade.update(dbpedia_pagerank: urk)
+						shade.update(danker: s)
+					end
+				rescue
+					STDERR.puts $!
+				end
+			end
+
+			# arg.cond
+			desc "SPARQLy philosophical investigations (of the pageranking variety)"
+			task :pagerank, [:cond] => :environment do |task, arg|
+				phils = select(arg.cond)
+				exit if phils.nil?
+				total = phils.length
+				bar = progress_bar(total, FORCE)
+				require 'knowledge'
+				include Knowledge
+				phils.each do |phil|
+					update_progress(bar)
+					site,title = Wikidata::API::wiki_title("Q#{phil.entity_id}")
+					res = DBpedia::pagerank_of_one_resource title
+					begin
+						urk = res.bindings[:v].first.to_s.to_f
+						phil.update(dbpedia_pagerank: urk)
+						q = "Q#{phil.entity_id}".ljust(9)
+						puts "#{q} #{urk}"
+					rescue
+						puts "No data for #{title}"
+					end
+				end
+			end
+
+			desc "SPARQLy philosophical investigations (of the tallying variety)"
+			task :count, [:cond] => :environment do |task, arg|
+				phils = select(arg.cond)
+				total = if phils.nil?
+					0
+				else
+					phils.length
+				end
+				puts "Would process #{total} record(s)"
+			end
+
+			# fix these, generally 7th century becomes 700 rather than 600 for instance
+			# comment these out when there work is done
+			def date_tweak
+				p = Philosopher.find_by(entity_id: 9333)
+				p.birth = "-604-01-01T00:00:00Z"
+				p.death = "-531-01-01T00:00:00Z"
+				p.birth_approx = true
+				p.death_approx = true
+				p.save!
+				p = Philosopher.find_by(entity_id: 10261)
+				p.birth = "-572-01-01T00:00:00Z"
+				p.death = "-497-01-01T00:00:00Z"
+				p.birth_approx = true
+				p.death_approx = true
+				p.save!
+				p = Philosopher.find_by(entity_id: 59138)
+				p.birth = "0300-01-01T00:00:00Z"
+				p.death = "0300-01-01T00:00:00Z"
+				p.save!
+				p = Philosopher.find_by(entity_id: 76501)
+				p.birth = "1882-02-20T00:00:00Z"
+				p.save!
+				p = Philosopher.find_by(entity_id: 967356)
+				p.birth = "1300-01-01T00:00:00Z"
+				p.birth_approx = true
+				p.save!
+				p = Philosopher.find_by(entity_id: 258369)
+				p.death = "1072-01-01T00:00:00Z"
+				p.save!
+				p = Philosopher.find_by(entity_id: 165589)
+				p.birth = "-500-01-01T00:00:00Z"
+				p.death = "-400-01-01T00:00:00Z"
+				p.birth_approx = true
+				p.death_approx = true
+				p.save!
+				p = Philosopher.find_by(entity_id: 188332)
+				p.birth = "-500-01-01T00:00:00Z"
+				p.birth_approx = true
+				p.save!
+				p = Philosopher.find_by(entity_id: 320546)
+				p.birth = "1200-01-01T00:00:00Z"
+				p.birth_approx = true
+				p.save!
+				p = Philosopher.find_by(entity_id: 335371)
+				p.birth = "1238-01-01T00:00:00Z"
+				p.death = "1317-01-01T00:00:00Z"
+				p.save!
+				p = Philosopher.find_by(entity_id: 428694)
+				p.birth = "1200-01-01T00:00:00Z"
+				p.birth_approx = true
+				p.save!
+				p = Philosopher.find_by(entity_id: 457990)
+				p.birth = "0600-01-01T00:00:00Z"
+				p.birth_approx = true
+				p.save!
+				p = Philosopher.find_by(entity_id: 556865)
+				p.birth = "-300-01-01T00:00:00Z"
+				p.birth_approx = true
+				p.save!
+				p = Philosopher.find_by(entity_id: 960345)
+				p.birth = "0300-01-01T00:00:00Z"
+				p.death = "0400-01-01T00:00:00Z"
+				p.birth_approx = true
+				p.death_approx = true
+				p.save!
+
+				# 20th century :(
+
+				# 10261,    '(c. 572
+			end
+
+			desc "SPARQLy philosophical investigations (of the yearly variety)"
+			task year: :environment do
+				Shadow.none
+				phils = Philosopher.all
+				bar = progress_bar(phils.size, FORCE)
+				date_tweak
+				phils.each do |phil|
+					birth_year = phil.year(:birth)
+					death_year = phil.year(:death)
+					phil.update(birth_year: birth_year, death_year: death_year)
+					update_progress(bar)
+				end
+			end
+
+			desc "SPARQLy philosophical investigations (of the capacities variety)"
+			task :capacities, [:ent] => :environment do |task, arg|
+				ents = []
+				Shadow.none
+				ent = Capacity.find_by(label: arg.ent)
+				ents.push(ent.entity_id) unless ent.nil?
+				arg.extras.each {|the_ent|
+					ent = Capacity.find_by(label: the_ent)
+					ents.push(ent.entity_id) unless ent.nil?
+				}
+				p ents
+				phils = Role.where(entity_id: ents).group(:shadow_id).size
+				#phils = Philosopher.all
+				#bar = progress_bar(phils.size.length, FORCE)
+				phils.each do |phil|
+					puts phil[1].to_s+': '+Philosopher.find(phil[0]).english #if phil.where(entity_id: 41217).length > 0
+					#update_progress(bar)
+				end
+			end
+
+			def which_slot(y)
+				if 2000 == y # means 20th cent.
+					return 0
+				else
+					return 19 - y/100
+				end
+			end
+
+			desc "SPARQLy philosophical investigations (of the gender variety)"
+			task gender: :environment do
+				Shadow.none
+				phils = Philosopher.all.order(:birth_year).reverse
+				bar = progress_bar(phils.size, FORCE)
+				m = []
+				f = []
+				p = []
+				no_data = 0
+				
+				phils.each do |phil|
+					year = if phil.birth_year.nil?
+						if phil.death_year.nil?
+							nil
+						else
+							phil.death_year - 50
+						end
+					else
+						phil.birth_year
+					end
+					if year.nil?
+						no_data += 1
+					else
+						use = if phil.gender == 'Q6581097' # male
+							m
+						else
+							f
+						end
+						slot = which_slot(year)
+						#printf "#{slot} #{year} "
+						begin
+							use[slot] += 1
+						rescue
+							use[slot] = 1
+						end
+						update_progress(bar)
+					end
+				end
+				puts "No data for #{no_data} :("
+				max = 29
+				i = 0
+				while i < max
+					n = if f[i].nil?
+						f[i] = 0
+						0.0
+					else
+						f[i].to_f
+					end
+					d = m[i].to_f
+					per = n/d*100
+					p[i] = sprintf("%02.2f%", per)
+					i += 1
+				end
+				p m[0..max-1]
+				p f
+				p p
+			end
+
+			desc "SPARQLy philosophical investigations (of the dumb property variety)"
+			task :dumbprop, [:data] => :environment do |task, arg|
+				Shadow.none
+				# phils = Philosopher.all
+				puts 'broke'
+				exit
+				phil_set = Philosopher.pluck(:entity_id)
+				prop_set = Property.where(property_id: arg.data.to_i).pluck(:original_id).uniq
+				redo_set = phil_set - prop_set
+				bar = progress_bar(redo_set.size, FORCE)
+				redo_set.each do |entity_id|
+					# binding.pry
+					datum(entity_id, arg.data) {|line|
+						# p line
+						prop  = Property.new
+						prop.property_id = arg.data.to_i
+						# can never be nil !
+						prop.entity_id = line.bindings[:q].to_s.split('entity/').last[1..-1].to_i
+						prop.entity_label = line.bindings[:qLabel].to_s
+						prop.original_id = entity_id
+						# guaranteed to no to be nil
+						prop.data_id = line.bindings[:data].to_s.split('entity/').last[1..-1].to_i
+						prop.data_label = line.bindings[:dataLabel].to_s
+						# could be nil :)
+						if line.bindings[:instance].nil?
+							prop.instance_id = nil
+							prop.instance_label = nil
+						else
+							prop.instance_id = line.bindings[:instance].to_s.split('entity/').last[1..-1].to_i
+							prop.instance_label = line.bindings[:instanceLabel].to_s
+						end
+						are_we_here = Property.where(property_id: prop.property_id, entity_id: prop.entity_id, data_id: prop.data_id).first
+						pp are_we_here
+						puts "original id: #{entity_id}"
+						are_we_here.delete unless are_we_here.nil?
+						prop.save!
+					}
+					update_progress(bar)
+				end
+			end
+
+			#
+			# leave cond empty to print cond
+			# bin/rake shadow:philosopher:smartprop[,19]
+			#
+			desc "SPARQLy philosophical investigations (of the smart wikidata property variety)"
+			task :smartprop, [:cond,:prop_id,:force] => :environment do |task, arg|
+				phils = select(arg.cond)
+				puts "before ==> #{phils.size}"
+				prop_klass  = P::Smart.property(arg.prop_id)
+				p prop_klass
+				if arg.force.nil? or 'force' != arg.force
+					if "31" == arg.prop_id
+						entity_ids = prop_klass.pluck(:entity_id).uniq
+					else
+						entity_ids = prop_klass.pluck(:object_id).uniq
+					end
+					puts "Already processed #{entity_ids.size} records"
+					phils = phils.select {|phil| !entity_ids.include?(phil.entity_id )}
+				end
+				puts "after ==> #{phils.size}"
+				puts 'nothing to do!' && exit if phils.nil? or phils.size.nil?
+				bar = progress_bar(phils.size, FORCE)
+				phils.each do |phil|
+					entity_id = phil.entity_id
+					lines = object(entity_id, arg.prop_id) {|line|
+						# p line
+						prop = prop_klass.new
+						prop.redirect_id      = entity_id # should be called redirect_from_id
+						prop.entity_id        = line.bindings[:q].to_s.split('entity/').last[1..-1].to_i
+						prop.object_id        = line.bindings[:datum].to_s.split('entity/').last[1..-1].to_i
+						prop.object_label     = line.bindings[:datumLabel].to_s
+						are_we_here = prop_klass.find_by(redirect_id: prop.redirect_id, object_id: prop.object_id)
+						are_we_here.delete unless are_we_here.nil?
+						prop.save!
+					}
+					Rails.logger.info "Smart Property: #{arg.cond} (#{entity_id} P#{arg.prop_id} => #{lines} line#{'s' unless 1==lines}"
+					update_progress(bar)
+				end
+			end
+
+			# bin/rake shadow:philosopher:smartprop[philosophers,19]
+			# bin/rake shadow:philosopher:smartprop[P19,31]
+			# bin/rake shadow:philosopher:smartprop[philosophers,20]
+			# bin/rake shadow:philosopher:smartprop[P20,31]
+			# bin/rake shadow:philosopher:locale_infer
+			# bin/rake shadow:philosopher:locale_build
+
+			desc "SPARQLy philosophical investigations (of the locale variety)"
+			task locale_infer: :environment do
+				each_locale(19)
+				each_locale(20)
+			end
+
+			desc "SPARQLy philosophical investigations (of the locale variety)"
+			task locale_build: :environment do
+				P::J27.delete_all	
+				entity_country_list = P::P27.all
+				bar = progress_bar(entity_country_list.size, FORCE)
+				entity_country_list.each{ |entity_country|
+					vc = P::J27.new
+					vc.entity_id = entity_country.entity_id
+					vc.object_id = entity_country.object_id
+					vc.object_label = entity_country.object_label
+					vc.save!
+					update_progress(bar)
+				}
+				place_country_list = P::J1.all
+				bar = progress_bar(place_country_list.size, FORCE)
+				place_country_list.each{ |place_country|
+					# entity_place_list = P::P19.pluck(:entity_id, :object_id)
+					# entity_place_list.each{ |entity_id, place_id|
+					entity_place_list = P::P19.where(object_id: place_country.entity_id)
+					entity_place_list.each{ |entity_place|
+						vc = P::J27.new
+						vc.entity_id = entity_place.entity_id
+						vc.object_id = place_country.object_id
+						vc.object_label = place_country.object_label
+						vc.save!
+					}
+					entity_place_list = P::P20.where(object_id: place_country.entity_id)
+					entity_place_list.each{ |entity_place|
+						vc = P::J27.new
+						vc.entity_id = entity_place.entity_id
+						vc.object_id = place_country.object_id
+						vc.object_label = place_country.object_label
+						vc.save!
+					}
+					update_progress(bar)
+				}
+			end
+
+			# ok places
+			PLACE_WHITELIST={
+				727 => "Amsterdam",   # {:q=>#<RDF::URI:0x263a84c URI:http://www.wikidata.org/entity/Q727>,   :qLabel=>#<RDF::Literal:0x263a6f8("Amsterdam"@en)>}
+				3616 => "Tehran",     # {:q=>#<RDF::URI:0x2538368 URI:http://www.wikidata.org/entity/Q3616>,  :qLabel=>#<RDF::Literal:0x2538250("Tehran"@en)>}
+				1748 => "Copenhagen", # {:q=>#<RDF::URI:0x250010c URI:http://www.wikidata.org/entity/Q1748>,  :qLabel=>#<RDF::Literal:0x24fffa4("Copenhagen"@en)>}
+				36600 => "The Hague", # {:q=>#<RDF::URI:0x23b5158 URI:http://www.wikidata.org/entity/Q36600>, :qLabel=>#<RDF::Literal:0x23b5004("The Hague"@en)>}
+			}
+
+			# not a place or irreducible to their connecting places
+			PLACE_BLACKLIST={
+				97     => "Atlantic Ocean",      # {:q=>#<RDF::URI:0x2dc6bc4 URI:http://www.wikidata.org/entity/Q97>,     :qLabel=>#<RDF::Literal:0x2dc691c("Atlantic Ocean"@en)>}
+				4918   => "Mediterranean Sea",   # {:q=>#<RDF::URI:0x2f14e68 URI:http://www.wikidata.org/entity/Q4918>,   :qLabel=>#<RDF::Literal:0x2f14d3c("Mediterranean Sea"@en)>}
+				8646   => "Hong Kong",           # {:q=>#<RDF::URI:0x24fee24 URI:http://www.wikidata.org/entity/Q8646>,   :qLabel=>#<RDF::Literal:0x24fed0c("Hong Kong"@en)>}
+				37495  => "Ionian Sea",          # {:q=>#<RDF::URI:0x2704fc0 URI:http://www.wikidata.org/entity/Q37495>,  :qLabel=>#<RDF::Literal:0x2704e44("Ionian Sea"@en)>}
+				43100  => "Kashmir",             # {:q=>#<RDF::URI:0x2291074 URI:http://www.wikidata.org/entity/Q43100>,  :qLabel=>#<RDF::Literal:0x228f378("Kashmir"@en)>}
+				38060  => "Gaul",                # {:q=>#<RDF::URI:0x314f91c URI:http://www.wikidata.org/entity/Q38060>,  :qLabel=>#<RDF::Literal:0x314f7dc("Gaul"@en)>}
+				223604 => "Greco-Italian War",   # {:q=>#<RDF::URI:0x23a3840 URI:http://www.wikidata.org/entity/Q223604>, :qLabel=>#<RDF::Literal:0x23a3700("Greco-Italian War"@en)>}
+				26     => "Northern Ireland",    # {:q=>#<RDF::URI:0x2e36604 URI:http://www.wikidata.org/entity/Q26>,     :qLabel=>#<RDF::Literal:0x2e3644c("Northern Ireland"@en)>}
+				60140  => "Indian Subcontinent", # {:q=>#<RDF::URI:0x250e6e4 URI:http://www.wikidata.org/entity/Q60140>, :qLabel=>#<RDF::Literal:0x250e16c("Indian subcontinent"@en)>}
+			}
+
+			def insert_locale(rec, place_id)
+				country_id    = rec.bindings[:connector].to_s.split('entity/').last[1..-1].to_i # hmm, must be a neat-o way of doing this
+				country_label = rec.bindings[:connectorLabel].to_s
+				inferred = P::J1.new
+				inferred.entity_id = place_id
+				inferred.object_id = country_id
+				inferred.object_label = country_label
+				# p inferred
+				inferred.save!
+			end
+
+			def each_locale(prop_id)
+				prop_klass = P::Smart.property(prop_id)
+				place_list = prop_klass.group(:object_id).count(:object_id).sort_by {|_key, value| value}.reverse
+				# p place_list
+				puts "#{place_list.size} places in P:P#{prop_id} (before check)"
+				entity_ids = P::J1.pluck(:entity_id).uniq
+				place_list.delete_if do |place_id, count|
+					entity_ids.include?(place_id)
+				end
+				puts "#{place_list.size} places in P:P#{prop_id} (after check)"
+				bar = progress_bar(place_list.size, FORCE)
+				place_list.each do |place_id, count|
+					bingo = P::P31.where(entity_id: place_id, object_id: [6256, 3624078, 3024240])
+					if bingo.empty?
+						substitution_hash = {interpolated_entity: 'Q'+place_id.to_s}
+						res = interpolated_entity(ASSOC_COUNTRY_, substitution_hash)
+						len = res.length
+						update_progress(bar) and next if len.zero?
+						# https://www.w3.org/TR/rdf-sparql-query/#modDistinct
+						# just_one = res.uniq # god i hope this works as intended, TODO double check!
+						if 1 == len
+							rec = res.first
+							insert_locale(rec, place_id)
+						else
+							if PLACE_WHITELIST.keys.include?(place_id)
+								res.each{ |rec|
+									insert_locale(rec, place_id)
+								}
+							else
+								puts "inconclusive place: #{place_id} #{res}" unless PLACE_BLACKLIST.keys.include?(place_id)
+							end
+						end
+					end
+					update_progress(bar)
+				end
+			end
+
+			desc "SPARQLy philosophical investigations (of the ordering variety)"
+			task order: :environment do # OBSOLETE
+				Shadow.none
+				phils = Philosopher.order('metric desc').group(:metric)
+				count_phils = phils.count
+				length_phils = count_phils.length
+				bar = progress_bar(length_phils, FORCE)
+				count_phils.each_with_index do |metric, idx|
+					Philosopher.where(metric: metric[0]).update_all(metric_pos: idx+1)
+					update_progress(bar)
+				end
+			end
+
+			desc "SPARQLy philosophical investigations (of the order2ing variety)"
+			task new_order: :environment do
+				Shadow.none
+				phils = Philosopher.order('measure desc').group(:measure)
+				count_phils = phils.count
+				length_phils = count_phils.length
+				bar = progress_bar(length_phils, FORCE, 'groups of records')
+				count_phils.each_with_index do |measure, idx|
+					Philosopher.where(measure: measure[0]).update_all(measure_pos: idx+1)
+					update_progress(bar)
+				end
+			end
+
+			desc "SPARQLy philosophical investigations (of the dbpedia measureful variety)"
+			task old_metric: :environment do # OBSOLETE
+				Shadow.none
+				# less crude
+				#Philosopher.update_all('metric = philosophy + philosopher') # use metric as a place_holder, should create new mention_attr
+				Philosopher.all
+				max_mention = (Philosopher.order('mention desc').first.mention)*1.0
+				min_mention = 1
+				max_rank = Philosopher.order('dbpedia_pagerank desc').first.dbpedia_pagerank
+				min_rank = Philosopher.where.not(dbpedia_pagerank: nil).order('dbpedia_pagerank asc').first.dbpedia_pagerank
+				
+				# Oxford Dictionary of Philosophy                    Q7755796  3.82001
+				# Philosophical Library Dictionary of Philosophy     Q3700851  2.46188
+				# Routledge Encyclopedia of Philosophy               Q249821   8.81918
+				# Stanford Encyclopedia of Philosophy                Q824553   45.4263
+				# Cambridge Dictionary of Philosophy                 Q1761588  3.06268
+				# Thomson Gale Encyclopedia of Philosophy            Q1340157  4.65352
+				# Internet Encyclopedia of Philosophy                Q259513   26.2852
+				# DBpedia – Philosophical Figures                    Q465      3.22946
+				# Wikidata – Philosophical Figures                   Q2013     3.53577
+				# Philosophy Pages Philosophical Dictionary          Q
+				
+ 				# What about Britannica?				
+				
+				Philosopher.order(:entity_id).each do |phil|
+					runes     = phil.runes     ? 0.0  : 0.0 # because biased
+					borchert  = phil.borchert  ? 0.2  : 0.0 # M 
+					cambridge = phil.cambridge ? 0.2  : 0.0
+					kemerling = phil.kemerling ? 0.1  : 0.0 # because sole affair
+					populate  = phil.populate  ? 0.05 : 0.0 # wikidata
+					oxford    = phil.oxford    ? 0.2  : 0.0
+					routledge = phil.routledge ? 0.2  : 0.0
+					dbpedia   = phil.dbpedia   ? 0.05 : 0.0 # don't trust
+					stanford  = phil.stanford  ? 0.2  : 0.0
+
+					if phil.mention.nil?
+						mention = min_mention
+					else
+						mention = phil.mention
+					end
+					if phil.dbpedia_pagerank.nil?
+						rank = min_rank
+					else
+						rank = phil.dbpedia_pagerank
+					end
+					tmp = ((mention/max_mention * rank/max_rank) * (dbpedia+ populate+ routledge+ oxford+ kemerling+ runes+ stanford+ cambridge) * 1000000)
+					phil.update(metric: tmp)
+					q = "Q#{phil.entity_id}".ljust(9)
+					puts "#{q} #{tmp}"
+				end
+			end
+
+			desc "SPARQLy philosophical investigations (of the danker measureful variety)"
+			task metric: :environment do
+				Shadow.none
+				total = Philosopher.all.size
+				bar = progress_bar(total, FORCE)
+
+				max_mention = (Philosopher.order('mention desc').first.mention)*1.0
+				min_mention = 0.0 # if no mention, reduce to zero!
+				unranked = Philosopher.where(danker: nil)
+				ranked = Philosopher.where.not(danker: nil)
+				max_rank = Philosopher.order('danker desc').first.danker # desc (first)
+				min_rank = (ranked.order('danker asc').first.danker)/2.0  # asc (first) / 2.0
+				
+				# Oxford Dictionary of Philosophy                    Q7755796  
+				# Philosophical Library Dictionary of Philosophy     Q3700851
+				# Routledge Encyclopedia of Philosophy               Q249821
+				# Stanford Encyclopedia of Philosophy                Q824553
+				# Cambridge Dictionary of Philosophy                 Q1761588
+				# Thomson Gale Encyclopedia of Philosophy            Q1340157
+				# Internet Encyclopedia of Philosophy                Q259513
+				# DBpedia – Philosophical Figures                    Q465    
+				# Indiana Philosophy Ontology – Thinkers             QQ6023365
+				# Wikidata – Philosophical Figures                   Q2013    
+				# Philosophy Pages Philosophical Dictionary          Q         
+				
+				Philosopher.order(:entity_id).each do |phil|
+					all_bonus = 0.13
+					runes     = phil.runes     ? 0.0  : 0.0 # because biased
+					inphobool = phil.inphobool ? 0.15 : (all_bonus=0.0) # I
+					borchert  = phil.borchert  ? 0.25 : (all_bonus=0.0) # M 
+					internet  = phil.internet  ? 0.05 : (all_bonus=0.0) # I
+					cambridge = phil.cambridge ? 0.2  : (all_bonus=0.0) # C
+					kemerling = phil.kemerling ? 0.1  : (all_bonus=0.0) # K because sole affair
+					populate  = phil.populate  ? 0.02 : (all_bonus=0.0) # W as a philosopher
+					oxford    = phil.oxford    ? 0.2  : (all_bonus=0.0) # O
+					routledge = phil.routledge ? 0.25 : (all_bonus=0.0) # R
+					dbpedia   = phil.dbpedia   ? 0.01 : (all_bonus=0.0) # D as a philosopher
+					stanford  = phil.stanford  ? 0.15 : (all_bonus=0.0) # S ~same amount as K
+
+					if phil.mention.nil? or phil.mention == 0 or ((phil.capacities.pluck(:entity_id) & [413, 41217, 269323]).length > 1) # hacky!
+						mention = min_mention
+					else
+						mention = phil.mention
+					end
+					if phil.danker.nil?
+						rank = min_rank
+					else
+						rank = phil.danker
+					end
+					tmp = ((mention/max_mention * rank/max_rank) * (runes+ borchert+ internet+ cambridge+ kemerling+ populate+ oxford+ routledge+ dbpedia+ inphobool+ stanford+ all_bonus) * 10000000)
+					phil.update(measure: tmp)
+					q = "Q#{phil.entity_id}".ljust(9); update_progress(bar, "#{q} #{tmp}")
+				end
+			end
+
+			def unpack_one(res)
+			end
+
+			def filters
+				require 'knowledge'
+				include Knowledge
+				w = Wikidata::Client.new
+				# lo = Name.all.group(:lang).order('count_all desc').count
+				# lo.each {|v| Name.where({lang: v[0]}).update_all({langorder: v[1]})}
+				lc = Name.all.group(:lang).order('count_all desc').count
+				lc.delete('en_match')
+				language_keys = lc.keys
+				base = 50 # CHUNK, languages processed as a time from the most frequent to the least frequent
+				idx = 0
+				#l = Name.all.group(:lang).order('count_all desc').count.keys.first(39)
+				until base*idx > language_keys.length # chunk by chunk
+					l = language_keys[(base*idx)..((base*(idx+1))-1)]
+					#p l
+					q = xlate2('Q5891', l) # philosophy
+					res1 = w.query(q)
+					#p res1
+					q = xlate2('Q4964182', l) # philosopher
+					res2 = w.query(q)
+					#p res2
+					q = xlate2('Q4964182', l) # philosophical #(
+					res3 = w.query(q)
+					#p res3
+					idx += 1
+
+					match1 = false
+					philosophy = l.collect { |val|
+						lbl = :"#{val.gsub('-','_')}Label"
+						if not res1.bindings[lbl].nil?
+							str = res1.bindings[lbl].first.to_s
+							if not str.start_with?('Q')
+								match1 = true
+								"CONTAINS(lcase(str(?desc)),\"#{str.downcase}\")"
+							else
+								false
+							end
+						else
+							false
+						end
+					}.join(" || ")
+
+					match2 = false
+					philosopher = l.collect { |val|
+						lbl = :"#{val.gsub('-','_')}Label"
+						if not res2.bindings[lbl].nil?
+							str = res2.bindings[lbl].first.to_s
+							if not str.start_with?('Q')
+								match2 = true
+								"CONTAINS(lcase(str(?desc)),\"#{str.downcase}\")"
+							else
+								false
+							end
+						else
+							false
+						end
+					}.join(" || ")
+
+					match3 = false
+					philosophical = l.collect { |val|
+						lbl = :"#{val.gsub('-','_')}Label"
+						if not res3.bindings[lbl].nil?
+							str = res3.bindings[lbl].first.to_s
+							if not str.start_with?('Q')
+								match3 = true
+								"CONTAINS(lcase(str(?desc)),\"#{str.downcase}\")"
+							else
+								false
+							end
+						else
+							false
+						end
+					}.join(" || ")
+
+					yield({:match => match1, :xlate => philosophy}, {:match => match2, :xlate => philosopher}, {:match => match3, :xlate => philosophical})
+				end
+			end
+
+			desc ""
+			task explore3: :environment do
+				filters {|a,b,c|
+					puts "philosophy = #{a}"
+					puts "philosopher = #{b}"
+					puts "philosophical = #{c}"
+				}
+			end
+
+			def mention_one(entity_id, filters)
+				require 'knowledge'
+				include Knowledge
+				w = Wikidata::Client.new
+				case entity_id
+				when String
+					if entity_id.start_with?('Q')
+						entity = entity_id
+					else
+						raise "bad entity id string #{entity_id}"
+					end
+				when Integer
+					entity = "Q#{entity_id}"
+				else
+					raise "bad entity id class #{entity_id.inspect}"
+				end
+				acc = []
+				filters.each_with_index { |filter, idx|
+					acc[idx] = 0
+					#l.each do |val|
+					if filter[:match]
+						q = HITS2 % {interpolated_entity: entity, interpolated_filter: filter[:xlate]}
+						#puts q
+						hits = w.query(q)
+						acc[idx] += hits.bindings[:hits].first.to_i
+					end
+					#end
+				}
+				acc
+			end
+
+			# net connection keeps killing this, thus the restart-handling code
+			desc "SPARQLy philosophical investigations (of the mentioning variety)"
+			task :mentions, [:cond] => :environment do |task, arg|
+				phils = select(arg.cond)
+				phils = phils.order(linkcount: :desc)
+				exit if phils.nil?
+				count_round = -1
+				begin
+					round, item = File.read('tmp/.phil_mention').split(':').map{|part| part.to_i}
+				rescue
+					round = 0
+					item = 0
+					phils.update_all(philosophy: 0, philosopher: 0)
+				end
+				puts "#{phils.length} records"
+				pad = '%0'+phils.length.to_s.length.to_s+'d'
+				filters { |filter1, filter2, filter3|
+					count_round += 1
+					puts "(xxxx of #{phils.length}) Q________ LC  –  round #{count_round}"
+					next if count_round < round
+					phils.each_with_index do |phil, count_item|
+						next if count_item < item
+						acc = mention_one(phil.entity_id, [filter1,filter2])
+						if acc.sum > 0
+							entity = "Q#{phil.entity_id}"
+							puts "(#{sprintf(pad,count_item)} of #{phils.length}) #{entity.ljust(9)} #{phil.linkcount.to_s.ljust(3)} (philosophy #{acc[0]} + philosopher #{acc[1]}) = #{acc.sum}"
+							attrs = {philosophy: acc[0]+phil.philosophy.to_i, philosopher: acc[1]+phil.philosopher.to_i}
+							phil.update_attributes(attrs)
+							File.write('tmp/.phil_mention', count_round.to_s+':'+(count_item+1).to_s) # restart at the same round, at the next item
+						end
+					end
+					item = 0
+				}
+				total = phils.update_all('mention = (philosophy + philosopher)')
+				File.unlink('tmp/.phil_mention')
+			end
+
+		end # namespace philosopher
+
+		namespace :property do
+
+			desc "SPARQLy property investigations      (check them out only)"
+			task :roles, [:cond] => :environment do |task, arg|
+				begin
+					phils = select(arg.cond)
+					exit if phils.nil?
+					count = 0
+					disp_count = '%03d'
+					total = phils.length
+					bar = progress_bar(total, FORCE)
+					disp_total = '%0'+(total.to_s.length.to_s)+'d'
+					num = 0
+					Role.delete_all
+					phils.each_with_index do |phil, i|
+						qQ = "Q#{phil.entity_id}"
+						rs = roles(qQ)
+						labels = rs[:roleLabel]
+						entities = rs[:role]
+						q = qQ.ljust(9)
+						if labels.nil?
+							puts "--- #{q} (#{i})"
+						else
+							puts "--- #{q} (#{i}) = #{labels.length}"
+							labels.each_with_index do |label, idx|
+								r = Role.new
+								r.shadow_id = phil.id
+								r.entity_id = entities[idx].to_s[32..-1].to_i
+								r.label = label.to_s
+								# p r
+								r.save
+							end
+						end
+					end
+				rescue
+					barf $!, 'shadow:property urk'
+					binding.pry
+				end
+			end
+
+		end
+
+		###
+		#
+		# W O R K
+		#
+		###
+
+		namespace :work do
+
+
+			desc "SPARQLy textual investigations       (show 'em)"
+			task :show, [:cond,:count] => :environment do |task, arg|
+				begin
+					require 'knowledge'
+					include Knowledge
+					w = Wikidata::Client.new
+					case arg.cond
+						#
+					when "works1"
+						q = THESE_WORKS_BY_PHILOSOPHERS.gsub("\t",'')
+						res = w.query(q)
+					when "works2"
+						q = THESE_PHILOSOPHICAL_WORKS.gsub("\t",'')
+						res = w.query(q)
+					end
+					if arg.count
+						p arg
+						puts "count: #{arg.count.inspect}"
+						puts "count: #{arg.count.class}"
+						puts "foo: #{arg.foo.inspect}"
+						puts "Got #{res.size} of 'em"
+					else
+						show_work_stuff(res)
+					end
+				rescue
+					barf $!, 'work:show urk'
+				end
+			end
+
+			desc "SPARQLy textual investigations       (connect Works and Texts)"
+			task connect: :environment do
+				Shadow.none
+				phils = Philosopher.order(measure: :desc)
+				en_phils = phils.select('shadows.*, names.lang, names.label').joins(:names).where('names.lang =?', 'en')
+				en_phils.each {|phil|
+					works = Work.where(id: Expression.where(creator_id: phil.id).pluck(:work_id)).order('linkcount desc')
+					en_works = works.select('shadows.*, names.lang, names.label').joins(:names).where('names.lang =?', 'en')
+					found = 0
+					en_works.each do|work|
+						label = work.name_hack.nil? ? work.label : work.name_hack # very hacky
+						the_text = ::Text.where("name_in_english LIKE '"+label.gsub("'", "''")+"'").first
+						if the_text.nil?
+						else
+							puts "'#{the_text.name_in_english}' #{the_text.fyle_id}" unless the_text.nil?
+							found += 1
+						end
+					end
+					puts "===" if found > 0
+					texts = ::Text.where(id: Writing.where(author_id: Author.where(english_name: phil.label)).pluck(:text_id))
+					texts.each do|text|
+						puts "'#{text.name_in_english}' #{text.fyle_id}"
+					end
+					if found > 0 or texts.count > 0
+						puts "==> Q#{phil.entity_id} (#{found}/#{texts.count})"
+					end
+				}
+			end
+
+			# 
+			# at the moment there are many deficincies with works
+			#
+			# (1) anonymous works and works whose author(s) are contested
+			#     philosophical works of unknown authorial provenance
+			#     you get the idea
+			# (2) philosophical works by non-philosophers
+			#     cus we track/anchor with philosophers which is wrong
+			#
+			def deez_wurks(q)
+				Shadow.none
+				require 'knowledge'
+				include Knowledge
+				w = Wikidata::Client.new
+				puts q
+				res = w.query(q)
+				#bar = progress_bar(res.length, FORCE)
+				bar = progress_bar(res.length)
+				mult = [] # only used to suppress output
+				res.each_with_index do |val, idx|
+					phil       = val.bindings[:item]
+					work       = val.bindings[:work]
+					name       = val.bindings[:workLabel].to_s
+					#what       = val.bindings[:whatLabel].to_s
+					#viaf       = val.bindings[:viaf].nil? ? nil : val.bindings[:viaf].to_s
+					count      = val.bindings[:linkCount].to_i
+					p_entity = phil.to_s.split('entity/').last
+					w_entity = work.to_s.split('entity/').last
+					p_e      = p_entity[1..-1]
+					p = Philosopher.where(entity_id: p_e.to_i).first
+					if p.nil?
+						if not mult.include?(p_e)
+							mult.push(p_e)
+							puts "Can't find philosopher with Q#{p_e} for #{name}"
+						end
+					else
+						w_e = w_entity[1..-1]
+						#w = Work.new(entity_id: w_e.to_i, viaf: viaf ,linkcount: count, what_label: what)
+						w = Work.new(entity_id: w_e.to_i, linkcount: count)
+						begin
+							w.save!
+							puts name
+						rescue ActiveRecord::RecordNotUnique
+							w = Work.where(entity_id: w_e.to_i).first
+						end
+						e = Expression.compose(p,w) # 
+						begin
+							e.save!
+							p e
+						rescue
+						end
+					end
+					#update_progress(bar)
+				end
+			end
+
+			# if there's no description they don't show up in bin/rake -T
+			# rake shadow:work:labels[cond]
+			#
+			desc "SPARQLy textual investigations       ([/^Q\d+/]  or  [/^d+/])"
+			task :work_labels, [:cond, :execute] => :environment do |task, arg|
+				begin
+					puts "execute: #{arg.execute.inspect}"
+					case arg.cond
+						# get all the labels for each work for a particular philosopher's works
+						# (used as you're moving on down the list)
+					when /^Q\d+/
+						Shadow.none
+						works = Philosopher.find_by(entity_id: arg.cond[1..-1]).works.where.not(obsolete: true)
+						works.each do |w|
+							update_labels(w)
+						end
+						puts "#{works.length} records in total"
+						langorder(FORCE, works.pluck(:id))
+					when /^\d+/
+						#works = Work.where(id: Expression.where(creator_id: arg.cond.to_i).pluck(:work_id))
+						#pp works
+						Shadow.none
+						works = Philosopher.find(arg.cond).works.where.not(obsolete: true)
+						works.each do |w|
+							update_labels(w)
+						end
+						puts "#{works.length} records in total"
+						langorder(FORCE, works.pluck(:id))
+					else
+					end
+				rescue
+					barf $!, 'work:labels urk'
+					binding.pry
+				end
+			end
+
+			desc "SPARQLy textual investigations       (set genre)"
+			task :signal3 => :environment do |task, arg|
+				begin
+					Shadow.none
+					require 'knowledge'
+					include Knowledge
+					w = Wikidata::Client.new
+					q = THESE_PHILOSOPHICAL_WORKS.gsub("\t",'')
+					puts q
+					solution_set = w.query(q)
+					bar = progress_bar(solution_set.length)
+					#<RDF::Query::Solution:0x23b5d9c({:work=>#<RDF::URI:0x251f138 URI:http://www.wikidata.org/entity/Q58002682>, :genre=>#<RDF::URI:0x251f05c URI:http://www.wikidata.org/entity/Q35986>, :item=>#<RDF::URI:0x251ef80 URI:http://www.wikidata.org/entity/Q57448516>, :linkCount=>#<RDF::Literal::Integer:0x244733c("0"^^<http://www.w3.org/2001/XMLSchema#integer>)>, :workLabel=>#<RDF::Literal:0x24471c0("Q58002682")>, :genreLabel=>#<RDF::Literal:0x24255e8("aesthetics"@en)>, :itemLabel=>#<RDF::Literal:0x2425444("Q57448516")>})>
+					solution_set.each { |solution|
+						#p solution
+						#exit
+						work   = solution.bindings[:work]
+						name   = solution.bindings[:workLabel].to_s
+						entity = work.to_s.split('/').last
+						entity_id = entity[1..-1].to_i
+						begin
+							work = Work.find_by!(entity_id: entity_id)
+							work.genre = true
+							work.save!	
+						rescue
+							if entity == name
+								puts "FIXME: Work w/ entity id #{entity_id} is not in the db, prolly no author."
+							else
+								puts "FIXME: Work “#{name}” w/ entity id #{entity_id} is not in the db, prolly no author."
+							end
+						end
+						# update_progress(bar)
+					}
+				rescue
+					barf $!, 'work:snarf urk'
+					binding.pry
+				end
+			end
+
+			desc "SPARQLy textual investigations       ([works1] [works2])"
+			task :populate, [:cond] => :environment do |task, arg|
+				begin
+					case arg.cond
+						#
+					when "works1"
+						q = THESE_WORKS_BY_PHILOSOPHERS.gsub("\t",'')
+						deez_wurks(q)
+					when "works2"
+						q = THESE_PHILOSOPHICAL_WORKS.gsub("\t",'')
+						deez_wurks(q)
+					else
+						puts 'Work it baby!'
+					end
+				rescue
+					barf $!, 'work:snarf urk'
+					binding.pry
+				end
+			end
+
+			def one_by_one(task, query_str, in_order={})
+				begin
+					Shadow.none
+					works = Work.order(in_order)
+					exit if works.nil?
+					total = works.length
+					bar = progress_bar(total, true)
+					require 'knowledge'
+					include Knowledge
+					w = Wikidata::Client.new
+					works.each {|work|
+						q = query_str % {:interpolated_entity => work.entity_id}
+						solution_set = w.query(q)
+						yield solution_set, work
+						update_progress(bar)
+					}
+				rescue
+					barf $!, "work:#{task} urk"
+					binding.pry
+				end
+			end
+
+			desc "describe works"
+			task describe: :environment do
+				predicates = {}
+				one_by_one(:describe, "DESCRIBE wd:Q%{interpolated_entity}") {|solution_set|
+					tmp = {}
+					solution_set.each do|solution|
+						p = solution.predicate.to_s
+						tmp[p] = true
+					end
+					tmp.keys.each do|p|
+						begin
+							predicates[p] = predicates[p]+1
+						rescue
+							predicates[p] = 1
+						end
+					end
+				}
+				# https://stackoverflow.com/questions/10989259/swapping-keys-and-values-in-a-hash
+				# vim fucks up the formatting of << (thinks what follows is a string)
+				# p predicates.each_with_object({}){|(k,v),o|(o[v]||=[])<<k}.sort.to_h
+				p predicates.each_with_object({}){|(k,v),o|(o[v]||=[]).push(k)}.sort.to_h
+			end
+
+			# which of these should be obsoleted and which should be reduced to zero?
+			desc "expunge works we definitely do not want"
+			task expunge: :environment do
+				get_rid = [
+					'Q3331189',  # edition
+					'Q483372',   # paradox
+					'Q35127',    # website
+					'Q179461',   # religious text ?
+					'Q3985225',  # rabbinic lit.
+					'Q23691',    # national anthem (i kid thee not)
+					'Q27560760', # collection of fairy tales
+					'Q93184',    # drawing
+					'Q3918409',  # proposal
+					'Q5551960',  # germanic mythology
+					'Q12308638', # poetry collection ?
+					'Q52947181', # public statement
+					'Q37484',    # epic poem ?
+				]
+				as_ever = 'SELECT ?p WHERE {'+(get_rid.collect{|what| "OPTIONAL {wd:Q%{interpolated_entity} ?p wd:#{what}.}"}.join(' '))+'}'
+				one_by_one(:expunge, as_ever, {linkcount: :asc}) {|solution_set, work|
+					if 0 != solution_set.first.count
+						#puts "#{work.id} #{work.entity_id} #{work.obsolete}"
+						work.obsolete = true
+						work.save!
+					end
+				}
+				# TODO – put this here?
+				# Add a reason field? (If obsolete is a string, could say why)
+				#	exists = -degree if 0.0 == phils.collect{|phil| phil.measure }.sum
+			end
+
+			desc "get britannica and philpapers signal"
+			#task :signal1, [:cond] => :environment do |task, arg| # maybe just use flesh
+			task signal1: :environment do |task, arg| # maybe just use flesh
+				begin
+					#works = select(arg.cond)
+					Shadow.none
+					works = Work.where.not(obsolete: true).order(measure: :desc).limit(500)
+					exit if works.nil?
+					total = works.length
+					bar = progress_bar(total, FORCE)
+					works.each {|work|
+						attrs = properties("Q#{work.entity_id}")
+						# these are for philosophical figure, remove 'em
+						attrs.delete(:floruit)
+						attrs.delete(:gender)
+						attrs.delete(:period)
+						attrs.delete(:births)
+						attrs.delete(:deaths)
+						attrs.delete(:citizen)
+						# these are not handled yet, remove 'em
+						attrs.delete(:title)
+						# attrs.delete(:work_lang)
+						# attrs.delete(:pub_date)
+						# attrs.delete(:country)
+						# attrs.delete(:copyright)
+						# attrs.delete(:image)
+						q="Q#{work.entity_id}".ljust(9)
+						do_date(q, attrs, :pub_date)
+						work.pub = attrs[:pub_date]
+						pub_year = work.year(:pub)
+						attrs[:pub_year] = pub_year
+						attrs[:pub_approx] = work.pub_approx
+						work.update_attributes(attrs)
+						#work.philtopic = attrs[:philtopic] unless attrs[:philtopic].nil?
+						#work.britannica = attrs[:britannica] unless attrs[:britannica].nil?
+						#work.philrecord = attrs[:philrecord] unless attrs[:philrecord].nil?
+						#work.save!
+						update_progress(bar)
+					}
+				rescue
+					barf $!, 'work:signal urk'
+					binding.pry
+				end
+			end
+		
+			desc "SPARQLy textual investigations (of the order2ing variety)"
+			task order2: :environment do
+				Shadow.none
+				works = Work.order('measure desc').group(:measure)
+				work_groupings = works.count
+				num_work_blocks = work_groupings.length
+				bar = progress_bar(num_work_blocks, FORCE, 'groups of records')
+				work_groupings.each_with_index do |measure, idx|
+					Work.where(measure: measure[0]).update_all(measure_pos: idx+1)
+					update_progress(bar)
+				end
+			end
+
+			desc "SPARQLy textual investigations (of the measureful variety)"
+			task measure: :environment do
+				Shadow.none
+				File.open('works.json'){|f|
+				  json_works = f.read
+					works = JSON.parse(json_works)
+					total = works.length
+					bar = progress_bar(total, FORCE)
+					works.each do |work|
+						w = Work.find_by(entity_id: work[0])
+						w.cambridge = ('y' == work[2])
+						w.borchert = ('y' == work[3])
+						w.routledge = ('y' == work[4])
+						w.save!
+						update_progress(bar)
+					end
+				}
+
+				total = Work.all.size
+				bar = progress_bar(total, FORCE)
+				#cutoff = Philosopher.pluck(:measure_pos).uniq.size - ((Philosopher.all.size)**0.5).to_i
+				# bar = progress_bar(total)
+
+				max_mention = (Work.order('mention desc').first.mention)*1.0
+				min_mention = 0.5 # if no mention, reduce to zero!
+				unranked = Work.where(danker: nil)
+				ranked = Work.where.not(danker: 0.0) # o.o
+				max_rank = Work.order('danker desc').first.danker # desc (first)
+				min_rank = (ranked.order('danker asc').first.danker)/2.0  # asc (first) / 2.0 o.o
+				
+				# Oxford Dictionary of Philosophy                    Q7755796
+				# Philosophical Library Dictionary of Philosophy     Q3700851
+				# Routledge Encyclopedia of Philosophy               Q249821
+				# Stanford Encyclopedia of Philosophy                Q824553
+				# Cambridge Dictionary of Philosophy                 Q1761588
+				# Thomson Gale Encyclopedia of Philosophy            Q1340157
+				# Internet Encyclopedia of Philosophy                Q259513
+				# DBpedia – Philosophical Figures                    Q465
+				# Indiana Philosophy Ontology – Thinkers             QQ6023365
+				# Wikidata – Philosophical Figures                   Q2013
+				# Philosophy Pages Philosophical Dictionary          Q         
+
+				Work.order(:entity_id).each do |work|
+=begin	
+					runes     = work.runes     ? 0.0  : 0.0 # because biased
+					borchert  = work.borchert  ? 0.25 : (all_bonus=0.0) # M 
+					internet  = work.internet  ? 0.05 : (all_bonus=0.0) # I
+					cambridge = work.cambridge ? 0.2  : (all_bonus=0.0) # C
+					kemerling = work.kemerling ? 0.1  : (all_bonus=0.0) # K because sole affair
+					populate  = work.populate  ? 0.02 : (all_bonus=0.0) # W as a work
+					oxford    = work.oxford    ? 0.2  : (all_bonus=0.0) # O
+					routledge = work.routledge ? 0.25 : (all_bonus=0.0) # R
+					inphobool = work.inphobool ? 0.01 : (all_bonus=0.0) # D as a work
+					stanford  = work.stanford  ? 0.15 : (all_bonus=0.0) # S ~same amount as K
+=end
+					all_bonus = 0.1
+					borchert  = work.borchert  ? 0.25 : (all_bonus=0.0) # M 
+					cambridge = work.cambridge ? 0.2  : (all_bonus=0.0) # C
+					routledge = work.routledge ? 0.25 : (all_bonus=0.0) # R
+					#britannica = work.britannica ? 0.1 : 0.0 # if can adduce that it's in the Philosophy category reinstate it
+					philpapers= (work.philrecord or work.philtopic) ? 0.2 : 0.0
+
+					genre = work.genre ? 1.0 : 0.5
+					sourcey = borchert+ cambridge+ routledge+ philpapers+ all_bonus
+					if 0.0 == sourcey
+						sourcey = 0.1 # don't be zero
+					end
+					exists = 0.0
+					phils = Philosopher.where(id: Expression.where(work_id: work.id).pluck(:creator_id))
+					if phils.length > 0
+						exists = -sourcey if 0.0 == phils.collect{|phil| phil.measure }.sum # counterbalance
+					else
+						STDERR.puts "Q#{work.entity_id} has no author!"
+					end
+					#exists = -degree if phils.all?{|phil| phil.measure > cutoff}
+
+					if work.mention.nil? or work.mention == 0 # or not work.role # role?
+						mention = min_mention
+					else
+						mention = work.mention
+					end
+					if work.danker.nil?
+						rank = min_rank
+					else
+						rank = work.danker
+					end
+					# FOUR signals: description * connectedness * authority * size
+					tmp = (mention/max_mention) * (rank/max_rank) * (genre) * (sourcey+ exists) * 1000000
+					work.update(measure: tmp)
+					q = "Q#{work.entity_id}".ljust(9); update_progress(bar, "#{q} #{tmp}")
+				end
+				null_point = Work.where(measure: 0.0).size
+				puts "Null point is #{null_point}, usable works is #{total-null_point}"
+			end
+
+			desc "SPARQLy textual investigations (of the mentioning variety)"
+			#task :signal2, [:cond] => :environment do |task, arg|
+			task signal2: :environment do |task, arg|
+				Shadow.none
+				works = Work.all #Work.where('philosophy = 0 or philosophical = 0') #select(arg.cond)
+				exit if works.nil?
+				count = 0
+				begin
+					start = File.read('tmp/.work_mention').to_i
+					if arg.cond.nil?
+						puts "Must supply at starting index value from where it was interrupted."
+						exit
+					else
+						from = arg.cond.to_i
+						if from < 0 or from > works.size
+							puts "The starting index value is out of range."
+							exit
+						end
+					end
+				rescue
+					puts "resetting values"
+					works.update_all(philosophy: 0, philosophical: 0)
+				end
+				filters { |filter1, filter2, filter3| # this iterates and yields
+					puts "round: #{count}"
+					if count >= start
+						bar = progress_bar(works.size, true)
+						works.each_with_index do |work, idx| # fix the first 842
+							if idx < from
+							  continue
+							end
+							acc = mention_one(work.entity_id, [filter1,filter3])
+							if acc.sum > 0
+								entity = "Q#{work.entity_id}"
+								puts "#{entity.ljust(8)} #{work.linkcount.to_s.ljust(3)} (philosophy #{acc[0]} + philosophical #{acc[1]}) -= #{acc.sum}" if bar.nil?
+								attrs = {philosophy: acc[0]-work.philosophy.to_i, philosophical: acc[1]-work.philosophical.to_i}
+								work.update_attributes(attrs)
+							end
+							update_progress(bar)
+						end
+						GC.start
+						File.write('tmp/.work_mention',count+1)
+						from = 0
+					end
+					count += 1
+				}
+				total = works.update_all('mention = (philosophy + philosophical)')
+				File.unlink('tmp/.work_mention')
+			end
+
+			def truncate(label, length, word_break=true)
+				if label.length > length
+					parts = label.split
+					len = 0
+					str = ''
+					i = 0
+					parts.each_with_index{ |part,idx|
+						break if (len+part.length) > length
+						len += (part.length+1)
+						str += (part+' ')
+						i = idx+1
+					}
+					if word_break
+						part = parts[i]
+						str+(part[0..part.length/2])+'…'
+					else
+						str+' …'
+					end
+				else
+					label
+				end
+			end
+
+			def viaf_xml(id)
+      	"https://viaf.org/viaf/#{id}/viaf.xml"
+    	end
+
+			def viaf_url(id)
+      	# require 'oclc/auth'
+      	# wskey = OCLC::Auth::WSKey.new('api-key', 'api-key-secret')
+
+      	url = viaf_xml(id)
+      	uri = URI.parse(url)
+
+      	request = Net::HTTP::Get.new(uri.request_uri)
+      	# request['Authorization'] = wskey.hmac_signature('GET', url, :principal_id => 'principal-ID', :principal_idns => 'principal-IDNS')
+
+      	http = Net::HTTP.new(uri.host, uri.port)
+      	http.use_ssl = true
+      	response = http.start do |http|
+        	http.request(request)
+      	end
+      	response.body
+    	end
+
+			def match_name(full_id, title, match)
+				#yield match
+				begin
+					puts "#{full_id.ljust(27)} =@ [#{sprintf("%.3f",match.measure).rjust(9)}] #{truncate(title, 40)} :- Q#{match.entity_id}/#{match.english}"
+				rescue
+					puts "#{full_id.ljust(27)} =@ [#{sprintf("%.3f",match.measure).rjust(9)}] #{truncate(title, 40)} :- Q#{match.entity_id}/[]"
+				end
+			end
+
+			def match_id(entity_id, full_id, viaf_id, title, url)
+				begin
+					work = Work.find_by! entity_id: entity_id
+					if work.viaf.nil? or work.viaf.blank?
+						work.viaf = viaf_id
+						work.save!
+					end
+					begin
+						#puts "#{full_id.ljust(27)} => [#{sprintf("%.3f",work.measure).rjust(9)}] #{truncate(title, 40)} :- Q#{entity_id}/#{work.english}"
+					rescue
+						puts "#{full_id.ljust(27)} => [#{sprintf("%.3f",work.measure).rjust(9)}] #{truncate(title, 40)} :- Q#{entity_id}/[]"
+					end
+				rescue ActiveRecord::RecordNotFound
+					puts "#{full_id.ljust(27)} <= #{truncate(title, 40)} :- #{url}"
+				end
+				work
+			end
+
+			def match_neither(full_id)
+				printf "#{full_id.ljust(27)}\r"
+			end
+
+			def parse_viaf(obj)
+				doc = Nokogiri::XML(obj)
+				# require 'open-uri'
+				# doc = Nokogiri::HTML(open(viaf_xml(108159964)))
+				require 'knowledge'
+				include Knowledge
+				endpoint = Wikidata::Client.new
+				works = doc.xpath('//ns1:work')
+				puts "#{works.length} work(s)"
+				personal = doc.xpath('//ns1:viafID').first.content
+				works.each {|w|
+					full_id = w["id"]
+					node_set = w.xpath('ns1:title')
+					title = node_set.first.content
+					if full_id.nil?
+					elsif full_id.empty?
+					else
+						parts = full_id.split('|')
+						if 2 == parts.length
+							if 'VIAF' == parts.first
+								viaf_id = parts.second
+								next if @work_once.include?(viaf_id) # these are "special" for the moment in that they kinda match
+								@work_once.push(viaf_id) # and there aren't so many of them … never do an id more than once
+								vci_set = ViafCacheItem.where(personal: personal, uniform_title_work: viaf_id) # total misses
+								if 1 == vci_set.length
+									vci = vci_set.first
+									if not vci.q.blank?
+										work = match_id(vci.q, full_id, viaf_id, title, vci.url)
+										yield work unless work.nil?
+									else
+										match_neither(full_id)
+									end
+									next
+								elsif 1 < vci_set.length
+									raise "??? multiple Database hits yielding #{vci_set}"
+								end
+								q = "SELECT ?item WHERE { ?item wdt:P214 '#{viaf_id}' }"
+								solutions = endpoint.query(q)
+								len = solutions.length
+								if 0 == len # if Wikidata has no record of the Viaf
+        					str = viaf_url(viaf_id)
+									node = Nokogiri::XML(str)
+									expressions = node.xpath('//ns1:expression')
+									try_once = []
+									neither = true
+									expressions.each {|expr|
+										lang = ''
+										begin
+											lang = expr.xpath('ns1:lang').first.content
+										rescue
+												# content = nil !
+												puts "0 #{$!}" 
+										end
+										if "English" == lang
+											begin
+												el = expr.xpath('ns1:title').first
+												break if el.nil?
+												title = el.content.split('.')[0]
+												next if try_once.include?(title)
+												try_once.push(title)
+												ids = Name.where('label LIKE ?', title).pluck(:shadow_id).uniq
+												matches = Work.where(id: ids).where.not(obsolete: true)
+												puts "1 (#{matches.length})"
+												raise "Aw hell #{full_id.ljust(27)} =! #{truncate(title, 40)} :- Q#{matches.collect{|m|m.entity_id}}/#{matches.collect{m|m.english}}" if matches.length > 1
+												break unless matches.each {|match|
+													if match.creators.collect{|m|m.viaf}.include?(personal)
+														neither = false
+														match_name(full_id, title, match)
+														# no yield cuz unsure
+														# no ViafCacheItem cuz unsure
+													end
+												}.empty?
+											rescue
+												puts "2 #{$!}"
+											end
+										end
+									}
+									if neither
+										match_neither(full_id)
+										# no yield cuz no match
+										ViafCacheItem.new(personal: personal, uniform_title_work: viaf_id, q: '', url: '').save!
+									end
+								elsif 1 == len
+									solution = solutions.first
+									if 0 == (solution.item.to_s =~ /http:\/\/www.wikidata.org\/entity\/(.+)/)
+										entity_id = ($1)[1..-1]
+										url = solutions.first.item.to_s
+										work = match_id(entity_id, full_id, viaf_id, title, url)
+										yield work unless work.nil?
+										ViafCacheItem.new(personal: personal, uniform_title_work: viaf_id, q: entity_id, url: url).save!
+									else
+										raise "??? multiple Database hits for #{$1}"
+									end
+								else
+									raise "??? multiple Wikidata hits for #{full_id}"
+								end
+							else
+								raise "??? unrecognised identifier #{full_id}"
+							end
+						else
+						end
+					end
+				}
+			end
+
+
+    	desc "populate Work (works table) using philosopher Viaf data"
+			task :viaf, [:cond] => :environment do |task, arg|
+				Shadow.none
+				case arg.cond
+				when /^\d+/ # either singly
+					phils = [Philosopher.find_by(viaf: arg.cond)]
+				else
+					phils = Philosopher.all.order(measure: :desc)
+				end
+
+				require 'knowledge'
+				include Knowledge
+				w = Wikidata::Client.new
+				require 'net/http'
+
+				phils.each {|phil|
+					#viaf_id = phil['viaf'].to_i
+					entity = "Q#{phil.entity_id}"
+					begin
+						substitution_hash = {interpolated_entity: entity}
+						res = interpolated_entity(ATTR_, substitution_hash) # 
+						if 1 < res.length
+							# how to store multiple result lines? (birth dates or death dates trigger this scenario?)
+							Rails.logger.info "res.length > 1 for entity:#{entity} → res:#{res.inspect}"
+							viaf_ids = res.bindings[:viaf].collect{|v|v.to_s}.uniq
+						elsif 0 == res.length
+							next
+						else
+							viaf_ids = [res.bindings[:viaf].first.to_s]
+						end
+					end
+					phil.viaf = viaf_ids.join(':') # well, well, well
+					phil.save!
+					work_qs = []
+					label = phil.english
+					@work_once = [
+						'180971400', # Nicomachean ethics. Book 6.
+						'305105455', # Nicomachean ethics. Book 10.
+						'309516325', # Nicomachean ethics. Book 2-4.
+						'309546615', # De caelo. Liber 3.
+						'309558007', # Metaphysics. Book M.
+						'309558008', # Metaphysics. Book N.
+						'309553444', # Politics. Books 3-4.
+						'309554420', # Grundlegung zur Metaphysik der Sitten. 2.
+						'5669151051954733530003', # Meditationes de prima philosophia. 2. Selections.
+						'178970449', # Q371884/Timaeus – redirects to '269728865'
+						'220008331', # Q1180623/De fato – doesn't redirect, but should? '315944581'
+						'2698149619368004010005', # Tusculanae disputationes. Selections (Davie)
+						'309482297', # Summa theologica. Pars 1. Quaestio 75-88.
+						'315937978', # Wallenstein. Wallensteins Tod. 
+					]
+					viaf_ids.each do |viaf_id|
+						puts "[#{label}:#{viaf_id}]"
+						#next if viaf_id.nil?
+						str = viaf_url(viaf_id)
+						parse_viaf(str) do |work|
+							#  => Expression(creator_id: integer, work_id: integer)
+							begin
+								e = Expression.new(creator_id: phil.id, work_id: work.id)
+								e.save!
+								puts "+ #{e}"
+							rescue # could fail by e not being unique
+							end
+							work_qs.push(work.entity_id)
+						end
+					end
+					work_qs = work_qs.uniq
+					plucked_qs = phil.works.pluck(:entity_id)
+					left_overs = plucked_qs-work_qs
+					puts "#{plucked_qs.length} total - #{work_qs.length} unique = #{left_overs.length} left over"
+					left_overs.each do |e_id|
+						match = Work.find_by(entity_id: e_id)
+						if match.measure > 0.0
+							begin
+								unless match.viaf.present?
+									puts "#{match.viaf.to_s.ljust(27)} => [#{sprintf("%.3f",match.measure).rjust(9)}] #{match.english} :- http://www.wikidata.org/entity/Q#{match.entity_id}"
+								end
+							rescue
+								puts "#{match.viaf.to_s.ljust(27)} => [#{sprintf("%.3f",match.measure).rjust(9)}] [] :- http://www.wikidata.org/entity/Q#{match.entity_id}"
+							end
+						end
+					end
+					GC.start
+				}
+    	end
+
+		end # namespace work
+
+		namespace :reference do
+
+			desc "SPARQLy ref work investigations      (of the pageranking variety)"
+			task :pagerank => :environment do |task|
+				dicts = Dictionary.where.not(entity_id: nil)
+				exit if dicts.nil?
+				total = dicts.length
+				bar = progress_bar(total, FORCE)
+				require 'knowledge'
+				include Knowledge
+				dicts.each do |dict|
+					bar.increment! if not bar.nil?
+					site,title = Wikidata::API::wiki_title("Q#{dict.entity_id}")
+					res = DBpedia::pagerank_of_one_resource title
+					begin
+						urk = res.bindings[:v].first.to_s.to_f
+						dict.update(dbpedia_pagerank: urk)
+						q = "Q#{dict.entity_id}".ljust(9)
+						t = "#{dict.title}".ljust(50)
+						puts "#{t} #{q} #{urk}"
+					rescue
+						puts "No data for #{title}"
+					end
+				end
+			end
+
+		end	# namespace reference
+
+	end # namespace shadow
+
+rescue
+	barf $!, 'shadow urk: $! has wot you want'
+	binding.pry
+end

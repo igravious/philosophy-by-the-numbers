@@ -1,0 +1,2 @@
+class MainMetaFilter < MetaFilter
+end

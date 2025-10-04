@@ -1,0 +1,316 @@
+<style>
+.highlight table td { padding: 5px; }
+.highlight table pre { margin: 0; }
+.highlight, .highlight .w {
+  color: #303030;
+}
+.highlight .err {
+  color: #151515;
+  background-color: #ac4142;
+}
+.highlight .c, .highlight .cd, .highlight .cm, .highlight .c1, .highlight .cs {
+  color: #505050;
+}
+.highlight .cp {
+  color: #f4bf75;
+}
+.highlight .nt {
+  color: #f4bf75;
+}
+.highlight .o, .highlight .ow {
+  color: #d0d0d0;
+}
+.highlight .p, .highlight .pi {
+  color: #d0d0d0;
+}
+.highlight .gi {
+  color: #90a959;
+}
+.highlight .gd {
+  color: #ac4142;
+}
+.highlight .gh {
+  color: #6a9fb5;
+  background-color: #151515;
+  font-weight: bold;
+}
+.highlight .k, .highlight .kn, .highlight .kp, .highlight .kr, .highlight .kv {
+  color: #aa759f;
+}
+.highlight .kc {
+  color: #d28445;
+}
+.highlight .kt {
+  color: #d28445;
+}
+.highlight .kd {
+  color: #d28445;
+}
+.highlight .s, .highlight .sb, .highlight .sc, .highlight .sd, .highlight .s2, .highlight .sh, .highlight .sx, .highlight .s1 {
+  color: #90a959;
+}
+.highlight .sr {
+  color: #75b5aa;
+}
+.highlight .si {
+  color: #8f5536;
+}
+.highlight .se {
+  color: #8f5536;
+}
+.highlight .nn {
+  color: #f4bf75;
+}
+.highlight .nc {
+  color: #f4bf75;
+}
+.highlight .no {
+  color: #f4bf75;
+}
+.highlight .na {
+  color: #6a9fb5;
+}
+.highlight .m, .highlight .mf, .highlight .mh, .highlight .mi, .highlight .il, .highlight .mo, .highlight .mb, .highlight .mx {
+  color: #90a959;
+}
+.highlight .ss {
+  color: #90a959;
+}
+</style>
+<pre class='highlight'>
+<span class="c1"># encoding: UTF-8</span>
+<span class="c1"># This file is auto-generated from the current state of the database. Instead</span>
+<span class="c1"># of editing this file, please use the migrations feature of Active Record to</span>
+<span class="c1"># incrementally modify your database, and then regenerate this schema definition.</span>
+<span class="c1">#</span>
+<span class="c1"># Note that this schema.rb definition is the authoritative source for your</span>
+<span class="c1"># database schema. If you need to create the application database on another</span>
+<span class="c1"># system, you should be using db:schema:load, not running all the migrations</span>
+<span class="c1"># from scratch. The latter is a flawed and unsustainable approach (the more migrations</span>
+<span class="c1"># you'll amass, the slower it'll run and the greater likelihood for issues).</span>
+<span class="c1">#</span>
+<span class="c1"># It's strongly recommended that you check this file into your version control system.</span>
+
+<span class="no">ActiveRecord</span><span class="o">::</span><span class="no">Schema</span><span class="p">.</span><span class="nf">define</span><span class="p">(</span><span class="ss">version: </span><span class="mi">20170704063139</span><span class="p">)</span> <span class="k">do</span>
+
+  <span class="n">create_table</span> <span class="s2">"actual_texts"</span><span class="p">,</span> <span class="ss">force: :cascade</span> <span class="k">do</span> <span class="o">|</span><span class="n">t</span><span class="o">|</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">string</span>   <span class="s2">"URL"</span><span class="p">,</span>         <span class="ss">limit: </span><span class="mi">255</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">integer</span>  <span class="s2">"strip_start"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">integer</span>  <span class="s2">"strip_end"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">datetime</span> <span class="s2">"created_at"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">datetime</span> <span class="s2">"updated_at"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">string</span>   <span class="s2">"what"</span><span class="p">,</span>        <span class="ss">limit: </span><span class="mi">255</span>
+  <span class="k">end</span>
+
+  <span class="n">create_table</span> <span class="s2">"author_texts"</span><span class="p">,</span> <span class="ss">force: :cascade</span> <span class="k">do</span> <span class="o">|</span><span class="n">t</span><span class="o">|</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">integer</span>  <span class="s2">"author_id"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">integer</span>  <span class="s2">"text_id"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">datetime</span> <span class="s2">"created_at"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">datetime</span> <span class="s2">"updated_at"</span>
+  <span class="k">end</span>
+
+  <span class="n">create_table</span> <span class="s2">"authors"</span><span class="p">,</span> <span class="ss">force: :cascade</span> <span class="k">do</span> <span class="o">|</span><span class="n">t</span><span class="o">|</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">string</span>   <span class="s2">"name"</span><span class="p">,</span>          <span class="ss">limit: </span><span class="mi">255</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">integer</span>  <span class="s2">"year_of_birth"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">integer</span>  <span class="s2">"year_of_death"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">string</span>   <span class="s2">"where"</span><span class="p">,</span>         <span class="ss">limit: </span><span class="mi">255</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">text</span>     <span class="s2">"about"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">datetime</span> <span class="s2">"created_at"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">datetime</span> <span class="s2">"updated_at"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">string</span>   <span class="s2">"english_name"</span><span class="p">,</span>  <span class="ss">limit: </span><span class="mi">255</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">string</span>   <span class="s2">"date_of_birth"</span><span class="p">,</span> <span class="ss">limit: </span><span class="mi">255</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">string</span>   <span class="s2">"when_died"</span><span class="p">,</span>     <span class="ss">limit: </span><span class="mi">255</span>
+  <span class="k">end</span>
+
+  <span class="n">create_table</span> <span class="s2">"dictionaries"</span><span class="p">,</span> <span class="ss">force: :cascade</span> <span class="k">do</span> <span class="o">|</span><span class="n">t</span><span class="o">|</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">string</span>   <span class="s2">"title"</span><span class="p">,</span>            <span class="ss">limit: </span><span class="mi">255</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">string</span>   <span class="s2">"long_title"</span><span class="p">,</span>       <span class="ss">limit: </span><span class="mi">255</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">string</span>   <span class="s2">"URI"</span><span class="p">,</span>              <span class="ss">limit: </span><span class="mi">255</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">string</span>   <span class="s2">"current_editor"</span><span class="p">,</span>   <span class="ss">limit: </span><span class="mi">255</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">string</span>   <span class="s2">"contact"</span><span class="p">,</span>          <span class="ss">limit: </span><span class="mi">255</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">string</span>   <span class="s2">"organisation"</span><span class="p">,</span>     <span class="ss">limit: </span><span class="mi">255</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">datetime</span> <span class="s2">"created_at"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">datetime</span> <span class="s2">"updated_at"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">boolean</span>  <span class="s2">"machine"</span><span class="p">,</span>                      <span class="ss">default: </span><span class="kp">false</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">integer</span>  <span class="s2">"entity_id"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">float</span>    <span class="s2">"dbpedia_pagerank"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">integer</span>  <span class="s2">"year"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">integer</span>  <span class="s2">"missing"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">string</span>   <span class="s2">"content_uri"</span>
+  <span class="k">end</span>
+
+  <span class="n">create_table</span> <span class="s2">"expressions"</span><span class="p">,</span> <span class="ss">id: </span><span class="kp">false</span><span class="p">,</span> <span class="ss">force: :cascade</span> <span class="k">do</span> <span class="o">|</span><span class="n">t</span><span class="o">|</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">integer</span> <span class="s2">"creator_id"</span><span class="p">,</span> <span class="ss">null: </span><span class="kp">false</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">integer</span> <span class="s2">"work_id"</span><span class="p">,</span>    <span class="ss">null: </span><span class="kp">false</span>
+  <span class="k">end</span>
+
+  <span class="n">add_index</span> <span class="s2">"expressions"</span><span class="p">,</span> <span class="p">[</span><span class="s2">"work_id"</span><span class="p">,</span> <span class="s2">"creator_id"</span><span class="p">],</span> <span class="ss">name: </span><span class="s2">"index_expressions_on_work_id_and_creator_id"</span><span class="p">,</span> <span class="ss">unique: </span><span class="kp">true</span>
+
+  <span class="n">create_table</span> <span class="s2">"filters"</span><span class="p">,</span> <span class="ss">force: :cascade</span> <span class="k">do</span> <span class="o">|</span><span class="n">t</span><span class="o">|</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">string</span>   <span class="s2">"name"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">integer</span>  <span class="s2">"tag_id"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">string</span>   <span class="s2">"inequality"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">integer</span>  <span class="s2">"original_year"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">datetime</span> <span class="s2">"created_at"</span><span class="p">,</span>      <span class="ss">null: </span><span class="kp">false</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">datetime</span> <span class="s2">"updated_at"</span><span class="p">,</span>      <span class="ss">null: </span><span class="kp">false</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">string</span>   <span class="s2">"name_in_english"</span>
+  <span class="k">end</span>
+
+  <span class="n">add_index</span> <span class="s2">"filters"</span><span class="p">,</span> <span class="p">[</span><span class="s2">"name"</span><span class="p">],</span> <span class="ss">name: </span><span class="s2">"index_filters_on_name"</span><span class="p">,</span> <span class="ss">unique: </span><span class="kp">true</span>
+
+  <span class="n">create_table</span> <span class="s2">"fyles"</span><span class="p">,</span> <span class="ss">force: :cascade</span> <span class="k">do</span> <span class="o">|</span><span class="n">t</span><span class="o">|</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">string</span>   <span class="s2">"URL"</span><span class="p">,</span>              <span class="ss">limit: </span><span class="mi">255</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">string</span>   <span class="s2">"what"</span><span class="p">,</span>             <span class="ss">limit: </span><span class="mi">255</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">datetime</span> <span class="s2">"created_at"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">datetime</span> <span class="s2">"updated_at"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">integer</span>  <span class="s2">"type_negotiation"</span><span class="p">,</span> <span class="ss">limit: </span><span class="mi">255</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">boolean</span>  <span class="s2">"handled"</span><span class="p">,</span>                      <span class="ss">default: </span><span class="kp">false</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">integer</span>  <span class="s2">"status_code"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">string</span>   <span class="s2">"cache_file"</span><span class="p">,</span>       <span class="ss">limit: </span><span class="mi">255</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">string</span>   <span class="s2">"encoding"</span><span class="p">,</span>         <span class="ss">limit: </span><span class="mi">255</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">string</span>   <span class="s2">"local_file"</span><span class="p">,</span>       <span class="ss">limit: </span><span class="mi">255</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">float</span>    <span class="s2">"health"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">string</span>   <span class="s2">"health_hash"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">integer</span>  <span class="s2">"file_size"</span>
+  <span class="k">end</span>
+
+  <span class="n">add_index</span> <span class="s2">"fyles"</span><span class="p">,</span> <span class="p">[</span><span class="s2">"URL"</span><span class="p">],</span> <span class="ss">name: </span><span class="s2">"index_fyles_on_URL"</span><span class="p">,</span> <span class="ss">unique: </span><span class="kp">true</span>
+
+  <span class="n">create_table</span> <span class="s2">"http_request_loggers"</span><span class="p">,</span> <span class="ss">force: :cascade</span> <span class="k">do</span> <span class="o">|</span><span class="n">t</span><span class="o">|</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">string</span>   <span class="s2">"caller"</span><span class="p">,</span>     <span class="ss">limit: </span><span class="mi">255</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">string</span>   <span class="s2">"uri"</span><span class="p">,</span>        <span class="ss">limit: </span><span class="mi">255</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">string</span>   <span class="s2">"request"</span><span class="p">,</span>    <span class="ss">limit: </span><span class="mi">255</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">text</span>     <span class="s2">"response"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">datetime</span> <span class="s2">"created_at"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">datetime</span> <span class="s2">"updated_at"</span>
+  <span class="k">end</span>
+
+  <span class="n">create_table</span> <span class="s2">"includings"</span><span class="p">,</span> <span class="ss">force: :cascade</span> <span class="k">do</span> <span class="o">|</span><span class="n">t</span><span class="o">|</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">integer</span>  <span class="s2">"filter_id"</span><span class="p">,</span>  <span class="ss">null: </span><span class="kp">false</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">integer</span>  <span class="s2">"text_id"</span><span class="p">,</span>    <span class="ss">null: </span><span class="kp">false</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">datetime</span> <span class="s2">"created_at"</span><span class="p">,</span> <span class="ss">null: </span><span class="kp">false</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">datetime</span> <span class="s2">"updated_at"</span><span class="p">,</span> <span class="ss">null: </span><span class="kp">false</span>
+  <span class="k">end</span>
+
+  <span class="n">add_index</span> <span class="s2">"includings"</span><span class="p">,</span> <span class="p">[</span><span class="s2">"filter_id"</span><span class="p">,</span> <span class="s2">"text_id"</span><span class="p">],</span> <span class="ss">name: </span><span class="s2">"index_includings_on_filter_id_and_text_id"</span><span class="p">,</span> <span class="ss">unique: </span><span class="kp">true</span>
+
+  <span class="n">create_table</span> <span class="s2">"labelings"</span><span class="p">,</span> <span class="ss">force: :cascade</span> <span class="k">do</span> <span class="o">|</span><span class="n">t</span><span class="o">|</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">integer</span>  <span class="s2">"tag_id"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">integer</span>  <span class="s2">"text_id"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">datetime</span> <span class="s2">"created_at"</span><span class="p">,</span> <span class="ss">null: </span><span class="kp">false</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">datetime</span> <span class="s2">"updated_at"</span><span class="p">,</span> <span class="ss">null: </span><span class="kp">false</span>
+  <span class="k">end</span>
+
+  <span class="n">add_index</span> <span class="s2">"labelings"</span><span class="p">,</span> <span class="p">[</span><span class="s2">"tag_id"</span><span class="p">,</span> <span class="s2">"text_id"</span><span class="p">],</span> <span class="ss">name: </span><span class="s2">"index_labelings_on_tag_id_and_text_id"</span><span class="p">,</span> <span class="ss">unique: </span><span class="kp">true</span>
+
+  <span class="n">create_table</span> <span class="s2">"links"</span><span class="p">,</span> <span class="ss">force: :cascade</span> <span class="k">do</span> <span class="o">|</span><span class="n">t</span><span class="o">|</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">string</span>   <span class="s2">"table_name"</span><span class="p">,</span>  <span class="ss">limit: </span><span class="mi">255</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">integer</span>  <span class="s2">"row_id"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">string</span>   <span class="s2">"IRI"</span><span class="p">,</span>         <span class="ss">limit: </span><span class="mi">255</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">text</span>     <span class="s2">"description"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">datetime</span> <span class="s2">"created_at"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">datetime</span> <span class="s2">"updated_at"</span>
+  <span class="k">end</span>
+
+  <span class="n">create_table</span> <span class="s2">"names"</span><span class="p">,</span> <span class="ss">force: :cascade</span> <span class="k">do</span> <span class="o">|</span><span class="n">t</span><span class="o">|</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">integer</span>  <span class="s2">"shadow_id"</span><span class="p">,</span>  <span class="ss">null: </span><span class="kp">false</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">string</span>   <span class="s2">"label"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">string</span>   <span class="s2">"lang"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">datetime</span> <span class="s2">"created_at"</span><span class="p">,</span> <span class="ss">null: </span><span class="kp">false</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">datetime</span> <span class="s2">"updated_at"</span><span class="p">,</span> <span class="ss">null: </span><span class="kp">false</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">integer</span>  <span class="s2">"langorder"</span>
+  <span class="k">end</span>
+
+  <span class="n">add_index</span> <span class="s2">"names"</span><span class="p">,</span> <span class="p">[</span><span class="s2">"label"</span><span class="p">],</span> <span class="ss">name: </span><span class="s2">"index_names_on_label"</span>
+  <span class="n">add_index</span> <span class="s2">"names"</span><span class="p">,</span> <span class="p">[</span><span class="s2">"shadow_id"</span><span class="p">,</span> <span class="s2">"lang"</span><span class="p">],</span> <span class="ss">name: </span><span class="s2">"index_names_on_shadow_id_and_lang"</span><span class="p">,</span> <span class="ss">unique: </span><span class="kp">true</span>
+
+  <span class="n">create_table</span> <span class="s2">"resources"</span><span class="p">,</span> <span class="ss">force: :cascade</span> <span class="k">do</span> <span class="o">|</span><span class="n">t</span><span class="o">|</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">string</span>   <span class="s2">"URI"</span><span class="p">,</span>        <span class="ss">limit: </span><span class="mi">255</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">datetime</span> <span class="s2">"created_at"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">datetime</span> <span class="s2">"updated_at"</span>
+  <span class="k">end</span>
+
+  <span class="n">create_table</span> <span class="s2">"shadows"</span><span class="p">,</span> <span class="ss">force: :cascade</span> <span class="k">do</span> <span class="o">|</span><span class="n">t</span><span class="o">|</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">string</span>   <span class="s2">"type"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">integer</span>  <span class="s2">"entity_id"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">datetime</span> <span class="s2">"created_at"</span><span class="p">,</span>                       <span class="ss">null: </span><span class="kp">false</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">datetime</span> <span class="s2">"updated_at"</span><span class="p">,</span>                       <span class="ss">null: </span><span class="kp">false</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">integer</span>  <span class="s2">"linkcount"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">integer</span>  <span class="s2">"philosophy"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">integer</span>  <span class="s2">"philosopher"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">float</span>    <span class="s2">"metric"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">float</span>    <span class="s2">"dbpedia_pagerank"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">boolean</span>  <span class="s2">"routledge"</span><span class="p">,</span>        <span class="ss">default: </span><span class="kp">false</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">boolean</span>  <span class="s2">"populate"</span><span class="p">,</span>         <span class="ss">default: </span><span class="kp">false</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">boolean</span>  <span class="s2">"dbpedia"</span><span class="p">,</span>          <span class="ss">default: </span><span class="kp">false</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">string</span>   <span class="s2">"birth"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">string</span>   <span class="s2">"death"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">string</span>   <span class="s2">"date_hack"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">boolean</span>  <span class="s2">"oxford"</span><span class="p">,</span>           <span class="ss">default: </span><span class="kp">false</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">integer</span>  <span class="s2">"birth_year"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">integer</span>  <span class="s2">"death_year"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">string</span>   <span class="s2">"viaf"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">integer</span>  <span class="s2">"metric_pos"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">boolean</span>  <span class="s2">"kemerling"</span><span class="p">,</span>        <span class="ss">default: </span><span class="kp">false</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">string</span>   <span class="s2">"what_label"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">string</span>   <span class="s2">"name_hack"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">boolean</span>  <span class="s2">"stanford"</span><span class="p">,</span>         <span class="ss">default: </span><span class="kp">false</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">boolean</span>  <span class="s2">"birth_approx"</span><span class="p">,</span>     <span class="ss">default: </span><span class="kp">false</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">boolean</span>  <span class="s2">"death_approx"</span><span class="p">,</span>     <span class="ss">default: </span><span class="kp">false</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">string</span>   <span class="s2">"floruit"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">string</span>   <span class="s2">"period"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">boolean</span>  <span class="s2">"runes"</span><span class="p">,</span>            <span class="ss">default: </span><span class="kp">false</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">boolean</span>  <span class="s2">"cambridge"</span><span class="p">,</span>        <span class="ss">default: </span><span class="kp">false</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">string</span>   <span class="s2">"gender"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">boolean</span>  <span class="s2">"internet"</span><span class="p">,</span>         <span class="ss">default: </span><span class="kp">false</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">boolean</span>  <span class="s2">"borchert"</span><span class="p">,</span>         <span class="ss">default: </span><span class="kp">false</span>
+  <span class="k">end</span>
+
+  <span class="n">add_index</span> <span class="s2">"shadows"</span><span class="p">,</span> <span class="p">[</span><span class="s2">"entity_id"</span><span class="p">],</span> <span class="ss">name: </span><span class="s2">"index_shadows_on_entity_id"</span><span class="p">,</span> <span class="ss">unique: </span><span class="kp">true</span>
+
+  <span class="n">create_table</span> <span class="s2">"tags"</span><span class="p">,</span> <span class="ss">force: :cascade</span> <span class="k">do</span> <span class="o">|</span><span class="n">t</span><span class="o">|</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">string</span>   <span class="s2">"name"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">datetime</span> <span class="s2">"created_at"</span><span class="p">,</span> <span class="ss">null: </span><span class="kp">false</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">datetime</span> <span class="s2">"updated_at"</span><span class="p">,</span> <span class="ss">null: </span><span class="kp">false</span>
+  <span class="k">end</span>
+
+  <span class="n">add_index</span> <span class="s2">"tags"</span><span class="p">,</span> <span class="p">[</span><span class="s2">"name"</span><span class="p">],</span> <span class="ss">name: </span><span class="s2">"index_tags_on_name"</span><span class="p">,</span> <span class="ss">unique: </span><span class="kp">true</span>
+
+  <span class="n">create_table</span> <span class="s2">"texts"</span><span class="p">,</span> <span class="ss">force: :cascade</span> <span class="k">do</span> <span class="o">|</span><span class="n">t</span><span class="o">|</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">string</span>   <span class="s2">"name"</span><span class="p">,</span>              <span class="ss">limit: </span><span class="mi">255</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">integer</span>  <span class="s2">"original_year"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">integer</span>  <span class="s2">"edition_year"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">datetime</span> <span class="s2">"created_at"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">datetime</span> <span class="s2">"updated_at"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">string</span>   <span class="s2">"name_in_english"</span><span class="p">,</span>   <span class="ss">limit: </span><span class="mi">255</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">integer</span>  <span class="s2">"fyle_id"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">boolean</span>  <span class="s2">"include"</span><span class="p">,</span>                       <span class="ss">default: </span><span class="kp">false</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">string</span>   <span class="s2">"original_language"</span><span class="p">,</span> <span class="ss">limit: </span><span class="mi">255</span>
+  <span class="k">end</span>
+
+  <span class="n">add_index</span> <span class="s2">"texts"</span><span class="p">,</span> <span class="p">[</span><span class="s2">"name_in_english"</span><span class="p">,</span> <span class="s2">"original_year"</span><span class="p">],</span> <span class="ss">name: </span><span class="s2">"index_texts_on_name_in_english_and_original_year"</span><span class="p">,</span> <span class="ss">unique: </span><span class="kp">true</span>
+
+  <span class="n">create_table</span> <span class="s2">"units"</span><span class="p">,</span> <span class="ss">force: :cascade</span> <span class="k">do</span> <span class="o">|</span><span class="n">t</span><span class="o">|</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">integer</span>  <span class="s2">"dictionary_id"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">string</span>   <span class="s2">"entry"</span><span class="p">,</span>         <span class="ss">limit: </span><span class="mi">255</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">datetime</span> <span class="s2">"created_at"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">datetime</span> <span class="s2">"updated_at"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">string</span>   <span class="s2">"normal_form"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">string</span>   <span class="s2">"analysis"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">boolean</span>  <span class="s2">"confirmation"</span><span class="p">,</span>              <span class="ss">default: </span><span class="kp">false</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">string</span>   <span class="s2">"what_it_is"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">string</span>   <span class="s2">"display_name"</span>
+  <span class="k">end</span>
+
+  <span class="n">create_table</span> <span class="s2">"writings"</span><span class="p">,</span> <span class="ss">force: :cascade</span> <span class="k">do</span> <span class="o">|</span><span class="n">t</span><span class="o">|</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">integer</span>  <span class="s2">"author_id"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">integer</span>  <span class="s2">"text_id"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">datetime</span> <span class="s2">"created_at"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">datetime</span> <span class="s2">"updated_at"</span>
+    <span class="n">t</span><span class="p">.</span><span class="nf">integer</span>  <span class="s2">"role"</span>
+  <span class="k">end</span>
+
+  <span class="n">add_index</span> <span class="s2">"writings"</span><span class="p">,</span> <span class="p">[</span><span class="s2">"author_id"</span><span class="p">,</span> <span class="s2">"text_id"</span><span class="p">],</span> <span class="ss">name: </span><span class="s2">"index_writings_on_author_id_and_text_id"</span><span class="p">,</span> <span class="ss">unique: </span><span class="kp">true</span>
+
+<span class="k">end</span>
+</pre>

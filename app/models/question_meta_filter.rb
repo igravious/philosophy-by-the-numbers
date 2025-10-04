@@ -1,0 +1,2 @@
+class QuestionMetaFilter < MetaFilter
+end

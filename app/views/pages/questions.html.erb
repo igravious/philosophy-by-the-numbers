@@ -1,0 +1,116 @@
+<div id="the-container" class="rounded container">
+	<div class="row">
+		<div class="">
+			<p>
+				<% @inquiries.each do |inq| %>
+					<a href="<%= inq.url %>">
+						<!-- original CC0 public domain - https://pixabay.com/en/magnifying-glass-increase-search-1374389/ -->
+						<img src="images/inquiry_too.png" width="384px">
+						<br/>
+						<h1><%= inq.name %></h1>
+					</a>
+				<% end %>
+			</p>
+		</div>
+		<div class="">
+			<ul>
+				<p>
+				<i>questions</i>
+				</p>
+
+				<li>       <a href="questions/upload">===> upload a list from a file</a></li>
+
+				<li> <a href="questions/birth_places">===> places of birth in order (P19)</a></li>
+
+				<li> <a href="questions/death_places">===> places of death in order (P20)</a></li>
+
+				<li>    <a href="questions/countries">===> given countries in order (P27)</a></li>
+
+				<li>      <a href="questions/schools">===> given schools in order (D1)</a></li>
+
+				<li>    <a href="questions/interests">===> given interests in order (D2)</a></li>
+
+				<li>     <a href="questions/subjects">===> given subjects in order (D3)</a></li>
+
+				<li>       <a href="questions/places">===> given places in order (P19 + P20 + P27)</a></li>
+
+				<li>    <a href="questions/languages">===> languages in order (P1412)</a></li>
+
+				<li><a href="questions/all_countries">===> all (given and inferred) countries in order (J27 = P27 + J1)</a></li>
+
+				<li>   <a href="questions/all_places">===> all (given and inferred) places in order (P19 + P20 + J27)</a></li>
+
+				<li><a href="questions/instances">instances in order</a></li>
+
+				<li><a href="questions/influences">influences in order</a></li>
+
+				<li><a href="questions/irish">list of `irish` thinkers</a></li>
+
+				<hr style="border-top: dotted 1px; margin-right: 200px" />
+				<p>
+				<i>answers</i>
+				</p>
+
+				<li><%= link_to 'List Resources', resources_path %></li>
+
+				<li><%= link_to 'List Roles', roles_path %></li>
+
+				<li><%= link_to 'List Roles for Aristotle', roles_path({filter: 'shadow_id', value: 5486}) %></li>
+
+				<li><%= link_to 'List Philosophical Figures', philosophers_path %></li>
+
+				<li><div>List Philosophical Works</div>
+					<ul>
+						<li><%= link_to 'List Philosophical Works (in English)', works_path %></li>
+						<li><%= link_to 'List (all) Philosophical Works', works_path({lang: 'all'}) %></li>
+						<li><%= link_to 'List (all) Philosophical Works (by women)', works_path({lang: 'all', gender: 'Q6581072'}) %></li>
+					</ul>
+				</li>
+
+				<li><%= link_to 'List Files', fyles_path %></li>
+
+				<li><%= link_to 'List Texts', texts_path %></li>
+
+				<li><%= link_to 'List Writings', writings_path %></li>
+
+				<li><%= link_to 'List Labelings', labelings_path %></li>
+
+				<li><%= link_to 'List Units', units_path %></li>
+
+				<li><%= link_to 'List Dictionaries', dictionaries_path %></li>
+
+				<li><%= link_to 'List Names', names_path %></li>
+
+				<li><%= link_to 'List Links', links_path %></li>
+
+				<li><%= link_to 'List Tags', tags_path %></li>
+
+				<li><%= link_to 'List Filters', filters_path %></li>
+
+				<li><%= link_to 'List Meta Filters', meta_filters_path %></li>
+
+				<li><%= link_to 'List Meta Filter Pairs', meta_filter_pairs_path %></li>
+			</ul>
+		
+			</p>
+		</div>
+		<div class="">
+			<p>
+				<!-- link usin an image and then link using some text -->
+				<a href="<%= texts_url %>">
+			  	<img src="images/stapel2.jpg">
+				</a>
+				<a href="<%= texts_url %>">
+					<h1>Corpus</h1>
+				</a>
+			</p>
+			<hr>
+			<p>
+				<h2>location and copyright</h2>
+				<div>
+					University College Cork, <a href="http://www.ucc.ie/en/dah/">Digtal Arts &amp; Humanities</a> PhD program / <a href="https://www.ucc.ie/en/philosophy/">Philosophy</a> Department. Philosophic Computing. Some rights reserved 2015-2017.
+				</div>
+			</p>
+		</div>
+	</div>
+</div>

@@ -1,0 +1,50 @@
+
+		<!--
+		<hr>
+		<input id="radiodemo2" checked type='radio' name="radiodemo">
+		<label for="radiodemo2" class="checkable">Full</span>
+		<br>
+		<input id="radiodemo3" checked type='radio' name="radiodemo">
+		<label for="radiodemo3" class="checkable">Empty</span>
+		<br>
+		<input id="radiodemo1" checked type='radio' name="radiodemo">
+		<label for="radiodemo1" class="checkable">Normal</span>
+		-->
+		<%= field_set_tag :years do %>
+				<span class="field">
+					<%= label_tag :after, '>' %><%= text_field_tag(:after, @after, style: 'width:66px; display:inline') %>
+				</span>
+				<span class="field">
+					<%= label_tag :before, '<' %><%= text_field_tag(:before, @before, style: 'width:66px; display:inline') %>
+				</span>
+			  <hr>
+				<%= radio_button_tag :yearage, 'full', @yearage[:full], :onclick => "$('#living').prop('checked', false);return true;" %>
+				<%= label_tag :yearage, "both?", :value => "full", :class => 'checkable', :for => 'yearage_full' %>
+				<%= radio_button_tag :yearage, 'empty', @yearage[:empty], :onclick => "$('#living').prop('checked', false);return true;" %>
+				<%= label_tag :yearage, "blank?", :value => "empty", :class => 'checkable', :for => 'yearage_empty'  %>
+				<hr>
+		    <%= radio_button_tag :yearage, 'normal', @yearage[:normal], onclick: "$('#living').prop('checked', remember_living);return true;" %>
+				<%= label_tag :yearage, "normal", :value => "normal", :class => 'checkable', :for => 'yearage_normal' %>
+				<label for='living'>
+					<script>
+						var remember_living = <%= 'checked'==@living?'true':'false' %>;
+						function goo() {
+							//console.log(remember_living);
+						}
+						function foo() {
+							remember_living = $('#living').is(':checked');
+							goo();
+						}
+						goo();
+					</script>
+					<input 
+						id='living'
+						name='living'
+						type=checkbox
+						onclick="if($('input[name=yearage]:checked').val()=='normal'){foo();return true;}else{return false;}"
+						<%= @living %>
+					>
+					<span class="checkable">alive</span>
+				</label>
+		<% end %>
+

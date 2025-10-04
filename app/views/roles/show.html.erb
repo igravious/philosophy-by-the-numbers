@@ -1,0 +1,22 @@
+<p>
+  <strong>Shadow:</strong>
+  <%= @role.shadow_id %>
+</p>
+
+<p>
+  <strong>Entity:</strong>
+  <%= @role.entity_id %>
+</p>
+
+<p>
+  <strong>Label:</strong>
+  <%= @role.label %>
+</p>
+
+<p>
+  <strong>Relevant:</strong>
+  <%= @role.relevant %>
+</p>
+
+<%= link_to 'Edit', edit_role_path(@role) %> |
+<%= link_to 'Back', roles_path %>

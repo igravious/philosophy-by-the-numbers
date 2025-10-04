@@ -1,0 +1,22 @@
+	<div class="fields">
+
+    <%= f.label :name, 'Name in original script' %><br>
+		<%= f.text_field :name %>
+
+    <%= f.label :english_name, 'Name in extended Latin script' %><br>
+		<em><a href="https://en.wikipedia.org/wiki/Latin_alphabets">(https://en.wikipedia.org/wiki/Latin_alphabets)</a></em><br>
+		<%= f.text_field :english_name %>
+
+    <%= f.label :date_of_birth, 'Year of birth' %><br>
+		<%= f.text_field :date_of_birth %>
+
+		<%= f.label :when_died, 'Year of death' %><br>
+		<%= f.text_field :when_died %>
+
+    <%= f.label :where %><br>
+		<%= f.text_field :where %>
+
+    <%= f.label :about %><br>
+		<%= f.text_area :about, placeholder: 'Well, hello there.', class: 'common' %>
+
+  </div>

@@ -1,0 +1,27 @@
+<table>
+  <thead>
+    <tr>
+      <th>Resource</th>
+			<th></th>
+      <th>New author via resource</th>
+      <th>Destroy resource</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <% @resources.each do |resource| %>
+			<tr>
+				<!-- metadata_author_path(id: resource.id) -->
+				<td><%= link_to(resource.URI[28..-1], resource.URI) %></td>
+        <td><%# link_to 'Edit metadata', resource %></td>
+        <td><%= link_to 'Edit metadata', edit_resource_path(resource) %></td>
+        <td><%= link_to 'Destroy', resource, method: :delete, data: { confirm: 'Are you sure?' } %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<br>
+
+<%# grr, plural path name :) %>
+<%= link_to 'New Resource', new_resource_path %> | <%= link_to 'New Author from DBPedia', new_dbpedia_authors_path %>

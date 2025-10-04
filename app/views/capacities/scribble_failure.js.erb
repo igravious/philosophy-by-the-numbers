@@ -1,0 +1,20 @@
+
+// not sure how best to get the status
+
+// if the status is unprocessable entity
+console.log('capacity scribble failure: <%= raw @capacity.errors.to_json %>')
+// otherwise ?
+
+var el = document.activeElement // handy!
+
+console.log('active element')
+console.log(el)
+
+var $el = $(el)
+
+console.log($el.val()) // el.value
+
+el.value = el.defaultValue
+
+$el.addClass("warn")
+var timeoutID = window.setTimeout(function(){$el.removeClass("warn")}, 1100);

@@ -1,0 +1,20 @@
+
+<%= render 'pome' %>
+
+<% if !@words.nil? %>
+	<ul>
+		<%
+			 a = []	
+				@words.each do |w| 
+		%>
+	<% 
+			w.words.each do |i| 
+				if !a.include?(i)
+					a.push(i)
+		%>
+	<li><%= "#{i}★" %></li>
+				<% end %>
+			<% end %>
+	<% end %>
+	</ul>
+<% end %>

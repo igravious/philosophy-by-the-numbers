@@ -1,0 +1,81 @@
+<div id="the-container" class="rounded container">
+	<div class="row">
+		<div class="">
+<!-- set method to patch if you don't want yukky URLs, could be a dev versus prod switcheroo -->
+<%= form_tag(@whereami, method: :get, id: :filter_form) do %>
+	<%= render 'label_filter' %>
+	<button submit>Search for Match</button>
+<% end %>
+
+<hr/>
+
+<p>
+<div><%= @feature_list.size %> individual entries in total</div>
+</p>
+
+<p>
+<div><%= @feature_labels.size %> individual ids in total</div>
+</p>
+
+<p>
+<div>(fyi) duplicate labels: <%= hmm={} ; @feature_labels.each{|k,v| begin hmm[v] += 1 ; rescue ; hmm[v] = 1 ; end } ; hmm.reject{|k,v|1==v} %></div>
+</p>
+
+<%= form_tag(@whereami, method: :get, id: :feature_form) do %>
+	<p><%= render '/philosophers/meta_filter' %></p>
+<table>
+  <thead>
+		<tr>
+			<th>id</th>
+			<th>Feature</th>
+			<th>Count</th>
+<%# if @label %>
+ 			<th>Choose</th>
+<%# end %>
+<% if @instance %>
+			<th>Instance Label</th>
+<% end %>
+      <th colspan="3"></th>
+    </tr>
+  </thead>
+
+  <tbody>
+		<%
+			@feature_list.each do |feature_id, count| feature_label = @feature_labels[feature_id]
+		%>
+			<tr>
+				<td><%= wikidata_entity_url(feature_id) %></td>
+				<td><%= link_to feature_label, url_for(:"features[]" => feature_id, :multiplex => @multiplex, :utf8 => '✓') %></td>
+				<td><%= count %></td>
+<%# if @label %>
+<td><label style="float: right"><input <%= !@features.nil? and @features.include?(feature_id)?'checked':'' %> type="checkbox" onclick="javascript:$('#feature'+<%=feature_id%>).prop('disabled', function(i, v) { return !v; });"><span class="checkable"></span></label>
+<%# end%>
+<% if @instance %>
+				<td><%= P::P31.one_long_label(feature_id) %></td>
+<% end %>
+        <td><%# link_to 'Show', property %></td>
+        <td><%# link_to 'Edit', edit_property_path(property) %></td>
+        <td><%# link_to 'Destroy', property, method: :delete, data: { confirm: 'Are you sure?' } %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+<%= paginate @feature_list, params: {multiplex: @multiplex} %> <%= page_entries_info @feature_list, entry_name: 'feature list' %>
+<!-- TODO
+	gah, should be called feature_ids[] :(
+
+	to make it Railsy you'd have to dynamically add hidden fields :/
+-->
+<%# hidden_field_tag('features[]', @features.nil? ? [] : @features) %>
+<% @feature_list.each do |feature_id, count| feature_label = @feature_labels[feature_id] %>
+	<%= hidden_field_tag('features[]', feature_id, disabled: !(!@features.nil? and @features.include?(feature_id)), id: "feature#{feature_id}") %>
+<% end %>
+<%= hidden_field_tag('label', @label) %>
+<button submit>Investigate Choices</button>
+<% end %>
+		</div>
+
+		<div class="">
+		</div>
+	</div>
+</div>

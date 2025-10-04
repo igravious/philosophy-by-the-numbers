@@ -1,0 +1,22 @@
+<p>
+  <strong>Table name:</strong>
+  <%= @link.table_name %>
+</p>
+
+<p>
+  <strong>Row:</strong>
+  <%= @link.row_id %>
+</p>
+
+<p>
+  <strong>Iri:</strong>
+  <%= @link.IRI %>
+</p>
+
+<p>
+  <strong>Description:</strong>
+  <%= @link.description %>
+</p>
+
+<%= link_to 'Edit', edit_link_path(@link) %> |
+<%= link_to 'Back', links_path %>

@@ -1,0 +1,133 @@
+<h1>comparing reference works</h1>
+
+<%
+	machine = Dictionary.where(machine: true).first
+	sets = Array.new((@plucked_dicts - [machine.id]).length) do |el|
+		el = {} # what the hell was i thinking here?
+	end
+	m_set = {}
+	#files_hack = ['pd.txt', 'odp.txt', 'runes.txt', 'rep.txt']
+	
+	sets.each_with_index do |set, idx|
+		set[:domain] = @dictionaries[idx].URI.split("/")[2]
+		dict  = @units.where(dictionary_id: @dictionaries[idx].id)
+		set[:count] = dict.count
+		what = dict.where.not(what_it_is: nil)
+		set[:what] = what.count
+		#set[:dict]   = files_hack[idx]
+	end
+	m_set[:domain] = machine.URI.split("/")[2]
+	m_dict = @units.where(dictionary_id: machine.id)
+	m_set[:count] = m_dict.count
+	m_what = m_dict.where.not(what_it_is: nil)
+	m_set[:what] = m_what.count
+%>
+
+<!-- rake resolve:paths -->
+<p>
+	<div class="glyphicon glyphicon-search" aria-hidden="true">____?</div>
+</p>
+
+
+<div class="container">
+	<div class="row">
+ 		<div class="two-fifth">
+			<p>
+				<table class="table table-striped table-hover refwork">
+					<thead>
+						<tr>
+							<th id='title'>reference work</th>
+							<th id='entry'># of entries</th>
+							<th id='what'># analysed</th>
+							<th id='slurp'>date of slurp</th>
+							<th id='batch'>original batch</th>
+						</tr>
+					</thead>
+
+					<tbody>
+						<% sets.each_with_index do |set, idx| %>
+							<tr>
+								<td><%= set[:domain] %></td>
+								<td><%= link_to set[:count].to_s, by_dictionary_units_path(@dictionaries[idx]) %></td>
+								<td><%= link_to set[:what].to_s, what_units_path(@dictionaries[idx]) %></td>
+								<td></td>
+								<td><%= link_to raw('<span class="glyphicon glyphicon-file">batch</span>'), entry_dictionary_path(@dictionaries[idx]) %></td>
+							</tr>
+						<% end %>
+					</tbody>
+				</table>
+			</p>
+
+			<p>
+				<table class="table table-striped table-hover machine">
+					<thead>
+						<tr>
+							<th id='title'>machine-generated list</th>
+							<th id='entry'># of entries</th>
+							<th id='what'># analysed</th>
+							<th id='slurp'>date of slurp</th>
+							<th id='batch'>original batch</th>
+						</tr>
+					</thead>
+
+					<tbody>
+						<tr>
+							<td><%= m_set[:domain] %></td>
+							<td><%= link_to m_set[:count].to_s, by_dictionary_units_path(machine) %></td>
+							<td><%= link_to m_set[:what].to_s, by_dictionary_units_path(machine) %></td>
+							<td></td>
+							<td><%= link_to raw('<span class="glyphicon glyphicon-file">batch</span>'), entry_dictionary_path(machine) %></td>
+						</tr>
+					</tbody>
+				</table>
+			</p>
+		</div>
+		<div class="one-third">
+			<div id="venn"></div>
+		</div>
+		<div></div>
+	</div>
+	<div class="row">
+		<div><%= link_to 'List of all dictionaries', dictionaries_path %></div>
+	</div>
+</div>
+
+<script type="text/javascript">
+
+	var A = '<%= sets[0][:domain].split('.')[-2] %>';
+	var B = '<%= sets[1][:domain].split('.')[-2] %>';
+	var C = '<%= sets[2][:domain].split('.')[-2] %>';
+	var D = '<%= sets[3][:domain].split('.')[-2] %>';
+
+	var A_s = <%= sets[0][:count] %>;
+	var B_s = <%= sets[1][:count] %>;
+	var C_s = <%= sets[2][:count] %>;
+	var D_s = <%= sets[3][:count] %>;
+
+	function draw_chart() {
+	}
+
+	function clear_chart() {
+	}
+
+	var sets = [ 
+		{sets: [A], size: A_s},
+		{sets: [B], size: B_s},
+		{sets: [C], size: C_s},
+		{sets: [D], size: D_s},
+		{sets: [A,B], size: 0},
+		{sets: [A,C], size: 0},
+		{sets: [A,D], size: 0},
+		{sets: [B,C], size: 0},
+		{sets: [B,D], size: 0},
+		{sets: [C,D], size: 0}
+	];
+
+	var chart = venn.VennDiagram()
+	d3.select("#venn").datum(sets).call(chart);
+
+	$(document).ready(function() {
+			$('.machine > thead > tr > th#title').css({'width':($('.refwork > thead > tr > th#title').outerWidth()+'px')});
+			$('.machine > thead > tr > th#entry').css({'width':($('.refwork > thead > tr > th#entry').outerWidth()+'px')});
+	});
+</script>

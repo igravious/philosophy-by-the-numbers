@@ -1,0 +1,42 @@
+
+	<%
+		# label stuff
+		w_label, w_lang, en_label, label = philosopher.show_label(@lang, @entity_qid.nil?)
+		# werk stüff
+		ready_works_count = ::Text.where(id: Writing.where(author_id: Author.where(english_name: en_label)).pluck(:text_id)).count
+		link_to_ready_works = link_to ready_works_count, texts_url(author_name: en_label), method: :patch
+		link_to_all_works = link_to philosopher.works.count, philosopher_works_url(philosopher.id, lang: @lang)
+	%>
+	<tr>
+		<td><%= link_to philosopher.id, philosophers_url({an_id: philosopher.id}) %><%# link_to philosopher.id, roles_path({filter: 'shadow_id', value: philosopher.id}) %></td>
+		<td><%= wikidata_entity_url(philosopher.entity_id) %></td>
+		<td><%= label.nil? ? '…' : wikipedia_entity_url(w_label, w_lang, label) %></td>
+		<td style="font-style: oblique"><%= philosopher.birth_year %></td>
+		<td style="font-style: oblique"><%= philosopher.death_year %></td>
+		<!--td style="float: right"><%# @rel_size[philosopher.id].nil? ? 0 : link_to(sprintf("%d", @rel_size[philosopher.id]-1),roles_path({filter: :shadow_id, value: philosopher.id})) %></td-->
+		<td><%= link_to_ready_works %>/<%= link_to_all_works %></td>
+		<td><%= philosopher.linkcount %></td>
+		<td><%= philosopher.mention %></td>
+		<!-- td style="float: right"><%# sprintf("%.3f",philosopher.dbpedia_pagerank.nil? ? 0.0 : philosopher.dbpedia_pagerank) %></td -->
+		<td style="float: right"><%= sprintf("%.3f",philosopher.danker.nil? ? 0.0 : philosopher.danker) %></td>
+		<!-- td style="float: right"><%# sprintf("%d", philosopher.metric.to_i) %></td-->
+		<td><%= sprintf("%d", philosopher.measure.to_i) %></td>
+		<!-- -->
+		<td style='padding-right: 0.6em'><%= philosopher.inphobool ? '✓' : '' %></td>
+		<td style='padding-right: 0.6em'><%= philosopher.borchert  ? '✓' : '' %></td>
+		<td style='padding-right: 0.6em'><%= philosopher.internet  ? '✓' : '' %></td>
+		<td style='padding-right: 0.6em'><%= philosopher.cambridge ? '✓' : '' %></td>
+		<td style='padding-right: 0.6em'><%= philosopher.kemerling ? '✓' : '' %></td>
+		<td style='padding-right: 0.6em'><%= philosopher.populate  ? '✓' : '' %></td>
+		<td style='padding-right: 0.6em'><%= philosopher.oxford    ? '✓' : '' %></td>
+		<td style='padding-right: 0.6em'><%= philosopher.routledge ? '✓' : '' %></td>
+		<td style='padding-right: 0.6em'><%= philosopher.dbpedia   ? '✓' : '' %></td>
+		<td style='padding-right: 0.6em'><%= philosopher.stanford  ? '✓' : '' %></td>
+		<td title="<%= philosopher.metric_pos %>" style="float: right"><%= philosopher.measure_pos %></td>
+		<!--td style="float: right"><%# philosopher.metric_pos %></td-->
+		<!--
+		<td><%# link_to 'Show', philosopher %></td>
+		<td><%# link_to 'Edit', edit_philosopher_path(philosopher) %></td>
+		<td><%# link_to 'Destroy', philosopher, method: :delete, data: { confirm: 'Are you sure?' } %></td>
+		-->
+	</tr>

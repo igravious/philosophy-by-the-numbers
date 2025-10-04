@@ -1,0 +1,95 @@
+<!-- set method to patch if you don't want yukky URLs, could be a dev versus prod switcheroo -->
+<%= form_tag(@whereami, method: :get, id: :filter_form) do %>
+	<%= render 'label_filter' %>
+<% end %>
+
+<%= form_tag(@whereami, method: :get, id: :feature_form) do %>
+<table>
+  <thead>
+		<tr>
+			<th>Feature</th>
+			<th>Count</th>
+<% if @label %>
+ 			<th>Choose</th>
+<% end%>
+      <th colspan="3"></th>
+    </tr>
+  </thead>
+
+  <tbody>
+		<%
+			@feature_list.each do |feature, count|
+		%>
+			<tr>
+				<td><%= wikidata_entity_url(@feature_ids[feature], feature) %></td>
+				<td><%= count %></td>
+<% if @label %>
+				<td><label style="float: right"><input type="checkbox" onclick="javascript:toggle_feature(this, '<%= feature %>')"><span class="checkable"></span></label>
+<% end%>
+        <td><%# link_to 'Show', property %></td>
+        <td><%# link_to 'Edit', edit_property_path(property) %></td>
+        <td><%# link_to 'Destroy', property, method: :delete, data: { confirm: 'Are you sure?' } %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+<%= hidden_field_tag('features[]', []) %>
+<button submit>Submit</button>
+<% end %>
+
+<script>
+	function escapeRegExp(string){
+		return string.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1");
+	}
+
+	function toggle_feature(self, feature) {
+		feature = feature.replace(/ /g,"_")
+		console.log('the feature')
+		console.log(feature)
+		console.log('the hidden tag before')
+		el = $('#features_')
+		console.log(el.val())
+		var regex = '\\b';
+		regex += escapeRegExp(feature);
+		regex += '\\b';
+		arr = (new RegExp(regex, "i").exec(el.val()))
+		console.log(arr)
+		if(arr !== null) {
+			console.log(arr.index)
+		}
+		if(self.checked) { // if we're adding
+			if(arr !== null) { // check if it exists
+				// if so, do nothing
+				console.log('adding & exists: do nothing')
+			} else { // if not, add it
+				if(el.val().length === 0) {
+					console.log('set it')
+					el.val(feature)
+				} else {
+					console.log('prepend it with a space')
+					el.val(feature+' '+el.val())
+				}
+			}
+		} else { // we're taking away
+			if(new RegExp(regex, "i").exec(el.val())) { // check if it exists
+				// if so remove it
+				if(arr.index === 0) {
+					console.log('strip from the start')
+					el.val(el.val().substring((feature.length) + 1))
+				} else {
+					var tmp = el.val().split('') // convert to an array
+					tmp.splice(arr.index - 1 , feature.length + 1) // remove n elements from the array
+					console.log('strip from somewhere else')
+					el.val(tmp.join(''))
+				}
+			} else { // if not, do nothing
+				//
+				console.log('subbing & does not exist: do nothing')
+				console.log(arr)
+				console.log(arr.index)
+			}
+		}
+		console.log('the hidden tag after')
+		console.log(el.val())
+	}
+</script>

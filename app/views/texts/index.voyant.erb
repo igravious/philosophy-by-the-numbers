@@ -1,0 +1,12 @@
+<%= 
+	urls = @papers.collect {|p|
+		"#{request.base_url}#{p.paper_url}"
+	}
+	i = 0
+	s = ''
+	urls.each {|u|
+		s += ((10==(i%11))?"\n":""+"\n#{u.to_s}")
+		i += 1
+	}
+	s
+%>

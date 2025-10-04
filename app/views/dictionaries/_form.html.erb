@@ -1,0 +1,41 @@
+<%= form_for(@dictionary) do |f| %>
+  <% if @dictionary.errors.any? %>
+    <div id="error_explanation">
+      <h2><%= pluralize(@dictionary.errors.count, "error") %> prohibited this dictionary from being saved:</h2>
+
+      <ul>
+      <% @dictionary.errors.full_messages.each do |msg| %>
+        <li><%= msg %></li>
+      <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="field">
+    <%= f.label :title %><br>
+    <%= f.text_field :title %>
+  </div>
+  <div class="field">
+    <%= f.label :long_title %><br>
+    <%= f.text_field :long_title %>
+  </div>
+  <div class="field">
+    <%= f.label :URI %><br>
+    <%= f.text_field :URI %>
+  </div>
+  <div class="field">
+    <%= f.label :current_editor %><br>
+    <%= f.text_field :current_editor %>
+  </div>
+  <div class="field">
+    <%= f.label :contact %><br>
+    <%= f.text_field :contact %>
+  </div>
+  <div class="field">
+    <%= f.label :organisation %><br>
+    <%= f.text_field :organisation %>
+  </div>
+  <div class="actions">
+    <%= f.submit %>
+  </div>
+<% end %>

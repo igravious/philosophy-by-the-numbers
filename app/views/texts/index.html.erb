@@ -1,0 +1,132 @@
+<%= form_tag(controller_name, method: :patch, id: :filter_form) do %>
+
+<table>
+	<thead>
+		<tr>
+			<th>Navigation</th>
+			<th>Conditions …</th>
+			<th>…</th>
+			<th>…</th>
+			<th>…</th>
+			<th>Save Filter</th>
+		</tr>
+	</thead>
+	
+	<tbody>
+		<tr>
+			<td><%= render 'navigation' %></td>
+			<td><%= render 'tag_filter' %></td>
+			<td><%= render 'year_filter' %></td>
+			<td><%= render 'name_filter' %><%= render 'commit_filter' %></td>
+			<td><%= render 'filter' %></td>
+			<td><%= render 'reset' %><%= render 'save_changes' %></td>
+		</tr>
+	</tbody>
+</table>
+
+<% end %>
+
+<script type='text/javascript'>
+	var toggle_include = function(toggle, filter_id, text_id, including_id) {
+		if(toggle) { // on, create
+			$.ajax({
+					headers : {
+							'Accept' : 'application/json; charset=utf-8',
+							'Content-Type' : 'application/json; charset=utf-8'
+					},
+					url : 'includings',
+					type : 'POST',
+					data : JSON.stringify({filter_id: filter_id, text_id: text_id}),
+					success : function(response, textStatus, jqXhr) {
+							console.log("Including Successfully Created!");
+					},
+					error : function(jqXHR, textStatus, errorThrown) {
+							// log the error to the console
+							console.log("The following error occured: " + textStatus, errorThrown);
+					},
+					complete : function() {
+							console.log("Including Post Ran");
+					}
+			});
+		} else {
+			$.ajax({
+					headers : {
+							'Accept' : 'application/json; charset=utf-8',
+							'Content-Type' : 'application/json; charset=utf-8'
+					},
+					url : 'includings',
+					type : 'DELETE',
+					data : JSON.stringify({filter_id: filter_id, text_id: text_id}),
+					done : function ( data, textStatus, jqXHR) {
+							console.log("Including Successfully Deleted!");
+							console.log(jqXHR.status); //handle your 204 or other status codes here
+					},
+					//success : function(response, textStatus, jqXhr) {
+					//		console.log("Including Successfully Deleted!");
+					//},
+					error : function(jqXHR, textStatus, errorThrown) {
+							// log the error to the console
+							console.log("The following error occured: " + textStatus, errorThrown);
+					},
+					complete : function() {
+							console.log("Including Delete Ran");
+					}
+			});
+		}
+	}
+</script>
+
+<table>
+  <thead>
+    <tr>
+			<th>Author Names</th>
+			<th><%= sortable 'original_year', 'Original Year' %></th>
+			<th><%= sortable 'name_in_english', 'Text Name in English' %></th>
+			<th>Tag Names</th>
+			<th>File</th>
+			<% unless @filter.id.nil? %>
+				<th>Included</th>
+			<% end %>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+
+  <tbody>
+		<%
+			count = 0
+			files = 0
+			@texts.each do |text|
+				count += 1
+				plain = if text.fyle_id.nil?
+					''
+				else
+					files += 1
+					#"<a href='#{text.plain_file}'>#{File.basename text.plain_file}</a>"
+					link_to (fa_stacked_icon "file-text", base: "square-o", class: "fa-1x"), fyle_url(text.fyle_id) # link name was text.fyle_id.to_s
+				end
+		%>
+      <tr>
+				<td style='white-space: nowrap; overflow: hidden;'><%=raw text.edit_author_names %></td>
+				<td><%= text.original_year %></td>
+				<td style='white-space: nowrap; overflow: hidden;'><%= text.name_in_english %></td>
+				<td><%=raw text.jump_tag_names %></td>
+				<td><%=raw plain %></td>
+				<% unless @filter.id.nil? %>
+				<td>
+					<label style="float: right">
+						<input id='check<%= text.id %>' onclick='javascript:toggle_include($("#check<%=text.id%>").is(":checked"), <%=@filter.id%> , <%=text.id%>)' type=checkbox <%= @includings.include?(text.id) ? 'checked' : '' %>>
+						<span class="checkable"></span>
+					</label>
+				</td>
+				<% end %>
+        <td><%= link_to 'Show', text %></td>
+				<td><%= link_to 'Edit', edit_text_path(text,:filter_id => @filter.id) %></td>
+        <td><%= link_to 'Destroy', text, method: :delete, data: { confirm: 'Are you sure?' } %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+<hr>
+<div>Number of texts: <%= count %> | Number of texts with files: <%= files %> | <%= link_to 'Switch to file view', fyles_path %> | <%= link_to '«New Text»', new_text_path %> | <%= link_to 'Switch to author view', authors_path %></div>

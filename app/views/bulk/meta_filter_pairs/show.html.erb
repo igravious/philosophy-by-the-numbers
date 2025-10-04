@@ -1,0 +1,19 @@
+<p id="notice"><%= notice %></p>
+
+<h1>Showing Meta Filter (with pairs)</h1>
+
+	<%= render '/meta_filter_pairs/inner_index' %>
+
+<br>
+
+<%
+		jump_to = case @meta_filter
+							when QuestionMetaFilter
+								:from_filter_questions_path
+							when MainMetaFilter
+								:from_filter_philosophers_path
+							end
+%>
+<%= link_to 'Jump to what made this meta filter', send(jump_to, @meta_filter.id) %>
+
+<%# link_to 'New Meta filter pair', new_meta_filter_pair_path %>

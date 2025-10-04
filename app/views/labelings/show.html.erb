@@ -1,0 +1,12 @@
+<p>
+  <strong>Tag:</strong>
+  <%= link_to ::Tag.find(@labeling.tag_id).name, tag_path(@labeling.tag_id) %>
+</p>
+
+<p>
+  <strong>Text:</strong>
+  <%= link_to ::Text.find(@labeling.text_id).name_in_english, text_path(@labeling.text_id) %>
+</p>
+
+<%= link_to 'Edit this labeling', edit_labeling_path(@labeling) %> |
+<%= link_to 'List of labelings', labelings_path %>

@@ -1,0 +1,9 @@
+	<span class="field">
+    <%= label_tag :inequality %><br>
+		<%# select_tag(:inequality, options_for_select(::Text::INEQUALITY, @inequality), include_blank: '') %>
+		<%= select_tag(:inequality, options_for_select(['<','=','>'], @inequality), include_blank: '…') %>
+	</span>
+	<span class="field">
+		<%= label_tag :original_year %><br>
+		<%= text_field_tag :original_year, @original_year %>
+	</span>

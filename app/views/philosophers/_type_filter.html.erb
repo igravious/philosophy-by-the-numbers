@@ -1,0 +1,5 @@
+
+	<span class="field">
+		<%= label_tag :type, "type" %><br>
+		<%= select_tag(:type, options_for_select(@type_list, @type), include_blank: '…') %>
+	</span>

@@ -1,0 +1,33 @@
+<p id="notice"><%= notice %></p>
+
+<h1>Listing P Smarts</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>Entity</th>
+      <th>Redirect</th>
+      <th>Object</th>
+      <th>Type</th>
+      <th colspan="3"></th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <% @p_smarts.each do |p_smart| %>
+      <tr>
+        <td><%= p_smart.entity_id %></td>
+        <td><%= p_smart.redirect_id %></td>
+        <td><%= p_smart.object_id %></td>
+        <td><%= p_smart.type %></td>
+        <td><%= link_to 'Show', p_smart %></td>
+        <td><%= link_to 'Edit', edit_p_smart_path(p_smart) %></td>
+        <td><%= link_to 'Destroy', p_smart, method: :delete, data: { confirm: 'Are you sure?' } %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<br>
+
+<%= link_to 'New Smart', new_p_smart_path %>

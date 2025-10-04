@@ -1,0 +1,25 @@
+<%= form_for(@shadow) do |f| %>
+  <% if @shadow.errors.any? %>
+    <div id="error_explanation">
+      <h2><%= pluralize(@shadow.errors.count, "error") %> prohibited this shadow from being saved:</h2>
+
+      <ul>
+      <% @shadow.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="field">
+    <%= f.label :type %><br>
+    <%= f.text_field :type %>
+  </div>
+  <div class="field">
+    <%= f.label :entity_id %><br>
+    <%= f.number_field :entity_id %>
+  </div>
+  <div class="actions">
+    <%= f.submit %>
+  </div>
+<% end %>

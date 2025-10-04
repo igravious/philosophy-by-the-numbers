@@ -1,0 +1,33 @@
+
+<style>
+<%= 
+	# Rouge::Themes::Base16.mode(:light).render(scope: '.highlight')
+	Rouge::Themes::Monokai.render(scope: '.highlight')
+%>
+</style>
+
+<% 
+	formatter = Rouge::Formatters::HTML.new
+	formatter = Rouge::Formatters::HTMLLinewise.new(formatter, class_format: 'line-%i')
+	# formatter = Rouge::Formatters::HTMLPygments.new
+%>
+
+<p>
+<div class='highlight'>
+<%=
+	source = File.read("#{Rails.root}/scripts/es_version.sh")
+	lexer = Rouge::Lexers::Shell.new
+	raw formatter.format(lexer.lex(source))
+%>
+</div>
+</p>
+
+<p>
+<div class='highlight'>
+<%=
+	source = `#{Rails.root}/scripts/es_version.sh`
+	lexer = Rouge::Lexers::JSON.new
+	raw formatter.format(lexer.lex(source))
+%>
+</div>
+</p>

@@ -1,0 +1,22 @@
+<p>
+  <strong>Name:</strong>
+  <%= @filter.name %>
+</p>
+
+<p>
+  <strong>Tag:</strong>
+  <%= @filter.tag_id %>
+</p>
+
+<p>
+  <strong>Inequality:</strong>
+  <%= @filter.inequality %>
+</p>
+
+<p>
+  <strong>Original year:</strong>
+  <%= @filter.original_year %>
+</p>
+
+<%= link_to 'Edit', edit_filter_path(@filter) %> |
+<%= link_to 'Back', filters_path %>

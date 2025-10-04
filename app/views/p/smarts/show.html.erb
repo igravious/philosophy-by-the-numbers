@@ -1,0 +1,24 @@
+<p id="notice"><%= notice %></p>
+
+<p>
+  <strong>Entity:</strong>
+  <%= @p_smart.entity_id %>
+</p>
+
+<p>
+  <strong>Redirect:</strong>
+  <%= @p_smart.redirect_id %>
+</p>
+
+<p>
+  <strong>Object:</strong>
+  <%= @p_smart.object_id %>
+</p>
+
+<p>
+  <strong>Type:</strong>
+  <%= @p_smart.type %>
+</p>
+
+<%= link_to 'Edit', edit_p_smart_path(@p_smart) %> |
+<%= link_to 'Back', p_smarts_path %>

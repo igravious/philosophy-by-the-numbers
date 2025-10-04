@@ -1,0 +1,4 @@
+<div class="field">
+	<%= f.label :fyle_id %><br>
+	<%= f.collection_select(:fyle_id, Fyle.all, :id, :what, include_blank: '…') %>
+</div>

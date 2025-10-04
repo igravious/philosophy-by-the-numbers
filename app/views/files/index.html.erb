@@ -1,0 +1,55 @@
+<div style="padding-left:1em;padding-bottom:1em">
+	<hr/>
+	<%= link_to 'Cached file(s)', cached_fyles_path %> | <%= link_to 'Uncached file(s)', uncached_fyles_path %> | <%= link_to 'Linked file(s)', linked_fyles_path %> | <%= link_to 'Unlinked file(s)', unlinked_fyles_path %> | <%= link_to 'All file(s)', fyles_path %> 
+	<hr/>
+	<%= link_to 'Switch to author view', authors_path %> | <%= link_to 'Switch to text view', texts_path %> | <%= link_to '«New File»', new_fyle_path %> | <%= link_to 'Search', search_path %>
+	<hr/>
+
+	<b><%= @files.length %></b> files in total
+</div>
+
+<table>
+  <thead>
+		<tr>
+			<!-- th>#</th -->
+			<th>Url</th>
+			<th>Type negotiation</th>
+			<th><%= sortable 'file_size', 'Size' %></th>
+			<th>Cached? / Local?</th>
+			<th><%= sortable 'health', 'Health' %></th>
+      <th>What</th>
+      <th></th>
+      <th></th>
+			<th></th>
+			<th></th>
+			<!-- <th></th> -->
+    </tr>
+  </thead>
+
+  <tbody>
+	<% @files.each do |file|
+			t = ::Text.find_by fyle_id: file.id
+			localed = if t.nil?
+				file.display_localed
+			else
+				link_to file.display_localed, text_url(t.id)
+			end
+		%>
+			<tr>
+				<!-- td><%= sprintf("%03d", file.id) %></td -->
+				<td><a href="<%= file.URL %>" target="_blank"><%= file.display_URL %></a></td>
+				<td><em><%= file.display_type %></em></td>
+				<td><%= file.file_size %></td>
+				<td><%= raw "#{file.display_cached} <span style='color: #BBB'>/</span> #{localed}" %></td>
+				<td><%= file.health.nil? ? '' : sprintf("%05.2f%", file.health) %></td>
+				<!-- http://stackoverflow.com/questions/572298/css-how-to-stop-text-from-taking-up-more-than-1-line -->
+				<td style='white-space: nowrap; overflow: hidden;'><%= file.display_what %></td>
+        <td><%= link_to 'Show', file %></td>
+        <td><%= link_to 'Edit', edit_fyle_path(file) %></td>
+				<td><%= link_to 'Nuke', file, method: :delete, data: { confirm: 'Deleting… are you sure?' } %></td>
+				<td><%= link_to 'Dupe', dupe_fyle_path(file), method: :post, data: { confirm: 'Duplicating… are you sure?' } %></td>
+				<!-- <td><%= (::Text.find_by_fyle_id file).nil? ? link_to(raw('«New&nbsp;Text»'), from_fyle_text_path(file)) : link_to('?', query_fyle_path(file))  %></td> -->
+			</tr>
+		<% end %>
+  </tbody>
+</table>

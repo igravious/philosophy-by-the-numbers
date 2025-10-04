@@ -1,0 +1,29 @@
+<%= form_for(@labeling) do |f| %>
+  <% if @labeling.errors.any? %>
+    <div id="error_explanation">
+      <h2><%= pluralize(@labeling.errors.count, "error") %> prohibited this labeling from being saved:</h2>
+
+      <ul>
+      <% @labeling.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="field">
+    <%# f.label :tag_id %><br>
+    <%# f.number_field :tag_id %>
+	</div>
+	<div class="field">
+		<%= f.label :tag_id %><br>
+		<%= f.collection_select(:tag_id, ::Tag.all.collect{|t|[t.name,t.id]}, :last, :first, include_blank: '~~ choose a tag ~~') %>
+	</div>
+  <div class="field">
+    <%= f.label :text_id %><br>
+    <%= f.number_field :text_id %>
+  </div>
+  <div class="actions">
+    <%= f.submit %>
+  </div>
+<% end %>

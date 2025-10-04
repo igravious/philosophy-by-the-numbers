@@ -1,0 +1,74 @@
+
+<%= link_to 'List Philosophical Works', works_path %> <%= (link_to 'Specific Philosopher', specific_philosophers_url({ids: [@entity_qid[1..-1]]})) unless @entity_qid.nil? %>
+
+<%= form_tag(@whereami, method: :patch, id: :filter_form) do %>
+<%= hidden_field_tag 'type', @type %>
+<%= hidden_field_tag 'hide', @hide %>
+<%= hidden_field_tag 'sort', sort_column %>
+<%= hidden_field_tag 'direction', sort_direction %>
+<!-- https://www.google.com/search?q=ruby+map+shorthand -->
+<% unless @ids.nil? %>
+	<% @ids.each do |id| %>
+		<%= hidden_field_tag "ids[]", id %>
+	<% end %>
+<% end %>
+
+	<% if 'yes' != @hide %>
+	<table>
+		<thead>
+			<tr>
+				<th>Compare …</th>
+				<th>First Set</th>
+				<th>Second Set</th>
+			</tr>
+		</thead>
+		
+		<tbody>
+			<tr>
+				<td>
+					<%= render 'save_changes' %>
+					<%# render 'reset' %>
+					<%# render 'hide' %>
+				</td>
+				<td>><%= render 'meta_filter' %></td>
+				<td>><%= render 'meta_filter' %></td>
+			</tr>
+		</tbody>
+	</table>
+	<% else %>
+		<%= render 'unhide' %>
+	<% end %>
+
+<% end %>
+
+<% unless params[:meta].nil? %>
+	<p>Philosophical figures that are in <b><%= params[:meta].first %></b> and not in <b><%= params[:meta].second %></b></p>
+<% end %>
+<table>
+	<thead>
+		<%= render 'thead' %>
+  </thead>
+
+	<tbody>
+		<%= render @a_less_b %>
+  </tbody>
+</table>
+<%= paginate @a_less_b %> <%= page_entries_info @a_less_b, entry_name: 'philosophical figure' %> <span>– <b><%= @max_a %></b> without filters.</span>
+
+<% unless params[:meta].nil? %>
+	<p>Philosophical figures that are in <b><%= params[:meta].second %></b> and not in <b><%= params[:meta].first %></b></p>
+<% end %>
+<table>
+	<thead>
+		<%= render 'thead' %>
+  </thead>
+
+	<tbody>
+		<%= render @b_less_a %>
+  </tbody>
+</table>
+<%= paginate @b_less_a %> <%= page_entries_info @b_less_a, entry_name: 'philosophical figure' %> <span>– <b><%= @max_b %></b> without filters.</span>
+
+<%= render 'look_up_info' %>
+
+<%# link_to 'New Philosopher', new_philosopher_path %>

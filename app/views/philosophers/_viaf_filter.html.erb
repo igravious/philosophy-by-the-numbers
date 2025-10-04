@@ -1,0 +1,24 @@
+
+			<%= field_set_tag do %>
+				<label for='viaf'>
+					<input 
+						id='viaf'
+						name='viaf'
+						type=checkbox
+						onclick="if($('#no_viaf').is(':checked')){$('#no_viaf').prop('checked', false)};return true;"
+						<%= @viaf %>
+					>
+					<span class="checkable">has</span>
+				</label>
+				<label for='no_viaf'>
+					<input 
+						id='no_viaf'
+						name='no_viaf'
+						type=checkbox
+						onclick="if($('#viaf').is(':checked')){$('#viaf').prop('checked', false)};return true;"
+						<%= @no_viaf %>
+					>
+					<span class="checkable">hasn't</span>
+				</label>
+			<% end %>
+

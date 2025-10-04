@@ -1,0 +1,5 @@
+<% Rails.logger.info local_assigns %>
+<%# you have to explicitly say `partial' for locals to work! %>
+<li>
+<%= render partial: 'label_lang', locals: {name: local_assigns[:name]} %>
+</li>

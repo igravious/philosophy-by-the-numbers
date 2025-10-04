@@ -1,0 +1,40 @@
+<p>
+  <strong>Url:</strong>
+  <%= link_to(@file.URL, @file.URL, target: "_blank", rel: "nofollow") %>
+</p>
+
+<p>
+  <strong>Type negotiation:</strong>
+  <%= @file.type_in_English %>
+</p>
+
+<p>
+  <strong>What:</strong>
+  <%= @file.what %>
+</p>
+
+<% if !@file.type_negotiation.nil? %>
+		<p>
+  		<strong>Text:</strong>
+			<%=
+				t=::Text.find_by_fyle_id @file.id; t.nil? ? link_to('New Text', from_fyle_text_path(@file)) : link_to('Used by this Text', edit_text_path(t))
+			%>
+		</p>
+		<p>
+  		<strong>Google Books:</strong>
+			<%=
+				q="https://www.google.com/search?tbm=bks&q=\"#{t.author_names}\"+\"#{t.name_in_english}\""
+				link_to(q, q, target: "_blank", rel: "nofollow")
+			%>
+		</p>
+		<p>
+  		<strong>OCLC WorldCat:</strong>
+			<%=
+				q="https://www.worldcat.org/search?q=ti:\"#{t.name_in_english}\"+au:\"#{t.author_names}\""
+				link_to(q, q, target: "_blank", rel: "nofollow")
+			%>
+		</p>
+<% end %>
+
+<%= link_to 'Edit', edit_fyle_path(@file) %> |
+<%= link_to 'Back', fyles_path %>

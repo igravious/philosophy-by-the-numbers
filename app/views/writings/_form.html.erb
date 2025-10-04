@@ -1,0 +1,18 @@
+<%= form_for(@writing) do |f| %>
+  <% if @writing.errors.any? %>
+    <div id="error_explanation">
+      <h2><%= pluralize(@writing.errors.count, "error") %> prohibited this writing from being saved:</h2>
+
+      <ul>
+      <% @writing.errors.full_messages.each do |msg| %>
+        <li><%= msg %></li>
+      <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+	<%= render 'writing_fields', :f => f %>
+  <div class="actions">
+    <%= f.submit %>
+  </div>
+<% end %>

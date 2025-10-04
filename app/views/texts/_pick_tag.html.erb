@@ -1,0 +1,4 @@
+	<div id="tag_links">
+		<%= f.collection_select(:tag_id, Tag.all.order(:name), :id, :name, include_blank: '…') %>
+		<%# link_to_pick_association 'pick author', f, :authors %>
+	</div>

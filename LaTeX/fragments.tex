@@ -1,0 +1,915 @@
+% !TEX program = xelatex
+% http://research.ucc.ie/latex/
+% with modifications for xelatex
+\documentclass[dah,phd,a4paper]{xe_uccthesis}
+
+% how to integrate the following stylistically?
+% http://tug.ctan.org/macros/latex/contrib/tufte-latex/sample-book.pdf
+
+% http://tex.stackexchange.com/questions/44694/fontenc-vs-inputenc
+% already pulled in by uccthesis
+% \usepackage[T1]{fontenc}
+% https://en.wikipedia.org/wiki/XeTeX
+% http://xetex.sourceforge.net/
+% http://wiki.xelatex.org/doku.php
+% \usepackage{xltxtra}
+
+% https://en.wikibooks.org/wiki/LaTeX/Internationalization
+\usepackage[french, latin, italian, british]{babel}
+
+% http://stackoverflow.com/questions/2193307/how-to-get-latex-to-hyphenate-a-word-that-contains-a-dash
+\usepackage[shortcuts]{extdash}
+
+% defaults to use uccthesis bib environment
+% http://merkel.zoneo.net/Latex/natbib.php
+% \usepackage{natbib}
+
+% \usepackage{hyphenat}
+% \hyphenation{Thing-in-itself}
+% \hyphenation{thing-in-itself}
+% \hyphenation{Of-a-thing}
+% \hyphenation{of-a-thing}
+% \hyphenation{Predicated-on-things}
+% \hyphenation{predicated-on-things}
+
+% for what reason?
+\usepackage{microtype}
+
+% for lorem ipsum
+\usepackage{lipsum}
+
+% https://github.com/wspr/fontspec
+% no can do without lualatex or xelatex
+\usepackage{fontspec}
+
+% https://en.wikibooks.org/wiki/LaTeX/Macros
+% https://www.grammarly.com/handbook/mechanics/italics-and-underlining/1/italics-and-underlining-titles-of-works/
+% \work{} is for the titles of works
+\newcommand{\work}[1] {\textit{#1}}
+
+% https://en.wikibooks.org/wiki/LaTeX/Hyperlinks
+% http://tex.stackexchange.com/questions/50747/options-for-appearance-of-links-in-hyperref
+\usepackage[colorlinks]{hyperref}
+
+% let us begin!
+\begin{document}
+\pagenumbering{roman}
+
+% http://www.thebookdesigner.com/2012/02/self-publishing-basics-how-to-organize-your-books-front-matter/
+
+%% Title Page
+%%
+\title{B0TH D1G1TAL\\AND N0T}
+\subtitle{}
+\author{Anthony Durity}
+\date{June 2016}
+\professor{Orla Murphy}
+\supervisors{Joel Walmsley\\Mary Keeler\\John Sowa}
+\maketitle
+
+%% TOC
+%%
+% default new page i believe
+% already set by uccthesis
+% \renewcommand\contentsname{Edition Notice}\tableofcontents{}
+\renewcommand*{\thefootnote}{\fnsymbol{footnote}}
+
+%% Edition Notice
+%%
+\newpage{}
+\phantomsection
+\addcontentsline{toc}{section}{Limited Edition Notice}
+% http://stackoverflow.com/questions/3978203/how-do-i-keep-my-section-numbering-in-latex-but-just-hide-it
+\section*{Edition Notice}
+\begin{flushright}
+Room G03\\Number 23 Sheraton Court\\Glasheen Road\\Cork
+\end{flushright}
+
+\input{limited}
+
+%% Preface
+%%
+\newpage{}
+\phantomsection 
+\addcontentsline{toc}{section}{Preface}
+\section*{Preface}
+\begin{flushright}
+Room G03\\Number 23 Sheraton Court\\Glasheen Road\\Cork
+\end{flushright}
+
+%% Acknowledgments
+%%
+\newpage{}
+\section*{Acknowledgments}
+\begin{flushright}
+Room G03\\Number 23 Sheraton Court\\Glasheen Road\\Cork
+\end{flushright}
+
+I'd like to thank my brain, “Thank you brain.” I'd also like to reproach my brain, “Gee, thanks brain.”
+
+%% Introduction
+%%
+\newpage{}
+% https://tex.stackexchange.com/questions/107470/getting-section-numbering-to-start-at-0
+\setcounter{chapter}{-1}
+\setcounter{section}{-1}
+\chapter{Fragments: The Shape of Things to Come}
+
+\begin{quotation}
+``The difference between fiction and reality is that reality has
+more footnotes''
+\end{quotation}
+
+\section{Language Acquisition}
+
+	The opening sequence of \work{Infinite Jest}\cite{wallace_infinite_1997} by David Foster Wallace has the reader placed in the mind of Hal Incandenza. We are sitting with him in an office in the presence of three Deans who are arrayed on the opposite side of a desk. He takes in the scene -- describes it to us -- you can only wish that you had the rich interior mental life of Hal. He is a young rising tennis star and one hurdle remains between his adolescence and progression to a prestigious tennis academy – this meeting. His academic record is beyond reproach, so good it raises suspicion. His tennis ability is up there with the best for his age. But as the meeting goes on we are given to realise that something is not quite right. Hal does not speak, his uncle (his chaperone) does the talking, fielding responses for questions that are clearly directed at Hal whether intentional or not. The Deans desire to get the measure of Hal by what he has to say for himself. Besides the odd gesture Hal does not speak. He narrates for us. This goes on for a while.
+
+	Finally he communicates vocally and this happens,
+\begin{quotation}
+	‘Sweet mother of Christ,’ the Director says.\\	
+	‘I’m fine,’ I tell them, standing. From the yellow Dean’s expression, there’s a brutal wind blowing from my direction. Academics’ face has gone instantly old. Eight eyes have become blank discs that stare at whatever they see.\\	
+	‘Good God,’ whispers Athletics.\\	
+	‘Please don’t worry,’ I say. ‘I can explain.’ I soothe the air with a casual hand.
+	Both my arms are pinioned from behind by the Director of Comp., who wrestles me roughly down, on me with all his weight. I taste floor.\\
+	‘What’s wrong?’\\
+	I say ‘Nothing is wrong.’\\
+	‘It’s all right! I’m here!’ the Director is calling into my ear.\\
+	‘Get help!’ cries a Dean.\\
+	My forehead is pressed into parquet I never knew could be so cold. I am arrested. I try to be perceived as limp and pliable. My face is mashed flat; Comp.’s weight makes it hard to breathe.\\
+	‘Try to listen,’ I say very slowly, muffled by the floor.\\
+	‘What in God’s name are those…,’ one Dean cries shrilly, ‘…those sounds?’\\
+\begin{flushright}
+\citep[See][opening sequence]{wallace_infinite_1997}
+\end{flushright}
+\end{quotation}
+	What is the point in this? The point is \emph{language}.
+
+\section{Given Language}
+
+Given language. These two words ought to prefix every philosophical text ever committed to print.
+
+The Very Ancient Greeks used a syllabic script prior to acquiring the alphabetic one we are familiar with today which they cadged from the Phoenicians and subsequently improved upon\citep[See][ch. 1]{suarez_book:_2013}. They moulded it to fit their speech patterns pausing only to invent symbols to represent vowel sounds, a global first so far as we know. Did the Very Ancient Greeks do philosophy in a systematic way? They could have done but no written record exists, no full account, only scraps and heresay.
+
+The problem of writing\citep{plato_phaedrus_2006} for philosophy foreshadows the problem of digital media\citep{manovich_language_2002} for philosophy.
+
+Is language thought? Is thought language? I say, who cares. We treat language as transparent. We treat it as a proxy for thought. Ought we to? It doesn't matter. The only philosophy we have is fossilized in the form of words.
+
+Given language. Language is the machine-house of the soul. It's where we dwell. If all there were to philosophy were language Aristophanes would be mentioned in the same breath as Aristotle.
+
+\section{Let's talk about the interplay of form and content in the history of philosophy}
+
+Any account of what philosophy is must include a reasonable account of language. In \work{The Unity of Content and Form in Philosophical Writing: The Perils of Conformity}\citep{stewart_unity_2013} a recent work by Jon Stewart he surveys the forms of expression philosophy has historically deployed. He does so with the intention of highlighting how anaemic the pallor of the Anglo-American so-called Analytic hide is nowadays. I'm not saying that this animal is not philosophy, I'm saying it is limited in its expression and agree with Stewart that this state of affairs is to our collective detriment. Poetry, dialogue, aphorism, correspondence, meditation, blog post, podcast, encyclopedia entry, the list of forms shunned is in nearly as numerous as the diversity of forms of expression. This is one of the reasons why Rorty can claim with deliberate playfulness and provocativeness that philosophy is a but a mere branch of literature.
+
+If nobody were to agree with the conclusions of a certain philosophical text, given that all were in agreement that it is indeed a philosophical text does this disqualify it as a philosophical text? No. It means that this text is consigned – pending re-evaluation – to a big slop-bucket marked “bad philosophical texts”. Strangely, it would appear that while philosophers are concerned with truth, the truth of a text is not the measure of whether a text is philosophical or not. A text may be unconvincing but that does not make it not philosophy.
+
+\section{Ethos, Pathos, Logos}
+
+To take convincing takes persuasion. But not all methods of persuasion are valid philosophical methods. If we expand outward from the text we see that every coherent argument obviously involves three components: the speaker, the text, the audience. The persuasive value of the message of the text is similarly broken into three components: ethos, logos, pathos. Students of advertising and marketing will be familiar with this division, as is well known this analysis dates back to at least Aristotle and the Rhetoric. This is to be contrasted with the discussion of the art of persuasion by Plato/Socrates in the Phaedrus.
+
+\begin{quotation}
+“Of the modes of persuasion furnished by the spoken word there are three kinds. The first kind depends on the personal character of the speaker; the second on putting the audience into a certain frame of mind; the third on the proof, or apparent proof, provided by the words of the speech itself. Persuasion is achieved by the speaker's personal character when the speech is so spoken as to make us think him credible. We believe good men more fully and more readily than others: this is true generally whatever the question is, and absolutely true where exact certainty is impossible and opinions are divided. This kind of persuasion, like the others, should be achieved by what the speaker says, not by what people think of his character before he begins to speak. It is not true, as some writers assume in their treatises on rhetoric, that the personal goodness revealed by the speaker contributes nothing to his power of persuasion; on the contrary, his character may almost be called the most effective means of persuasion he possesses.”
+\begin{flushright}
+\citep{aristotle_rhetoric_1984}
+\end{flushright}
+\end{quotation}
+
+An ethical appeal elicits persuasion by directing the audience's attention to various laudable attributes of the speaker's character: their expertise say, their social standing, their authority, and so on. Pathos here refers to emotions, sentiments and sympathies – the idea is to override the audience's rational judgement. Ethos and pathos correspond to the idols of Bacon's Novum Organum.
+
+\begin{quotation}
+“Secondly, persuasion may come through the hearers, when the speech stirs their emotions.Our judgements when we are pleased and friendly are not the same as when we are pained and hostile. It is towards producing these effects, as we maintain, that present-day writers on rhetoric direct the whole of their efforts. This subject shall be treated in detail when we come to speak of the emotions.”
+\end{quotation}
+
+What is left are appeals to reason. Aristotle and Bacon and basically every philosopher under the sun agree on this. Where philosophers differ is in what constitutes a reasonable argument. And here they differ to such an extent that to the outsider it sometimes appears that there is no consensus in philosophy.
+
+\begin{quotation}
+“Thirdly, persuasion is effected through the speech itself when we have proved a truth or an apparent truth by means of the persuasive arguments suitable to the case in question.”
+\end{quotation}
+
+What distinguishes philosophy from the rest of literature is the direction of its gaze – that is to say the content of the gaze – and the limiting of appeals to appeals of reason. Immediately it can be seen why poetry and drama are richer vehicles. (I'm eliding mode of expression and form of expression here, bear with me.) And almost as immediately it can be seen why some, Plato for example, have expressed distrust for these vehicles.
+
+\section{Formal, Material}
+
+Another way of talking about the content of the gaze of philosophy is to talk about the subject matter. If one pauses long enough to give the compound “subject matter” its due consideration it spontaneously combusts. Subject. Matter. Material. First thing that should be realised is that when speaking about disciplines we must by necessity be using the words: content, matter, material, subject matter in a somewhat abstract sense. Perhaps it mightn't be unreasonable to say that we use these words metaphorically. It's important to realise this. It's important to realise that the sense we make, the meaning we generate is imparted by our embodied cognition and knowing. The moment one forgets this the hobgoblins start their chatter.
+
+This division between content and form goes back to at least Aristotle and the four-causes. Though it is derived from the analysis of concrete artefacts it can be readily seen that man extrapolates from the concrete to the abstract.
+
+If somebody somewhere has come up with an exact formula that generates a list of the objects that philosophers are concerned with I haven't heard about it. Part and parcel with the practice of philosophy is getting a feel for this terrain with the aid of navigators and charts, the broad outlines. We can say that philosophy's subject matter is broken down into as a first approximation: metaphysics, ethics, aesthetics, logic, epistemology, phenomenology, political philosophy, philosophy of religion, and so on. I love this “and so on,” it carpets over a bottomless well of unknowing. It can be seen that the subject matter of philosophy comprises abstract or general things or stuff. Some refer to these things as objects. Some call them entities. I propose that they be called units, for reasons that will become clear I hope.
+
+Imagine the main subject areas of philosophy as broad organisational units. Imagine concepts as the smallest divisional unit possible. Unit can be used to capture a fine-grained division or a coarse-grained division. Unit responds to focus, enables granularity. Unit is bloodless, colourless. Even though words like object and entity seem like good signifiers they carry too much etymological baggage. A collection of units can itself be viewed as a unit. A collection of collections is itself a collection. To herald the shape of things to come it matters to this work how language is used to capture and convey philosophical concepts.
+
+It seems that the content of a text is what its about and the form of the text is the way or how it is presented. Everyone knows about the spiritually troubled insomniac who stays up the whole night fretting if there really is a dog. Change one crucial word and the content changes. Rearrange the words and the form changes. We see this with a bronze statue or a silver chalice – switch the material to wood or plastic and the artefact remains a statue or a chalice. One must alter its form, deform it beyond recognition so to speak, in order to make it stop being a statue or a chalice. But this does not mean that the material is inconsequential – one can't have form without content. Can one have content without form? We speak of something being formless. And formlessness. Pinker in The Sense of Style points out that it's fallacious to say that a piece can be written without style. Style is always relative to stylistic norms. In a sense the same could be said for form. Form is always relative to formal conventions. Formlessness is not the absence of form, it is the absence of any one particular form.
+
+In linguistics form is called syntax. Or is it morphology? What is the content of language? Depending on the medium, for speech the phoneme, for writing the grapheme. For signed language the sememe? But can't any language be encoded digitally in a stream of bits? Does that mean that the humble bit is the conveyor of content in language? No, this is the minimal distinction. That's all. 0 or 1, on or off, what matters is that a distinction is made, all the rest is convention, agreed upon encodings. From this perspective it seems like language is all form and no content which is strange because we use language expressly to convey the contents of our thoughts.
+
+In the realm of the abstract content arises out of differences in form.
+
+To focus on form to the exclusion of content is the domain of the formal sciences. But form for its own sake, what is that? Mere play. It is not without coincidence that works of music are called compositions. It is not without coincidence that Kandinsky titled his explorations in abstract visual arrangements compositions.
+
+But it seems to me that there has been an undue focus on a certain sorts of formal arrangements, namely logical forms and mathematical forms. This is curious when we remember that logos originally covered such linguistic forms as metaphor and metonymy, not solely the interplay of the so-called logical constants. Hence Schopenhauer's directing of our attention towards matters of style. The great philosopher's tend to be great stylists because they care as much about stylistic and literary form as they do about the narrow constraints of logical form, they also care about the unity of form and content.
+
+Notice that mathematics is called the exact science and that natural language is said to be imprecise. If meaning fails to be conveyed I would suggest it is the imprecision of the thoughts behind the linguistic vehicle. A stronger claim is that clothing something in logical or mathematical garb does not make that thing any more precise than it being rendered in the form of a well crafted aphorism for instance. The fact that I feel the need to defend that position speaks to a great imbalance playing out within the history of ideas. From this perspective arguments like those put forward in C.P. Snow's The Two Cultures are not only meaningless they are in a certain sense deeply malign. The same is true of the opposing camp, however.
+
+To focus on content/matter to the exclusion of form is the domain of the material sciences. But in the realm of the abstract what can the matter be? If logic is the theory of form what is the theory of content? And if, as I've said, content in the realm of the abstract is basically each significant distinction and difference then is semiotics the theory of content?
+
+It would seem then that logic and semiotics must bleed into one another. Why then is formal logic placed on such a high pedestal and semiotics looked down upon? Why is it that semiotics has played second fiddle to logic from the time of the Ancient Greeks to the end of the 19th century? These may seem like esoteric questions. Indeed, such are the ideological commitments in the history of ideas, it has taken me years to be able to begin to formulate these questions.
+
+Ordinary language is dead, long live ordinary language
+
+Ordinary language philosophy swims against the tide of content-less formal investigations. The recognition of this tide, or this imbalance as I called it above, gives us insight into a superficially diverse set of phenomena in contemporary philosophy and thought. It explains why the study of logic is seen as a part of philosophy and is present in so many curricula. and if we grant logic its  place then why not linguistics, why not semiotics? Semiotics claims to be an investigation into signs and signification. And meaning-making is the name of the game, is it not? It explains why Kripke, Quine, Lewis are so highly thought of but Baudrillard, Eco, Peirce are not. It explains why structuralism was replaced by post-structuralism. It explains how the young Wittgenstein's mind could assemble the Tractatus and why the later's mind could scarcely synthesise a few fragments. It explains the fragmentary nature of Peirce's writing. It explains the opposition of Hegel to Kant, it explains why Kant is held to be so significant in the Anglo-American tradition whereas all that people know of Hegel is his Phenomenology of Spirit and not his Science of Logic. It explains why Trendelenburg who sought to right what he saw of as the ills in both Kant and Hegel is a relative unknown. It even, I would claim, goes some way towards explaining why it is thought that science supposedly grounded by numerical/quantitative methods is praiseworthy but that qualitative methods being deemed inferior fail to ground the humanities. It partly explains why the term digital humanities is seen as an oxymoron.
+
+In the realm of the abstract how do we reunite content and form? Let us look to ordinary language.
+
+The logical constants permit certain formal arrangements and bar others. Curiously nobody can say precisely which forms are permitted and which are not. In fact, the development of formal logic is nothing more than a haphazard investigation into which forms are permitted and which are not. Logic developed as new forms were rigorously studied. Correctly speaking, every logician who pushed against the boundaries of what is logically sayable was a philosopher of logic. The logical constants are drawn from a subset of the compositional units of ordinary language and they allow us to analyse the logical relations between concepts in conceptual space and make inferences.
+
+I ask you what is the compositional or inferential difference between:
+
+All men are mortal
+Socrates is a man
+∴ Socrates is mortal
+
+and: 
+
+The mat is in the house
+The cat is on the mat
+∴ The cat is in the house
+
+You think I jest? I do not. This is where we are at insofar as a theory of content is concerned I would argue. We're at the point the Ancient Greeks were at when they began their logical investigations.
+
+Note that there is a silent and (or simultaneously) at the head of the second line of each syllogism. Look at how much work the copula to be is doing in the first syllogism, far more than in the second. Unpacked and reworded we get:
+
+mortality is a property that all men share
+Socrates is an instance of the class of men
+∴ mortality is a property of Socrates
+
+versus:
+
+The cat is located in the house
+The cat is located on the mat
+∴ The cat is located in the house
+
+Or how about:
+
+Stealing is wrong
+
+You may ask how this is a syllogism. There is an implicit:
+
+One ought not to do wrong
+Stealing is a sort of doing
+∴ One ought not to steal
+
+Stealing is wrong is shorthand for I assert that it is the case that one ought not to steal. You can see why the former is preferred. Why is it that for so long the study of logic confined itself to analysing states of affairs that are or are not the case? Why not investigate why situations might be the case, or might not, how they ought to be the case, or ought not, how they could not have been otherwise, or necessarily could not be, and so on. Shorn of spatiality, shorn of temporality, shorn of modality – in short, shorn of content of the world – the best logic could give us for two millennia was the desiccated husk that were the investigations into formal logic before Hegel and Trendelenburg arrived on the scene. Indeed, Aristotle studied counterfactuals, Leibniz studied modal logic. Why are we led to believe that modal logic only arrives on the scene properly with Lewis and Kripke? If one wanted to investigate compositionality with respect to content (which was not a frequent impulse it seems) in any fashion at all outside of logic one had to do semiotics. Which is why Peirce could claim that the high-point in semiotics was with the Scholastics.
+
+Linguistics separates words and phrases into two camps, the lexical and the function words. Isn't that curious, linguists now regard some words as existing outside of the lexicon. But from a linguists perspective this makes sense. Words like idea and sleep and green and furiously seem to convey content whereas words like a, the, none, some, all, of, at, on, and so on allow us to compose or assemble content. The lexical/function division isn't an arbitrary division for another reason – the lexical class is open and the function class is closed. As we discover more and more things we can invent names for them, we can make verbs out of nouns which infuriates the more conservative grammarians. We can nominalize adjectives and also the reverse is true. On the other hand the class of function words is relatively stable and immune to spontaneous alteration. Note that all of the logical constants are drawn from the class of function words. Note how for the longest time only a certain fixed subset is permitted (quantifiers and conjunctions), the copula is relegated to linking devoid of its compositional nature. When the walls of logic finally came down in the 20th century tense and mode were let in. But, one could argue, not space.
+
+“Constructive type theory avoids separating form and meaning (content) by explaining semantically each form of judgement and each rule of inference at the same time as they are introduced (and this in a direct, intuitive and not in a recursive, set-theoretical way).”
+Giovanni Sommaru
+
+I think this statement by Sommaru is crucial to the understanding of how the program of type theory relates to the program of logic
+
+One theory of types and its philosophical implications, a tedious investigation from a contrarian viewpoint
+
+Serious investigations into logic immediately encounter the same variety of problem that investigations into consciousness encounter, namely that the apparatus being used to perform the investigation is almost indissolubly mixed up with the methods and subject matter of the investigation.
+On top of that, logic is a multi-faceted thing. Though it is possible to set off on the journey to new vistas from any number of starting positions, it is difficult to know which, if any, is better. Better in the sense of leading to an appreciable insight or leading more quickly to fundamental features of the topic under investigation.
+In fact, the word fundamental is problematic here, as is the related word foundational. This is all the more ironic given that one of the ways in which logic has been employed is to provide foundations or a grounding for other disciplines. Should we not eventually stop to consider what it means (conceptually speaking) for something to ground something else. Why stop there? Won't our new ground need grounding? And so on.
+Which brings us to another feature of logic which compounds the difficulty of investigation. That of the potential for infinite regress, but in the logical sense rather than the – shall we say – phenomenological sense as in above. This second sense is more along the lines of, “Who will guard the guards?” whereas above it was more along the lines of “How can anybody see their own eyes?” The answers being respectively, “An ombudsman will,” and, “Using a mirror.” I am only half-joking when I say that in order to perform any serious logical investigation one needs an ombudsman and a mirror, logically speaking.
+At the risk of being my own voice-over I have considered the matter for quite a while now, set off on many false starts – here, for what it is worth, is my latest attempt. Let us start then with the notion of infinite regress and other interrelated topics.
+Paradox versus contradiction versus self-contradiction versus contradiction-in-terms
+Let us bring the distinctions here into sharp relief. A paradox is a phrase or expression or statement or proposition which relies on the property of self-circularity, infinite regress, or unbounded recursion. A paradox differs from a contradiction in that a contradiction is always and at all times in every case unconditionally false. A tautology is the contrariwise, unconditionally true. Let us call these whether-or-nots unconditionals. More importantly, a contradiction is unconditionally false regardless of the range of significance of the terms under discussion. This evaluation is in direct contrast with the notion of contradiction-in-terms which is unconditionally false because of the terms under discussion or (to put it another way)  in virtue of the characteristics of the objects within the domain of discourse.
+The distinction between a self-contradiction and a contradiction-in-terms can be teased out by noting that a text may be self-contradictory whereas it is narrower units of discourse that may be contradictory-in-terms. Meaning that in the former instance separate parts of a text when brought together deny each other whereas in the latter one part is all that is needed. Informally a contradiction-in-terms is called an oxymoron, more formally an antimony. It does not really make sense to observe of an entire text that it is oxymoronic. To understand how paradoxes differ from contradictions it is necessary to bring in the notion of reference, in particular the notion of self-referentiality. Procedurally then, from initial position, or set of assumptions/premises, an incompatible conclusion is drawn from which another incompatible conclusion is drawn, and so on. No definite conclusion may be drawn rendering the entire procedure or entire operation inconclusive which then forces a re-evaluation of the premises. If one can reasonably reject one or more of the premises then all well and good; if not then one is forced into the position of concluding that though the initial premises are apparently valid the conclusion they entail is logically inconclusive, where one goes from there is context dependent.
+From here the journey forward can proceed in a number of different directions, and it is not immediately apparent which direction is best. I recognise that I have not precisely defined what is meant by term, nor proposition, nor for that that matter either of the two concepts of true or false, nor many others.
+Perhaps it is best to ask the seemingly pointless question, “What is meant by true and what is meant by false, and furthermore, do they exhaust the space they inhabit?” and from there move onto a discussion of operators and connectives and from there to a discussion of the notion of abstraction.
+When I assert “it is raining” when in actual fact it is raining then I am speaking the truth, what I am asserting is true. If on the other hand I assert that it is raining when it is not raining then I am uttering a falsity, what I am asserting is false, I am denying an actual state of affairs. What could be meant by “exhaust the space they inhabit”? Note that in asserting or denying a state of affairs one is making a judgement, and that in order to make sense of the judgement one must be able to verify whether the state of affairs under question does or does not match the content of ones judgement. In order to be able to do that though one must be able to pick out salient states of affairs in the first place. So it appears at least as a first approximation that whatever logic is rests on our ability to make distinctions, our ability to pattern match, our powers of recall and recognition, and so on. These abilities appear distinctly phenomenological rather than logical – there could hardly be a single moment when the mind is not performing one or more of these operations.
+Another way of saying “it is true that …” is “it is the case that …”. What if I cannot determine, for whatever reason, something to be the case or not? I would say that I do not know or perhaps that I cannot know or perhaps that I can never know. True and false are called truth values, but it appears that to judge something to be unknown or unknowable amounts to the same thing. Truth values are actually fundamental operational values and should perhaps despite the weight of tradition be called operational values. This would allow for all manners of operation to be viewed as logical operations, for instance not only the making of judgements but also the deferring of judgements. Also it is necessary to observe that truth is dependent on who or what is performing the judgement allowing for the ideas of subjective and objective truth. This who or what we call an agent, if there be an interlocutor the traditional jargon is patient.
+The “…” above is taken to stand for anything, literally any thing. I use that notation to abstract over the entire range of things that could be the case. One of the aims of this explanation is to avoid the use of mathematical language and notation but at times it is unavoidable. For instance, say that I want to speak about a certain class of things in the abstract but also compare or combine that class of things with some other distinct class of things then it will be useful to standardise on a notation for that.
+This is what algebra does.
+Some may remember algebra from school as that point in time when they felt un-moored for the first time (and certainly not the last) from the concrete practice of arithmetic. This is no coincidence, because algebra relies on an abstraction – the variable. Indeed, variables are such a non-intuitive abstraction that it wasn't for thousands of years after the formalisation of arithmetic and geometry that it even occurred to someone that perhaps this idea of abstracting over a class of things should be formalised. A variable stands for something else. What it stands for may be specified to a certain degree, put another way, what it stands for could be constrained to a particular domain. The opposite of a variable is a constant. Both these words are slightly unfamiliar to us when used in the nominative sense – in normal discourse they are used adjectivally, so that we may qualify states of affairs as remaining the same or changing over time. We are going to use them as nominalized adjectives. A constant is a thing-in-itself, an unchanging thing, a variable can be thought as a box into which we can place a constant, perhaps any constant, but also perhaps only some kind of constant.
+Sentential connectives, sentential constants, logical constants, logical operators, logical connectives
+Confusingly the constant things just mentioned and the logical constants are not the same class of thing. What are called the logical connectives are those things which allow one to assemble complex ideas out of simple ideas in a logical fashion. In natural language they are words like the and in “this and that”, and the not in “not that”, and the if and then in “if this then that” or alternatively the implies in “this implies that”. Among others. This “among others” is deliberately vague. For if we were to view the logical constants as if they constituted the logical elements from which the atoms and molecules of our discourse are fashioned we would search in vain for the equivalent of a periodic table of logical elements.
+An attempted explanation given by Tarski in 1966 reproduced by Corcoran in 1986 goes,
+“In the extreme case, we would consider the class of all one-one transformations of the space, or universe of discourse, or 'world', onto itself. What will be the science which deals with the notions invariant under this widest class of transformations? Here we will have very few notions, all of a very general character. I suggest that they are the logical notions, that we call a notion 'logical' if it is invariant under all possible one-one transformations of the world onto itself”
+This is the type of explanation, that though intelligible and suggestive, gets us no closer to an actual table of the elements. The explanation is not constructive, meaning it does not give us a procedure by which the elements are generated, it merely gives us a means (given that we understand the judgements involved) for establishing whether one thing or another once we have a hold of that thing meets the desired criteria.
+What is useful to us here is the idea of a transformation, what should catch our attention is the embedded word form. Logical constants are concerned with the formal properties of what can be said or judged to be the case. Think form and substance. This is to be contrasted with the material properties of what can be said or judged to be the case. A contradiction-in-terms then could the be defined as the situation where the substantial claims have an inherent incompatibility and suggests to us that what we call contradictions might more accurately be called formal-contradictions. Then, the more general notion of an unqualified contradiction would cover both cases.
+Let us make formal arrangements
+As a second approximation the science of logic can be thought of as the investigations into the formal arrangements concerning what can be said to be the case. Logic with a capital L can be thought of as the grand enterprise, but it can be readily seen that usefully speaking logic cannot be a monolithic enterprise but rather must comprise many general species of logic each picking out salient formal arrangements and distinct modes of being. This we know from studying the history of the development of logic which has until quite recent times been very much not how things have been. If someone is to say to you, “that's logical” or more frequently “that's illogical” the correct response should be “according to which logic?” Note the difference between having ones claims rejected by the utterance “that's illogical” rather “that's untrue”. In the latter instance your interlocutor is rejecting a substantial claim or premise, in the former instance they are calling attention to the defective machinery of your logical operations themselves – quite another thing entirely. Contrast again with, “you made a mistake in your reasoning,” which points to natural operational fallibility rather than an essential defect.
+In one of the few books, Deviant Logic, Fuzzy Logic: Beyond the Formalism, to treat this matter properly Susan Haack calls the “non-standard” logics deviant logics because they deviate from the “norm”. Which begs the question of what makes the standard standardized and the norm normal.
+So far I have been referring to the “science of logic” but I could well have referred to the art of logic – as in skill-set or craft. Logic is only one way in which we come to know the truth or operational value of something, another way is through direct sensory experience, another way is through persuasion. An anecdotal example about the importance of the former is given by the book, Don't Sleep, There are Snakes: Life Language in the Amazonian Jungle, by Daniel Everett. This book, for me, is an example of how one detailed empirical study can outweigh a thousand rehashed theoretical texts. Everett is a devout missionary. He (with his family in tow) is tasked with bringing the word of God (the Christian Bible its sacred container) to the ungodly. The received way to do this is to translate the word of God into the language of the unacquainted primitives. He is a linguist by training, a background that should render him amply prepared for his task at hand. The catch? The Pirahãs (the tribe in question) conform to a strange epistemological precept. Having no print culture they are like a band of unapologetic Doubting Thomases. For them, to know is to experience first-hand, failing that the report of an immediate second-hand witness is acceptable, after that all epistemological bets are off. So embedded is the operation of the belief system, that the grammar of the Pirahãs's language takes into account syntactically the handedness of the any claim. Indo-Europeans, indeed most of the rest of the world, might raise an eyebrow here but I would contend that such syntactical calcification happens in all languages and because language is the water one swims through ones culture in it is virtually impossible to notice this during the ordinary course of events.
+So much for first-hand knowledge, call it embodied knowledge, the knowledge we must necessarily have because we have bodies. And what of the art of persuasion? We can trace this back to a text by Aristotle, the Ars Rhetorica to give it its Latin title. Rhetorical claims are based on appeals: ethos, pathos, and logos. This is an ancient agent-based model of information theory, there is a sender, a receiver, and the agent-neutral content part of the information itself – an agent, a patient, and the facts of the argument contained in the communication itself. Ethos, regardless of its contemporary connotations, refers to appeals to the character of the agent, his or her reliability, expertise, authority, and so on. Pathos refers to appeals to the patient's psychology or emotions. Logos appeals to reason. From logos we get logic. Logos in this sense incorporates all linguistic devices, metaphor, irony, metonymy, synecdoche, as well as the narrower range of devices familiar to students of formal logic. Interestingly Aristotle – while discounting the broader literary devices as mere stylistic ornamentation and inadequate, practically speaking, for proper logical argument – employs metaphor after metaphor. I would contend that metaphor is a linguistic abstraction allowing us to carry across understanding from a more concrete realm to a more abstract one that is entirely compatible in the formal/operational sense with the tools of first-order logic.
+
+In what follows I am going to call the narrower brand of logic formal logic and relegate the term logic to the brand that includes the narrower brand and also the various literary devices. Ancient, Scholastic/Medieval logic was already formalised. Then symbolic logic is any logic which uses symbols to stand in place of the content under discussion. Boole's algebraic logic with its use of variables being one example, syllogistic logic following Aristotle the other. If boolean and syllogistic logic are both formal and symbolic are they not the same thing? No, boolean logic does not formalise quantification, but it does formalise the concepts of totality (1) and nullity (0).
+Type theory was developed to serve as a foundation for mathematics. To be clearer. Type theory was proposed as an alternative to infinite set theory which itself was seen as a foundation to mathematics but turned out to contained what were deemed to be insurmountable paradoxes. Over the course of the development of type theory some came to realise that there are deep connections (some term them correspondences, others equivalences, still others isomorphisms) between logic and proof theory on the one hand, mathematical theories like category theory on the other, and theoretical computer science on the third hand.
+Logic has long been part of the project of philosophy, in some ways its handmaiden. The trade between the two has often been bilateral with advances in logic impacting philosophy, as well as the reverse also being the case. Philosophy, however, it must be noted does not have a monopoly on logical reasoning therefore it is important to fully realise that logic is not a part of philosophy. At the same time if logic has morphed into type theory then we must ask ourselves what does this mean for philosophy. Does type theory have uses outside of the foundational program for mathematics? What types can the types of type theory be?
+In a 2014 extended paper, A Primer on Homotopy Type Theory, Part 1: The Formal Type Theory, again with an emphasis on its utility as a foundational program for mathematics, Ladyman and Presnell say “We do not consider propositions about concrete reality such as that snow is white or that water is H2O.” I have to ask, “Why not?” Why concern oneself with such a narrow range of types of things? Is it possible that we could use type theory to investigate concrete phenomena such as snow and water, a sensual phenomenon such as white and a chemical phenomenon such as H2O? I am going to go ahead and assume that it is possible in the absence of a sound theoretical censure or proof otherwise. Let us call this the Axiom of Natural Relevance to give it a grand sounding name. Until proven otherwise I am assuming this axiom, that this axiom holds for the things that most philosophers care about, and that as a result the machinery, tools, and methods of type theory are applicable to the wider philosophical project. If I am right, what has been called the linguistic turn in philosophy, and also the computational turn in the humanities can be seen to be recognised as the same turn, a type-theoretic turn. I believe the 2009 book, Types and Tokens: On Abstract Objects, by Linda Wetzel, to be a foreshadowing of the recognition of this turn.
+To that end we must unclasp type theory from its mathematical impulses. If anything, linguistics and the study of natural language grammars has already travelled a long way down this path by classifying words and phrases according to the roles they play in language. To classify something as a noun or adjective, a verb or particle is already an attempt to constrain that thing to a particular class. Similarly in metaphysics the attempt to place 
+In order to be able to investigate the entities of philosophy in a type-theoretic way we must be able to build up our type schemas or hierarchies systematically. This will then allow us to answer more precisely questions such as, “What is art?”, “What is justice?”, “What is a virtue”, “What is beauty?” and so on by being able to say what type of thing these things are. One definite move in this direction is the book Type Theoretic Grammar by Aarne Ranta which (it will come as no surprise) contains a recapitulation of type theory but at least then applies it to natural language syntax/grammar rather than mathematics as is the norm. What is needed is both a philosophical account (or rather many competing accounts, a cottage industry of accounts in fact) of type theory accessible to non-mathematically inclined in addition to the mathematically inclined. Once that is done the machinery needs to be turned on philosophy itself – the more abstract the discipline the more useful type theory ought to be to that discipline the thinking goes.
+At the risk of further delaying the inevitable (a dive into the machinery) I need to point out that be they computer/programming languages, formal languages, or natural languages type theory is conveyed using language. What is special about type theory is that it does its best not to invoke any of the machinery it ultimately is meant to ground, and it does so in a measured and controlled fashion. But what of this failure to take into account that a language of some sort is always a given? None of the expositions start off, “Given language: …” Of course, maybe this is so basic that it does not need to be stated. But given that we are investigating quite foundational and fundamental terrain do we not at least need to acknowledge that language has a good deal of built in machinery.
+By way of example. What is the very simplest type (or at least one of the very simplest types)? That would be the type which cannot be instantiated, the type which is inhabited by no token. What type is that? It is called the empty type. The natural language interpretation of the empty type is the concept of nothing. But a moment's reflection causes one to realise that this is the English word for what the Spanish call nada and the French rien and the German nichts and the Latin nihil. Are we to understand that what the type is called is not the type? Let us, in keeping with the traditional notation, call the concept Nothing with a capital N to distinguish it from the English word nothing. The jargon for the empty type is the Bottom type and the symbolic notation is ⊥, pronounced “up tack”.
+I believe this to be the first way in which type theory differs from logic. Expositions in logic give primacy to the logical operations, type theory asks us to think deeply about how these types of things get constructed in the first place. A construction for the type must be given. The rule via which the type comes into being must be produced. Additional rules show how the instances of the type are introduced and eliminated.
+
+\begin{quotation}
+“But one might still wonder: are any words at all that obey the condition on divisiveness? Or put another way, are there really any words that are atomless—whose referent has no smallest parts Doesn’t water, for example, have smallest parts: H2O molecules perhaps? A standard defense of the divisiveness condition in the face of these facts is to distinguish between “empirical facts” and “facts of language”. It is an empirical fact that water has smallest parts, it is said, but English does not recognize this in its semantics: the word water presupposes infinite divisibility.”
+\begin{flushright}
+\citep[p. 129]{pelletier_kinds_2009}
+\end{flushright}
+\end{quotation}
+
+\part*{Fuseki}
+
+\chapter{Code + Philosophy = ?}
+
+There is this stock rhetorical move that I too have been guilty of relying on in the past. It goes something like this: "Witness," it is said, "the stupendous impact of \textit{information \& communications technology} (ICT) on society -- therefore it is significant, ergo it ought to be investigated, my interests lie in subject area \textit{X}, therefore I am going to tackle the impact of ICT on \textit{X}"
+
+Not this time.
+
+Whole books have been written about what is called the \textit{information revolution} and its actual and potential social consequences. Contemporary philosophers treat   \textit{artificial intelligence} (AI) very seriously: the breakout work \work{Superintelligence} \citep{bostrom_superintelligence:_2016} by Nick Bostrom being a prime example. We are said to be on the cusp of a revolution as Luciano Floridi makes explicit in \work{The Fourth Revolution}\citep{floridi_fourth_2016}. See also: \emph{paradigm shift}, \emph{informational turn}, \emph{computational turn}.
+
+These claims mount up. 1) Are all these claims warranted? Is this moment unique? 2) Does it necessarily follow that the moment deserves philosophical treatment?
+
+What backs up these claims is Moore's Law. Ray Kurzweil has been tracking what he calls the Law of Exponential Return. He provides much evidence in his book Singularity\citep{kurzweil_singularity_2005} which is now a decade out of date but no less relevant for it -- trends have been borne out.
+
+Coupled with the unceasing rate of digital technological progress (even in the face of natural physical limits) is the widespread deployment and application of these technologies. Globe-spanning fiber optic cables(). Satellite networks(). Ubiquitous computing power(). Mind-boggling storage numbers(). Our media have gone digital, our archives are rapidly following. Our social lives have become digitally mediated.
+
+All told it is difficult to understate the degree and rapidity of the changes.
+
+But still, why should philosophy care? 
+
+These changes have not gone unnoticed in the sciences and humanities.
+
+\subsubsection{philosophy, meet the digital humanties}
+
+Philosophers, take note, there is a small but growing cadre of scholars populating the academic landscape. They call themselves ‘digital humanists’. Now, the term \emph{digital humanities} is itself a piece of academic branding or vulgar marketing, it was unveiled before academia in 2003, and has been gaining currency year on year. A part of the collection of activities that is being branded by the digital humanities has a much longer history. Humanists have been using computational methods in one form or another for nigh on seven decades now.
+
+Every reflective piece about the digital humanities declares that Busa and co. planted the seed. For example \citep{jockers_macroanalysis:_2013} or \citep{berry_computational_2011} The plant is now reaching maturity.
+
+\begin{quotation}
+It is widely accepted that the application of computational methods to the humanities can be traced back to at least 1949, when Roberto Busa envisaged an \emph{index variorum} of some 11 million words of medieval Latin in the works of Thomas Aquinas and related authors.
+\begin{flushright}
+\cite{nyhan_oral_2015}
+\end{flushright}
+\end{quotation}
+
+Such methods (or dare it be said \emph{methodologies}), the intersection of the humanities with computational methods is called \emph{humanities computing}. There is a parallel construction which gives this term legitimacy, the intersection of science with computational methods is called \emph{scientific computing}. I propose that in a likewise construction the intersection of philosophy with computational methods be called \emph{philosophic computing}.
+
+There was never the need within the sciences for such a branding and marketing push because the sciences are seen as entirely compatible with computational or automated numerical methods. This is why when digital technology and the sciences merged they did so without fanfare and the result is just called science, not digital science. 
+
+There is no up to date quantitative study about the exact size of the sea-change within the humanities but there are some statistics from December 2011\cite{terras_infographic_2011} which give an indication on the magnitude of the shift underway. The statistics from the world at large are even more compelling\citep{hilbert_worlds_2011}.
+
+\subsubsection{tripartite division}
+
+Most, if not all, digital humanists understand how epoch-making are the changes that are underway: (1) Not a single existing discipline within the humanities, regardless how ancient and storied its lineage, has been left unmarked from its encounter with digital technology; In addition to the modification of existing disciplines (2) new disciplines have sprouted in this novel digital soil; (3) Finally, more radically the traditional tools and methods of the humanist are augmented with computational methods. It is true that there are those more traditional scholars who see no reason to modify the research tools and practices of their discipline in the face of this digital transformation, but the change is inexorable and inevitable even if it is to take a couple of generations.
+
+How and in what way information and communication technologies (ICT) are reshaping the humanities ought to be highly instructive to philosophers. It is unthinkable that philosophy as an activity or discipline will be left unaltered for too much longer. In a way the inexorability and inevibility of this change ought to be one of the concluding/conclusive prongs of the thesis of this dissertation rather than presented axiomatically as I have done here.
+
+Petrarch following his stroll up Mount Ventoux\citep{petrarca_petrarchs_2006} is called the \emph{father of humanism}. The humanities is the inheritor of academic humanism. As such the humanities in its modern sense can be traced back to ideas which coalesced in the 14\textsuperscript{th} century at a time which we now call \emph{The Renaissance}. The Renaissance was itself a branding exercise along with the terms \emph{The Dark}/\emph{Middle Ages} which Petrarch so labeled. It would be too much of a digression here to dig into the formulation and formation of secular and academic humanism even though in many ways it is important for philosophy's place within academia that this archaeological\cite{heidegger_letter_2010} work is continued.
+
+Though extremely simplistic the tripartite division above can be used as a template to guide the eye: (1) Take the following assertion by Aaron Sloman in \work{The Computer Revolution in Philosophy}\cite{sloman_computer_1978} one of the earlier texts I could find which discusses the impact of computers on philosophy:
+\begin{quotation}
+I am prepared to go so far as to say that within a few years, if there remain any philosophers who are not familiar with some of the main developments in artificial intelligence, it will be fair to accuse them of professional incompetence, and that to teach courses in philosophy of mind, epistemology, aesthetics, philosophy of science, philosophy of language, ethics, metaphysics, and other main areas of philosophy, without discussing the relevant aspects of artificial intelligence will be as irresponsible as giving a degree course in physics which includes no quantum theory.
+\begin{flushright}
+\citep[See][XX]{sloman_computer_1978}
+\end{flushright}
+\end{quotation};
+(2) It is not unusual for new disciplines to become part of the philosophical landscape, such is the nature of philosophy after all -- this act of creation rings truer now that at any other time in modernity, witness new disciplines such as the philosophy of computation and the philosophy of information among others;
+(3) Finally, more radically the traditional tools and methods of philosophy are augmented with computational methods. It is this reamrkable and potent alteration of the world's oldest disciplined intellectual activity in the face of contemporary digital technology that is the focus of this work.
+
+\subsubsection{discipline!}
+
+The more fundamental the technological innovation the greater the impact on society, simultaneously the greater the impact on academic disciplines. A discipline is parameterized by both subject matter and tools \& methods. Philosophy, art, science, and the humanities, each of which is a \emph{great domain}, are not disciplines as such, they are discipline clusters. (We can see this because of the terms: the arts, the sciences, the humanities. You'll notice that we do not or cannot say, the philosophies -- it would be tempting to claim that this is the exception which proves the rule -- but note the branches of philosophy: philosophy of art, philosophy of science, and so on. By extension there ought to be a branch of philosophy called philosophy of the humanities. (And it is more than a little curious that there is not.)) They are aggregations of sub-disciplines or branches. Any significant technological advance has the potential to affect either subject matter or tools \& methods, and if fundamental enough, both.
+
+I take the idea of a great domain from Paul S. Rosenbloom's essay \work{Towards a Conceptual Framework for the Digital Humanities} which explores what a \emph{great scientific domain} is and begins with:
+\begin{quotation}
+the realization that computing forms the fourth such domain, with the physical, life, and social sciences comprising the other three domains
+\begin{flushright}
+\citep{rosenbloom_towards_2012}
+\end{flushright}
+\end{quotation}
+For our purposes it is not important if Rosenbloom's conception/definition of a great scientific domain is correct. It is less important still if the four large divisions he maps out are correct. What is germane is the notion of a domain. Some people call the digital humanities a discipline, clearly it is not, it is at least a sub-domain, if not a domain proper.
+
+\subsubsection{interrogative considerations}
+
+To live in any kind of meaningful way at all is to interrogate the world moment to moment. You could say that to interrogate is a mode of being. This ‘?’ is what we moderns call a question point or question mark -- the less moderns called it an \emph{eroteme}:
+\begin{quotation}
+Zeno, then, is hardly to be regarded as any further a logician than as to what respects his \emph{erotetic}\footnote{Emphasis mine} method of disputation; a course of argument constructed on this principle being properly an hypothetical Sorites, which may easily be reduced into a series of syllogisms.
+\begin{flushright}
+\citep{whately_elements_1845}
+\end{flushright}
+\end{quotation}
+This is now what is called the Socratic method. Whately claims that Zeno of Elea is seen by most familiar with such matters as the “earliest systematic writer on the subject of Logic, or as it was then called, Dialectics“. I'm not going to untangle the relation of questioning and types of questioning to philosophy proper, my point is that investigations begin with questions -- every thesis hinges on being able to ask what or how or why. Some go as far as to say that it is not language per se which separates humans from the rest of the animal kingdom but the ability to formulate questions linguistically. As hypotheses go, it is a compelling one.
+
+The distinction between subject matter and tools \& methods is one of ‘what’ versus ‘how’. ‘What’ corresponds to the first two parts of the tripartite division above. ‘How’ to the third. This is the same as saying that any significant change in the world is going to call into question the manner in which we call things into question \emph{in the first place}. This in somewhat concrete terms is what is meant by a foundational or fundamnetal re-evaluation.
+
+All questions reduce to what questions. Notice that how is ‘in what way‘, why is ‘for what reason’, when is ‘at what time’, where is ‘at what place’. Notice that they all share the form: preposition + what + noun.
+
+\subsubsection{perfect is the enemy of the good}
+
+	Bleargh!
+	
+\chapter{Faultlines}
+
+\renewcommand\thepart{\Alph{part}}
+\part{Epistêmê}
+
+%% Start of Content Proper
+%%
+%%
+%%
+%%
+\newpage{}
+
+% revert to arabic numerals
+\pagenumbering{arabic}
+
+\chapter{Disassembly, \emph{or} Reverse Engineering Reality (what philosophers call \emph{analysis})}
+
+\section{a distinction that makes a difference}
+
+	The discipline of cybernetics has been the midwife to a number of remarkable texts whose full significance have yet to be felt. Many thinkers are familiar with Norbert Wiener's foundational texts, \work{Control and Communication in Animal and Machine} and The \work{Human use of Human Beings}. Lesser known are Gotthard Günther's strange cumbersome essays on logic such as \work{Cybernetic Ontology and Transjunctional Operations}, and, say, the thought-provoking and unorthodox \work{Laws of Form} by George Spencer-Brown. The seminal \work{Autopoiesis and Cognition: the Realization of the Living} by Humberto Maturana and Fransisco Varela has gained a quiet notoriety and the many works on social systems theory by Niklass Luhmann have amassed a radical band of fervent devotees.
+	
+	The \work{Laws of Form} is a mathematical text which starts out by asking us to imagine an (uninterrupted and undifferentiated) space severed or cloven by some kind of mark so that a distinction is made. (We could imagine some closed curve creating the distinction between inner and outer). What I find remarkable is that no philosophical text that I know of has thought to emphasise this foundational process. We make distinctions. That which cannot be distinguished cannot be sensed apart from its background, and if it cannot be sensed apart it cannot be known. For each distinction that can be made there must be a corresponding place-holder for the distinction in the quasi-mind of the beholder.
+	
+	There is an echo of Turing's machine here. It's (linear) tape is made of a sequence of cells upon which symbols can be drawn. Ignoring arity and encoding it can be seen that there cannot be an infinite amount of symbols which can be drawn upon a cell because the mechanism which reads and writes a symbol would be limited by the precision of its reading or writing mechanism. Eventually symbols to close to each other in form would become indistinguishable and for all intents and purposes become the same symbol.
+	
+	The \work{Laws of Form} is a cybernetic text because the mark may be thought of as marking the boundary between system and environment. When making useful distinctions an organism or machine must when presented with an external state of affairs come recognise these states of affairs as being the same distinctions that were made before. There must be a uniformity in sense-making (sensing, apprehending, distinguishing, pattern-matching, and so on). Relative states of affairs must be reflected uniformly in relative internal inscriptions.
+	
+	In order to coordinate and cooperate information processing organisms and machines (what Floridi calls inforgs) must be able to reliably communicate and negotiate shared vocabularies and schemas and so on. Hence, language. Any organism that communicates uses language as such. The finer the distinctions the more refined the language.
+	Let us call these inscriptions signs. Let us call the structural relations of these signs their logical arrangement. Let us call the formal
+
+\section{etymological considerations}
+
+symbol:
+
+logic:
+
+category:
+
+type:
+
+structure:
+
+order:
+
+sign:
+
+word:
+
+relation:
+
+form:
+
+encode:
+
+\section{Signs}
+
+\subsection{The semiotics\texorpdfstring{\footnote{Peirce insisted on semeiotic}}{} of Peirce and the semiology of De Saussure, why do they differ?}
+
+	Semiotics, the study of signs is divided by the Atlantic. In the so-called New World there is Charles Sanders Peirce and his triadic formulation – in Europe the dyadic formulation of Ferdinand de Saussure. Why do they differ when, surely, there subject matter does not? A sign for Peirce is confusingly divided into sign (or representamen), object (or semiotic object), and interpretant. For de Saussure into signifier and signified.
+	
+	Let us call the Peirce's sign qua representamen the sign-vehicle. This corresponds to De Saussure's signifier. It is the label or handle or unique identifier used to call and recall the sign. Note that the signifier is only arbitrary in its simple, primordial and concrete designation and even then linguists tell us that certain sounds are used non-arbitrarily across domains. The more complex, evolved and abstract or metaphoric the less arbitrary the sign-vehicle is. Peirce's object corresponds de Saussure's signified. This is the form the description of the thing-in-itself takes, the representation.
+	
+	De Saussure has nothing that corresponds to Peirce's interpretant. Peirce calls this the quasi-mind in which sign-vehicle and object are brought together in understanding. De Saussure presents a static picture of knowledge representation, Peirce a dynamic one. Peirce's picture allows for reckoning, computing, calculating, inferring, deducing, and so on. I am more or less wholly unconcerned in this work with this part of the picture. In the best work to date that I have read on the subject matter Sowa calls this picture knowledge representation. I have to disagree, to follow Peirce one would have to call this knowledge representation and reckoning. I am unconcerned with the reckoning part, what concerns me is how concepts and their relationships are represented prior to reckoning. To put it another way, I am more or less unconcerned at this juncture with intelligence or cognition taken as the ability to reason (artificial or otherwise) and more concerned with knowledge or recognition. (There is the caveat at this point that I am unsure to what degree and to what extent these two positions are separable.)
+	
+	You might think then that I would ascribe to a dyadic conception of sign-making, that is to say, the de Saussurean model. This is not the case. I see Peirce's quasi-mind as a prefiguring of Deleuze and Guattari's conceptual persona. It is the context in which systems of knowledge are grounded – think how it is necessary to distinguish between “it is said (or known, or judged, or believed)” versus “I say (or know, or judge, or believe). If you are uncomfortable with the talk of personas and minds then feel free to substitute in the phrase knowledge-context, or simply context. Usefully, this is in accord with type theory as will be seen further on.
+
+\subsection{What is there? Things: nothing, something, everything}
+
+What is the most general way of referring to stuff? None of the technical
+terms used by philosopher's captures the manifold as it presents itself
+to us in distinct pieces. Not object, not entity, not process, not
+monad, not substance, not any of these. I would argue that our everyday
+language already provides us with the machinery. Hence, something,
+nothing, anything, everything, thing-in-itself, thing, and so on.
+But, note that thing properly speaking does not refer to any actual
+thing because when you point at something and say ``that thing there''
+for the reaon that the name of it escapes you what you are doing is
+using the most generic term possible.
+
+Oddly it feels strange (or even wrong) to call a person a thing because
+of the prohibition in regarding things that regard themselves as subjects
+or selves as instruments.
+
+Any metaphysics that reduces what is out there in its multiplicity
+to one sort of thing is involved in ontological monism. Hence: Leibniz's
+monadology -- everything is (at base) a monad; Object-Oriented-Ontology
+-- everything is (at base) an object; Heraclitean flux -- the doctrine
+that all is in flux; atomism -- everything is made of atoms; physicalism
+-- all is physical; process philosophy -- all is process. 
+
+% TeX won't break on - so must use \- to make line-breaking work
+% don't forget to add back in the -
+% hyperref complains so …
+% http://tex.stackexchange.com/questions/10555/hyperref-warning-token-not-allowed-in-a-pdf-string
+\subsection{Entities, attributes, relations. \texorpdfstring{thing\--in\--itself}{thing-in-itself}, \texorpdfstring{of\--a\--thing}{of-a-thing}, \texorpdfstring{predicated\--on\--things}{predicated-on-things}}
+
+\lipsum[80]
+
+\section{Logics}
+
+\subsection{The reign of classical logic and why it has come to pass}
+
+\lipsum[81]
+
+\subsection{What logic when?}
+
+\lipsum[82]
+
+\subsection{Making judgements but also deferring them}
+
+\lipsum[83]
+
+\part*{Chuban}
+\include{unique}
+
+\chapter{An Alternative Story Arc}
+
+\section{down another rabbit hole}
+
+\subsection{insert subsection title here}
+
+\begin{quotation}[]
+% need redundant []
+[…] I far from claim to have fully grasped the philosophical ideas inherent in constructive type theory. To the contrary, it is my conviction that the present work has barely laid the foundation for such an endeavor. It appears that the most important philosophical sources for a better understanding as well as for a future inspiration of constructive type theory, are phenomenology, above all Husserl, and analytical philosophy, above all Frege. Each of them, that is, constructive type theory and Husserl (including phenomenology), and constructive type theory and Frege (including analytical philosophy) deserve an in-depth study in their own right. At the beginning of version (8), Martin-Löf declares that his main concern is to construct a bridge between analytical philosophy and phenomenology within the philosophy of mathematics. Other important philosophical figures to be further scrutinized within the context of constructive type theory are Bolzano, Brentano, Brouwer and Kant. (One may be tempted to further add Aristotle, Quine, Russell, Wittgenstein, etc. etc. but one will end up quoting the index of names of a pocket history of philosophy!)\\
+\begin{flushright}
+\citep[p. 347]{sommaruga_history_2000-1}
+\end{flushright}
+\end{quotation}
+
+This long quotation is taken from the concluding section of Giovanni Sommaruga's recent enough work \work{History and Philosophy of Constructive Type Theory}. By his own admission he has performed the first part of the title of the work but not the second. “barely laid the foundation”, as he himself so disarmingly states. This is not to be taken as an indictment of his work, rather it is a testament to the difficulty of the task.
+
+Even as I try to give a philosophical account I find myself recounting history.
+
+But first, as always, some context.
+
+Why ought the working philosopher concern himself with the history and philosophy and tools of (constructive) type theory? For the same reason the working philosopher acquaints himself with history and philosophy and tools of formal logic. Let me answer that by showing why it should concern the reader of this present work – ostensibly a work on how computational methods can enhance the task of the philosopher by enhancing the activity of philosophy.
+
+There are philosophical accounts of the theory of types, but they are brief. And then there are non-philosophical accounts that leave a certain kind of inquiring mind starved of sustenance.
+Previous attempts:
+Reference works - \citep{coquand_type_2015}, …
+Conference proceedings - \citep{martin-lof_hilbert-brouwer_2008}, …
+Journal articles ?
+Essays ?
+Books - \citep{harper_practical_2016}, \citep{pierce_types_2002}, …
+-as-it-relates-to-logic
+-as-it-relates-to-computer-science
+And there is a what is called an isomorphism, the so-called Curry-Howard isomorphism \citep{sorensen_lectures_2007}, that is quite remarkable, that many (who?) have made use of and many (fucking who?) have outlined but again no decent philosophical account.
+
+A valid question in all this is: is it ultimately permissible to connect a theory from the domain of mathematical logic to the theory of signs. My working hypothesis is that it is. There is at least one author who agrees with me albeit he does not use the same language that I do and when he speaks of types he speaks of a certain kind of natural cognitive types rather than the synthetic types of type theory. More on this later. 
+
+In order to go forward we must go back.
+
+\subsection{apeiron}
+
+Infinity is the problem. Infinity has always to some extent been the problem. The ancient Greeks called it apeiron\footnote{ἄπειρον} which is a complex word composed of the prefix a which means “not”, in that it negates the next word, and the word peras meaning “end” or “limit”,  bounded in some way. In a way the problem is one of negation. If I know what red is then I ought to know when something is not coloured red. Not red includes all those colours which aren't red. Let us all the colours a class. In order to be able to negate the finite I need to be able to pick out all those things which belong to the same class of things as the finite. We suppose that there are only two members in this class, those things that are finite, and those that are infinite. What is this class that includes both things that have quantity and lack quantity? Is there even such a class? Perhaps because quantity is such a primitive category of being it may lack an inverse. Is it a logical law that all categories must have an inverse? Similar lines of reasoning could be made for things that are substantial and insubstantial, the theory that there are in fact things that exist that have no substance is called substance-dualism. Let us call the theory that there are actually existing infinite things quantity-dualism. Let us call the belief that any of the primitive categories may be inverted unrestricted-dualism.
+
+It is not my intention to wade into these debates. Maybe quantity is its own reciprocal, as is substance – logically speaking. Maybe – logically speaking – whatever way notions like quantity and substance are architected operatively taking their reciprocal yields those notions themselves. And maybe not.
+	Ancient Greek mythos equated primal chaos from whence order came into being with apeiron. They were sensitive to the logical complexities of the infinite. There is a distinction to be made here between potential infinity and actual infinity. Potential infinity makes use of time and process to set up a potentially non-terminating procedure, like presumably existence itself by which I mean the fact that from moment to moment existence seems invariably to continue to be.
+	Many of our famous logical paradoxes come from this era – some are paradoxical in virtue of the nature of unending processes. These are conceptual paradoxes. I shan't name them, we all know them. Interestingly infinity encroaches on mathematical territory, the territory of the exact. The Greeks used ratios to express quantities, hence $a/b$. It was known that the length of the diagonal of the unit square must be $√2$ which was known not be any ratio $a$ over $b$\footnote{The proof of this both simple and delightful.}. Numbers which can be expressed in terms of ratios are called rational numbers, the rest, which includes things like $√2$ are said to be irrational. A strange quirk of language this? It is almost as if we have deemed numbers which cannot be easily treated as simple ratios to be unreasonable in some way.
+	Some context. Bertrand Russell created the first theory of types. Ultimately I hope to show here why type theory's domain is the entirety of philosophical thought but its seeds were planted in mathematics so it is there we must start. With infinite sets to be precise.
+	
+It is important to recognise that the set theory we learn as children is finite set theory. A finite set is an intuitive notion. It is a container, like a bag say. Items (elements) can be placed into the bag. The bag and its items lead independent existences though. We learn about functions from set theory by being asked to imagine two sets, one as the source of our elements, one as the sink – mathematicians call these the range and the domain. Finite sets are intuitive and have a definite utility as the simplest notion of what it means to have an unordered grouping of objects. Sets can contain other sets. The set with no elements whatsoever, of which there is only one is called the null set for obvious reasons. Two notions that we will not be familiar with as children are inten\underline{s}ional\footnote{Note the s. My spell-checker does not even recognise this word so I can tell this territory is lesser charted!} and extensional. An intensional definition of a set would be to describe some property or properties that all the elements share (and only those elements) and an extensional definition would be to enumerate the elements one-by-one which coincides with our everyday notion of taking items one-by-one and placing them into a bag. (An interesting aside I think is this, in contrast with both intensional and extensional definitions which both provide the full complement of elements in a set, an ostensive definition works by providing examples and then asking the interlocutor to infer the common property or properties and thus the intensional definition.)
+The story has been told many times how Russell cautioned Frege that the infinite sets of his Begriffschrift led to a logical paradox. Apparently Zermelo also discovered this at around the same time as so often happens.
+The story's journey usually starts with the Frege/Russell interaction, skirts by the humongous edifice that is Pricipia Mathematica by Russell and Whitehead, takes a few snapshots of “Hilbert's program”, ducks down a couple of side-alleys, tries not to take too many detours with the final destination being Gödel and his, not one, but two incompleteness theorems.
+
+As niche as this story sounds it has been told many times, in one form or another. A recent retelling that I enjoyed is \citep{doxiadis_logicomix_2009} in comic book format. Subtitled, “an epic search for truth” it begins with the Russell/Frege interaction and naturally ends with Gödel. Another is (Wallace, 2003) in pop technical format. It begins with the calculus of Leibniz and Newton and ends naturally enough with Cantor but is on record as having said that if he were allowed another 300 pages he would have finished at the story's natural conclusion of Gödel.
+
+The things is Frege and Gödel are interesting characters. Frege died embittered, was an anti-semite, was housed in a mental institution. Gödel was a had paranoid delusions and thought that “they” were out to poison him and starved himself to death. Russell's uncle “went mad” and Russell was apparently afraid of “going mad”. (Doxiadis \& Papadimitiou make hay with the connections between reason and madness, the search for logical certainty and mental illness. Foster Wallace acknowledges the trope whilst simultaneously dismissing it.)
+
+Really it stems from the development of infinite set theory, so Cantor and his transfinites, the diagonalisation argument. Kronecker, Weyl, Hilbert's, Brouwer, Wittgenstein, and so on to Gödel. Again, because controversy is interesting, this battle between the platonists and formalists has also been told and retold.
+In answering Hilbert's second question it seems as if Gödel brought matters to a … and inconclusive end if I may use that rhetorical and somewhat contradictory flourish.
+
+What have we here? First, an attempt to ground mathematics in (infinite) set theory; second, an attempt to ground it in logic. Hence, foundations. And responses like Quine's “New Foundations”. Never an attempt to ask what does it actually mean to ground something (in something else). Surely if one reduces mathematics to logic, one must then ground logic? Or can set theory or logic (or whatever) be its own ground or not need a ground or can it just be the ground or grounding like a floor is by its very nature and then what is it about logic that allows this if this is so? At least no attempt that I am aware of, I am sure I will be corrected on this, in point of fact I would be delighted.
+The interpretation of the consequences of Gödel's theorems is that the foundational project is scuppered.
+In the mean time mathematicians still desire that infinite set theory be “well-behaved” and made rigorous so a program of axiomatisation produced a number of competing sets of axioms it is hoped in the manner of Euclid's for plane geometry. Zermelo gets a look in here again with Fraenkel. A key axiom and variants on it is called the Axiom of Choice. So this set of axioms for want of a better word is called ZFC. As I say, there are others.
+So, job done, we have some troubling and upsetting limits, we have a patched infinite set theory that allows us to play in the paradise Cantor has built\citep{cantor_uber_1874} for us and mathematicians can get back to doing actual mathematics with daunting sounding area names like topology and real analysis and what have you.
+What is not mentioned as much is Frege's attempt to rescue this small but vital part of his work, which was a failure4, and Russell's attempt which is called the doctrine of types\citep{russell_appendix_1903}.
+
+Let us follow the thread of the story from there beginning in Russell's own words,
+\begin{quotation}
+The doctrine of types is here put forward tentatively, as affording a possible solution of the contradiction; but it requires, in all probability, to be transformed into some subtler shape before it can answer all difficulties. In case, however, it should be found to be a first step towards the truth, I shall endeavour in this Appendix to set forth its main outlines, as well as some problems which it fails to solve.
+\end{quotation}
+
+He goes on to say,
+\begin{quotation}
+Every propositional function $\phi(x)$--so it is contended--has, in addition to its range of truth, a range of significance, i.e. a range in which x must lie if $\phi(x)$ is to be a proposition at all, whether true or false. This is the first point in the theory of types; the second point is that ranges of significance form types, i.e. if $x$ belongs to the range of significance of $\phi(x)$, then there is a class of objects, the type of $x$, all of which must also belong to the range of significance of $\phi(x)$, however $\phi$ may be varied; and the range of significance is always either a single type or a sum of several whole types.
+\end{quotation}
+
+So, these types are like sets but they can only be defined by intensional means. This property which binds them Russell calls a range of significance. Propositional functions are truth-bearing, this was Frege's innovation. Russell's is that the arguments to the functions must be types rather than sets. It is not a big leap to note that false and true both belong to the two-valued (bivalent) Boolean type and from there to observe that we can think of functions as mapping types to types rather than sets to sets (as before) and that propositional functions (called predicates, hence predicate calculus, map types to one particular type, Booleans. You can think of simple predicates like this: $is\_prop(x)?$ for instance, $is\_green?$ then is an object is passed to $is\_green?$ and if it is green then we get the value true, otherwise, false.
+	But this leaves us with the question. What is a type? Nowadays mathematicians call the elements of a type terms and computer scientists call them tokens. We use the notation small t and big T and the operator :. t:T t is a term of type T. So false:Boolean, red:Colour. How do we, in essence construct types? What are the rules which govern their range of significance? It is the answering of this question and the refinements in the answering of this question that is the thread of this story. It is one of the assertions of this work that only a particular avenue has historically been explored and it is one of the exhortations of this work that in order to bring the theory of types to a wider audience other formulations ought to be sought.
+	Let us give an intuitive ostensive definition first. Types are not like bags. It is true that one can construct a Set type which works like our extensional version of the set, but that is as close as we come to that. One does not place items into a type one by one because. T types and terms are given together. Once we have a rule for constructing a type we have both the type and all its terms simultaneously. Terms can also be called values, rarely are they called elements. Types can be composed of other types and you can think of this more or less in the same way that sets can contain other sets. A key difference is that types cannot contain themselves which circumvents Russell's set-theoretic paradox. However now we get a hierarchy of types and types at different levels do not seem to easily interact with types of other levels, unlike sets. This was Quine's (but not only Quine's) objection to type theory.
+We can have super-types and sub-types in the same way that we can have super-sets and sub-sets.
+The type with no value at all is called bottom, the type which includes all values is called top. Something to note here is that certain computer languages have very strong type-theoretical architectures. Of those that do a number of them call the bottom type Nothing. This makes sense. If a type is something which delimits a range of values (significance) then the type which is inhabited by no value denotes no-thing. Similarly we can think of top as Anything Everything though I know of know computer language that does this, Scala does call its top type Any.
+
+Russell 1903
+predicative/impredicative
+
+infinity allows self-reference and thus an unbounded circulating
+Ramsey
+Church
+Martin-Löf / Girard
+so-called ramified hierarchy
+first-order, second-order, …
+Russell 1959
+reducibility axiom – Weyl's response (1946):  this “is a bold, an almost fantastic axiom; there is little justification for it in the real world in which we live, and none at all in the evidence on which our mind bases its constructions”
+“Without it, all basic mathematical notions, like real or natural numbers are stratified into different orders. Also, despite the apparent circularity of impredicative definitions, the axiom of reducibility does not seem to lead to inconsistencies.”(Coquand, 2015, sec. 3)
+It is this stratification that Quine (rightly) opposed but he thought that the solution must be a better set theory. Wrong.
+Only recently have we the univalence axiom/principle?/theorem of HoTT that helps compress the layers while maintaining distinctions when necessary.
+We close with a quote from Per Martin-Löf,
+“So this is the picture that has emerged as the result of persistent work by the German proof-theoretic school during a period of more than seventy years. The original aim was to obtain a constructive consistency proof for classical analysis, which early on came to be identified with full second-order arithmetic, but we have now so much information that we know that this is out of our reach, and why? Well, if this is to be a constructive consistency proof, it will have to use constructively acceptable principles, and we know by now what are the strongest constructively acceptable principles that are available to us at the moment. It is of course never fixed at any absolutely precise level: as soon as you fix it, you can go beyond it by some kind of reflection principle, but basically we have at present exhausted the principles for which we can claim evidence, and this is a completely new situation. If you go back to the late sixties, for instance, when Takeuti did his fundamental work, it was still wide open how far you could go in this kind of proof theory. So we know by now that we cannot pass this abyss unless we are able to think up some brand-new strong constructive principles, and there is no sign whatsoever of that at the moment.”
+logical constants = {sentential operators / logical connectives , first-order quantifiers}
+\begin{quotation}
+Any justification for adopting one logic rather than another logic for mathematics must turn on questions of meaning.
+\begin{flushright}
+\citep[p. 215]{dummett_philosophical_1973}
+\end{flushright}
+\end{quotation}
+
+of evidence.
+
+type-token distinction
+Around the same time that Russell introduced the theory of types in 1903 Peirce introduced the type/token/tone distinction in an article title Prolegomena To An Apology For Pragmaticism\citep{peirce_prolegomena_1906} in 1906 in yet another one of those uncanny coincidences in the history of ideas.
+In the article Peirce gives a brief run-down of his theory of signs and also a diagrammatic method for understanding his system of logic. This pictorial representation he calls Existential Graphs. Again, this is something covered and elaborated on by Sowa. (Sowa's versions are called conceptual graphs). Sowa provides a fine tutorial\citep{sowa_peirces_2015} of existential graphs (to be consistent I will not be capitalizing the term)
+In presenting what an existential graph is Peirce introduces the type/token distinction. This distinction is already familiar to philosophers. What may be not quite so well known is that Peirce made the distinction to better convey what an existential graph is. He distinguishes between individual instances of existential graphs drawn upon a page and the notion of the existential graph. This is curious. For Peirce a token is an instance of a type. He uses the example of the word “the”. 
+Of the ten divisions of signs which have seemed to me to call for my special study, six turn on the characters of an Interpretant and three on the characters of the Object. Thus the division into Icons, Indices, and Symbols depends upon the different possible relations of a Sign to its Dynamical Object. Only one division is concerned with the nf the Sign itself, and this I now proceed to state.
+
+\begin{tabular}{|c|c|c|c|}
+\hline 
+INTERPRETANT & OBJECT & SIGN-VEHICLE    & EXAMPLES \\ 
+\hline 
+Rheme        & Icon   & Qualisign       & “A feeling of red” \\ 
+\hline 
+Rheme        & Icon   & Sinsign         & “An Individual Diagram” \\ 
+\hline 
+Rheme        & Index  & Sinsign         & “A spontaneous cry” \\ 
+\hline 
+Dicent       & Index  & Sinsign         & “A Weather Cock” \\ 
+\hline 
+Rheme        & Icon   & Legisign [Type] & “A diagram” \\ 
+\hline 
+Rheme        & Index  & Legisign        & “A demonstrative pronoun” \\ 
+\hline 
+Dicent       & Index  & Legisign        & “A street cry” \\ 
+\hline 
+Rheme        & Symbol & Legisign        & “A common noun” \\ 
+\hline 
+Dicent       & Symbol & Legisign        & “Ordinary proposition” \\ 
+\hline 
+Delome       & Symbol & Legisign        & “An argument” \\ 
+\hline 
+\end{tabular}
+\begin{flushright}
+\citep[pp. 254—263]{Peirce_CP_vol_II_1932}
+\end{flushright}
+
+A diagram allows us to visualize the schema more easily. The six that turn on the character(s) of the interpretant are rhemes, a term that has never caught on I believe. The three that turn on the character(s) of the object are dicents. The last then is the delome.
+
+\begin{quotation}
+A common mode of estimating the amount of matter in a MS. or printed book is to count the number of words.*[Dr. Edward Eggleston originated the method.] There will ordinarily be about twenty thes on a page, and of course they count as twenty words. In another sense of the word “word,” however, there is but one word “the” in the English language; and it is impossible that this word should lie visibly on a page or be heard in any voice, for the reason that it is not a Single thing or Single event. It does not exist; it only determines things that do exist. Such a definitely significant Form, I propose to term a Type. A Single event which happens once and whose identity is limited to that one happening or a Single object or thing which is in some single place at any one instant of time, such event or thing being significant only as occurring just when and where it does, such as this or that word on a single line of a single page of a single copy of a book, I will venture to call a Token. An indefinite significant character such as a tone of voice can neither be called a Type nor a Token. I propose to call such a Sign a Tone. In order that a Type may be used, it has to be embodied in a Token which shall be a sign of the Type, and thereby of the object the Type signifies. I propose to call such a Token of a Type an Instance of the Type. Thus, there may be twenty Instances of the Type "the" on a page. The term (Existential) Graph will be taken in the sense of a Type; and the act of embodying it in a Graph-Instance will be termed scribing the Graph (not the Instance), whether the Instance be written, drawn, or incised. A mere blank place is a Graph-Instance, and the Blank per se is a Graph ; but I shall ask you to assume that it has the peculiarity that it cannot be abolished from any Area on which it is scribed, as long as that Area exists.
+\end{quotation}
+
+Phew
+
+Eco's cognitive types\citep{eco_kant_2000}
+
+props-as-types\citep{wadler_propositions_2014}
+
+\subsection{Why naive set theory only gets us so far}
+
+\lipsum[84]
+
+\subsection{Definite descriptions and ramified hierarchies}
+
+\lipsum[85]
+
+\subsection{What's the difference between a type and a category?}
+
+\lipsum[86]
+
+\subsection{How this relates to individuals, particulars and universals}
+
+\lipsum[87]
+
+\subsection{State of the art: intuitionistic type theory}
+
+\lipsum[88]
+
+\chapter{Some Assembly Required \emph{or} Putting it All Together (What philosophers call \emph{synthesis})}
+
+\section{Blueprint}
+
+Now that the pieces of the machine are laid out on the table the time has come to put them back together. In truth, the clichéd flash of insight came first. Upon directing the analytic torch-light of my reckoning inwards upon itself, I essentially asking myself, “when I manipulate philosophical concepts what is it exactly that I am doing?” I observed that I manipulate signs of a certain philosophical nature and that these signs always appeared typed. You may say I intuited the truth of Eco's cognitive types\citep[ch. 3]{eco_kant_2000} all at once and in a moment but with the types of type theory\citep{coquand_type_2015}.
+
+I could not observe an instance of philosophical inquiry within when the type of the philosophical thing under investigation was unimportant, irrelevant or inconsequential. I say that I manipulate signs because at every instance I saw that each concept divided immediately into two, its label (or handle or identifier) and its description (or account). I saw that every concept has properties which also have a label and a description. I saw that relations link concepts and that they too have a label and a description.
+
+A stronger thesis is that all signs should be thought of as typed. This is not my position, or at any rate it is not my immediate concern. I am only concerned with the signs of a philosophical nature, at the risk of tautology what makes philosophy philosophy is that the signs used in the investigations are philosophical signs.
+
+I knew that I would have to perform a grand analyis on the activity of philosophy in light of computation so that when I built it back up I would end up not where I started but at a typed semiotic.
+
+But how to demonstrate this conclusively? To that end I came up with the following:
+
+Logics + (philosophical) Signs: Logical Semiotics
+
+and if,
+
+Types = Logics
+
+then
+
+Logics + (philosophical) Signs: Typed Semiotics
+
+So, is there such a thing as logical semiotics? And can types be thought of as equivalent to logics? The answer is an emphatic “yes” on both accounts.
+
+\section{Types = Logics: The Curry-Howard Correspondence}
+
+\begin{quotation}
+If anything, words stop us seeing.
+\end{quotation}
+
+What mathematicians, logicians, and programmers have come to realise from about the 1930s onwards is that proofs and programs are connected in deep and fundamental ways. This isomorphism I think hasn't been communicated adequately to the wider world meaning that its implications have not been fully appreciated.
+
+A recent paper by Philip Wadler called (usefully enough) \work{Propositions as Types}\citep{wadler_propositions_2014} gives a brilliant overview. There are also more intimidating works such as \work{Lectures on the Curry-Howard isomorphism}\citep{sorensen_lectures_2007}.
+
+\begin{quotation}
+Propositions as Types is a notion with many names and many
+origins. It is closely related to the BHK Interpretation, a view of
+logic developed by the intuitionists Brouwer, Heyting, and Kol-
+mogorov in the 1930s. It is often referred to as the Curry-Howard
+Isomorphism, referring to a correspondence observed by Curry in
+1934 and refined by Howard in 1969 (though not published until
+1980, in a Festschrift dedicated to Curry). Others draw attention
+to significant contributions from de Bruijn’s Automath and Martin-
+Löf’s Type Theory in the 1970s. Many variant names appear in the
+literature, including Formulae as Types, Curry-Howard-de Bruijn
+Correspondence, Brouwer’s Dictum, and others.
+\begin{flushright}
+\citep{wadler_propositions_2014}
+\end{flushright}
+\end{quotation}
+
+The paper by Howard is called \work{The formulae-as-types notion of construction}\citep{howard_formulae-as-types_1980}
+
+\section{Logics + Signs: Logical Semiotics}
+
+Given that logicians and semioticians have had ample time to hold each others work in mutual regard it seems kind of odd that the phrase logical semiotics does not have more currency and traction. There appear to be but a few instances of the use of the phrase. According to a page on the University of Warsaw's website a logician from Poland named Kazimierz Ajdukiewicz coined the phrase. It goes on to explain:
+
+\begin{quotation}
+Logical semiotics (also called ‘logic of language’) is a branch of logic. It deals with, roughly, the place of language in cognition, as seen from the logical perspective. It shares with formal logic the concern with truth and logical form, combined with the distinctively pragmatic concern with efficiency and economy. Due to the nature of the above subject matter the distinctively mathematical concern with structures, contributing to the development of mathematical logic, plays in the logic of language a secondary role. As in logic in general, so in the logic of language special attention is being drawn to certain devices of artificial languages developed in mathematics and logic, mainly the syntactic constructions involving variables and variable binding operators, the main stress being laid on the capacity for representing structure.
+\end{quotation}
+
+This is tough going. The second instance that I know of is from the title and second chapter of a work by a logician from the States named Richard M. Martin. The work is called Logical Semiotics and Mereology – chapter two is densely titled “On logical semiotics and logistic grammar: relations, roles, representations, and rules” – and an excerpt follows:
+
+\begin{quotation}
+Logic itself, including logical semiotics, has taken tremendous steps forward, and the time seems now ripe to show how these steps are of interest for the grammarian. It might be thought that this has already been done, but, alas, it has not. This is not the occasion to attempt to explore why, which will have to be left for future historians and sociologists of knowledge to study the near-scandal involved.
+\end{quotation}
+
+Not so tough going but this excerpt is an exception rather than the rule and while understandable is still quite vague. I will attempt to align these two domains more precisely.
+
+Also \work{Logical Semiotic}\citep{stalnaker_logical_1981} by Robert Stalnaker from 1981.
+
+Peirce never used the phrase logical semiotic and wouldn't have because he thought logic a part of semiotics, the closest is he called logic 'formal semiotic'.
+
+\section{Types + Signs: Typed Semiotics}
+
+The synthesis is nearly complete in the formal sense. First I have shown that there is an isomorphism between logic and type theory. Second I have shown how, though seemingly running side-by-side along parallel lines, that there is an interlocking co-dependence between logic and semiotics. What remains to be done is to explicitly substitute in the less familiar type theory for the more familiar logic by way of the second demonstration to arrive at typed semiotics.
+
+I will show that this is not without precedent, that this move has many implicit echoes.
+
+First, there is the statement in Kant where he says (Critique of Judgement, Introduction, Part IV):
+
+    Judgement in general is the faculty of thinking the particular as contained under the universal. If the universal (the rule, principle, or law) is given, then the judgement which subsumes the particular under it is determinant. This is so even where such a judgement is transcendental and, as such, provides the conditions a priori in conformity with which alone subsumption under that universal can be effected. If, however, only the particular is given and the universal has to be found for it, then the judgement is simply reflective.[9]
+
+Really what is being expressed here is the difference between determining a value (that is a tree) and asserting a value (that is morally wrong). If we treat the particular as a term and the universal as a type then we see for Kant he is saying that any act of judging causes a term to immediately or via a sequence of steps inhabit a type. What concerns us here are determinant judgements. They are all objective though determined by a subject.
+
+Let us consider a number of texts: the first was published in 1931 as an entry point to a voluminous collection though the text itself is based on a talk from a series of lectures going back to 1903; the second is from 1932; the third was published in 1951 in a collection of essays and again in revised form in 1973. The last is subject to ongoing revision and though it dates from 2004 the current version was published recently in 2014.
+
+	The first text is from a lecture series given at the Lowell Institute titled “Some Topics of Logic Bearing on Questions Now Vexed”(CP 1.15-1.26) by Charles Sanders Peirce, they are used to launch his Collected Papers.
+
+	The second is an article by Alonzo Church titled “A Set of Postulates for the Foundation of Logic” and it appeared in the Annals of Mathematics. The third is also by the same author and is an essay with the title “A Formulation of the Logic of Sense and Denotation” appearing in the collection “Structure, Method and Meaning, Essays in Honor of Henry M. Sheffer”
+
+	The last is a collaborative standard of the W3C (World-wide Web Consortium) titled “RDF 1.1 N-Triples: A line-based syntax for an RDF graph”.
+
+	I intend to show that the concepts in these three works are isomorphic, or to put it colloquially, they are three sides of the same coin – what that coin is will become clear after we hold it up for inspection.
+
+	Let us start with the oldest. “Some Topics of Logic Bearing on Questions Now Vexed”. After recounting the intergenerational realism versus nominalism dispute and wholeheartedly coming down on the side of realism (without having actually staked out either position) contra to the vast majority of modern philosophers.
+
+	He eventually comes to state, “The heart of the dispute lies in this. The modern philosophers -- one and all, unless Schelling be an exception -- recognize but one mode of being, the being of an individual thing or fact, the being which consists in the object's crowding out a place for itself in the universe, so to speak, and reacting by brute force of fact, against all other things. I call that existence.” (These are, one and all bar perhaps Schelling, nominalists.) So Peirce is stating that he recognizes more than one mode of being. He follows with, “Aristotle, on the other hand, whose system, like all the greatest systems, was evolutionary, recognized besides an embryonic kind of being, like the being of a tree in its seed, or like the being of a future contingent event, depending on how a man shall decide to act. In a few passages Aristotle seems to have a dim aperçue of a third mode of being in the entelechy.”
+
+	It would seem that Peirce is claiming that realists are in the main ontological dualists and nominalists are ontological monists which fits in with him categorizing that arch-monist Leibniz among the nominalists, indeed calling his version of nominalism an extreme one.
+
+	He is saying that Aristotle recognised both potentiality/possibility and actuality and weakly recognised a third mode. Of himself he says, “My view is that there are three modes of being”. (Note that this there are introduces a circularity within the assertion, something that should give any one of us a moment's pause.) There follows a long explanation of these three modes. A personal letter to Lady Welby dated 1904 is more succinct and more widely known (CP 8.328):
+“I was long ago (1867) led, after only three or four years’ study, to throw all ideas into the three classes of Firstness, of Secondness, and of Thirdness. This sort of notion is as distasteful to me as to anybody; and for years, I endeavored to pooh-pooh and refute it; but it long ago conquered me completely. Disagreeable as it is to attribute such meaning to numbers, and to a triad above all, it is as true as it is disagreeable. The ideas of Firstness, Secondness, and Thirdness are simple enough. Giving to being the broadest possible sense, to include ideas as well as things, and ideas that we fancy we have just as much as ideas we do have, I should define Firstness, Secondness, and Thirdness thus:
+Firstness is the mode of being of that which is such as it is, positively and without reference to anything else.
+Secondness is the mode of being of that which is such as it is, with respect to a second but regardless of any third.
+Thirdness is the mode of being of that which is such as it is, in bringing a second and third into relation to each other.”
+	It should be clear that Firstness is what we would call being-in-itself or thing-in-itself. In linguistic terms if you think about what part of speech the role of nouns play you have a handle on it. Secondness is what we could call of-a-thing and corresponds to properties that inhere in other things that are and cannot exist without existing in something else, linguistically think about adjectives and adverbs. Thirdness speaks to relations, to use our hyphenated notation relates-one-thing-to-another and if you want a handle on this linguistically then think of prepositions and conjunctions and perhaps all the other so-called function words, most specifically verbs which take a direct object. Peirce called these logical terms. So T is a finite set of three elements/terms, T = {1st-ness, 2nd-ness, 3rd-ness}
+I am going to diagrammatically write them out like so:
+1st-ness = [x]
+2nd-ness = [x, T]
+3rd-ness = [x, T, T]
+You can think of T as saying term or thing. Peirce's signs are all examples of Thirdness where x is the sign-vehicle (signifier), and the respective Ts are the object (signified) and interpretant (the De Saussurean tradition has no word for this, let us call it the context)
+	Leaving these observations to one side for the moment. If you have had any acquaintance with what is now called the untyped lambda calculus then already perhaps your nose will be twitching. Alonzo Church in “A Set of Postulates for the Foundation of Logic” devised the lambda calculus as a formal theory of logic to circumvent Russell's paradox. Note, this is something that Russell himself attempted, as did Frege, as did Quine.
+	Among the many insights and happy phrases this paper has to offer there is also the following, “There may, indeed, be other applications of the system than its use as a logic”. I show here a standard and simplified version of Church's theory – it is the standard way of presenting the theory, see Types and Programming Languages by Benjamin C. Pierce for instance. In it, all the objects under consideration are functions, even the variables. What in fact Church created was a term-rewriting system, in it one has to build up things like ordinals and truth values from anonymous functions. None of this would have been possible without Frege having introduced functions into logic.
+	Imagine a function called Double which takes a number and doubles it. The definition would be written so:
+double(x) = x * 2
+Then when doubling 3 (when performing the operation of doubling) we write Double(3) which provides us the answer 6. This is assuming that the machinery for the operation * is fully and explicitly known and that this machinery works for the values that x can take on. You can imagine somewhere written:
+*(x,y) = … (horrendously complicated instructions)
+	The lambda calculus is so called because Church uses the λ symbol to abstract the construction of function anonymously:
+λ(x)[M]
+here M is the body of the function. x is an argument. If we were defining double then we 
+let double = λ(x)[… (aforementioned horrendously complicated instructions)]
+When it comes to performing the operation it is written so in Church's formulation:
+{M}(N)
+We say that M is applied to N. Finally a variable itself may be a term:
+x
+The syntax of the lambda calculus is usually laid out in the following way, T={const,abs,app}
+const = c
+abs = λ arg . T
+app = T T
+The thing to notice here is that abstraction and application are relations, that is to say triads:
+abs = [λ, arg, T]
+app = [μ, T, T]
+One way to differentiate abstraction from application is to give them different Greek symbols. De Bruijn showed that there is an encoding scheme where we can do away with arguments by encoding the binding argument in the variables name. Which leaves us with an alternative way to express the lambda calculus, ending up with:
+const = [c]
+abs = [λ, T]
+app = [μ, T, T]
+It appears then that the lambda calculus is a special case of Peirce's logical terms.
+
+Which is where LISP gets its homoiconicity from.
+
+Peirce's version of type theory is implicit in his schemata for signs. But he would perhaps have only typed his signs (and thus Thirdnesses – sign, object, interpretant) or at least this is what I get from reading his Type/Token/(Tone|Mark) distinction. He does not have a type theory regardless of the use of the term here, he only saw legisigns as typed.
+Not his Firstness and Secondness. Logically speaking, all must participate, I suggest.
+
+\part{Technê}
+
+\chapter{Knowledge Representation Applied to Philosophy Itself}
+
+\section{…}
+
+In this part I will show how to apply the ideas and theories developed in the previous part.
+
+\section{Perfect and imperfect knowledge}
+
+\lipsum[92]
+
+\section{Comprehension as construction}
+
+\lipsum[93]
+
+\section{Knowledge graphs}
+
+
+\subsection{From the plain old web to the semantic web}
+
+\lipsum[94]
+
+\subsection{The open society and knowledge graphs}
+
+\lipsum[95]
+
+\subsection{A virtue theory of dynamic epistemology}
+
+\lipsum[96]
+
+\section{The digital \& philosophy}
+
+
+\subsection{Why the digital and not information?}
+
+\lipsum[97]
+
+\subsection{Towards a philosophy or metaphysics of the digital}
+
+\lipsum[98]
+
+\subsection{Philosophy performed on (about/with) a digital substrate}
+
+\lipsum[99]
+
+(what type of thing is a metaphysical object)
+
+\part*{Yose}
+
+\part*{Appendices}
+\cleardoublepage
+\phantomsection
+\appendix
+\addcontentsline{toc}{part}{Appendices}
+\renewcommand\thechapter{\Roman{chapter}}
+\chapter{Foo}
+\chapter{Bar}
+
+%\part*{Yose}
+%\chapter{The End}
+
+%\makeatletter
+%\def\toclevel@chapter{-1}
+%\makeatother
+%\chapter{Conclusion}
+
+% http://www.math.uiuc.edu/~hildebr/tex/bibliographies.html
+% set by uccthesis
+%\bibliographystyle{apalike}
+% https://tex.stackexchange.com/questions/119805/bibliography-in-texmaker
+
+% relative to tex doc location
+\bibliography{bibliography/phd_dissertation}
+\addcontentsline{toc}{part}{Bibliography}
+
+\end{document}

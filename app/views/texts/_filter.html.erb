@@ -1,0 +1,13 @@
+
+  <span class="actions">
+		<%= label_tag :filter_name %>
+		<!-- if this is selected it ought to clear the filter_id field -->
+    <%= text_field_tag :filter_name, @filter.name %>
+  </span>
+	<span class="field">
+		<%# f.label :tag_id %><br>
+		<%# f.collection_select(:tag_id, ::Tag.all.collect{|t|[t.name,t.id]}, :last, :first, include_blank: '') %>
+		<%= label_tag :filter_id %><br>
+		<!-- if this is selected it ought to clear the filter_name field -->
+		<%= select_tag(:filter_id,  options_from_collection_for_select(::Filter.all, :id, :name), include_blank: '…') %>
+	</span>

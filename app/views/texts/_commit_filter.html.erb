@@ -1,0 +1,10 @@
+	<div class="field">
+		<%# f.label :tag_id %>
+		<%# f.collection_select(:tag_id, ::Tag.all.collect{|t|[t.name,t.id]}, :last, :first, include_blank: '') %>
+		<%# label_tag :tag_id %>
+		<%# select_tag(:tag_id,  options_from_collection_for_select(::Tag.all, :id, :name, @tag_id), include_blank: '…') %>
+		<%# label_tag  :foo %><span id='foo'><%# "# of tracked files #{@num_tracked}" %></span>
+		<%# label_tag  :bar %><span id='bar'><%# "# of commits #{@num_commits}" %></span>
+		<%= label_tag  :commit_hashes %><br>
+		<%= select_tag(:commit_hashes, options_from_collection_for_select(@commit_hashes, :last, :first), include_blank: '…') %>
+	</div>

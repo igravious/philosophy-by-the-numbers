@@ -1,0 +1,57 @@
+<%= render 'search' %>
+
+<% if @total.nil? %>
+	<div>
+		<em>What does your heart desire?</em>
+	</div>
+<% elsif 0 > @total %>
+	<div>
+		<em>Something went awry. Someone somewhere may even know why.</em>
+	</div>
+<% elsif 0 == @total %>
+	<div>No matches for <i><%= params['q'] %></i> in any document</div>
+<% elsif 0 < @total %>
+	<div><%= "#{@total} documents" %></div>
+	<div>Showing <%= @from.to_s %>-<%= @from+@size < @total ? (@from+@size).to_s : @total.to_s %></div>
+	<div>
+		<span>
+			<% if @from > 0 %>
+				<a href="search?q=<%= @search_term %>">start</a>
+				<span> : </span>
+				<a href="search?q=<%= @search_term %>&f=<%= (@from-@size>0) ? (@from-@size).to_s : '0' %>">« previous</a>
+			<% end %>
+		</span>
+		<span>…</span>
+		<span>
+			<% if @from+@size < @total %>
+				<a href="search?q=<%= @search_term %>&f=<%= (@from+@size).to_s %>">next »</a>
+			<% end %>
+		</span>
+	</div>
+	<div class="container">
+		<div class="row">
+  		<div class="col-*-*"></div>
+		</div>
+		<div class="row">
+  		<div class=""></div>
+  		<div class="two-third">
+				<ul>
+					<% @hits.each do |h| %>
+					<p>
+					<fieldset>
+						<legend><%= link_to "#{h['_source']['title']} (#{h['_source']['year']})", h['text'] %></legend>
+						<ul>
+							<% h['highlight']['content'].each do |c| %>
+								<li><%= raw c %></li>
+							<% end %>
+						</ul>
+						<%= link_to "source", h['fyle'] %>
+					</fieldset>
+					</p>
+				<% end %>
+				</ul>
+			</div>
+			<div class=""></div>
+		</div>
+	</div>
+<% end %>

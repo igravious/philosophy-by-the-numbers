@@ -1,0 +1,4 @@
+<%= form_tag(do_pome_path, :method => "post", id: "pome-form") do %>
+	<%= text_field_tag :q, params[:q], placeholder: "Enter your word here" %>
+	<%= submit_tag "Make poem" %>
+<% end %>

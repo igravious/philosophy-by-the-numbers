@@ -1,0 +1,7 @@
+	<%= f.fields_for(:writings, @text.the_writing(author.object)) do |w| %>
+		<div class="field">
+			<%= w.label :role %><br>
+			<%= w.collection_select(:role, ::Writing::ROLE, :last, :first, include_blank: '…') %>
+			<%# w.number_field :role %>
+  	</div>
+	<% end %>

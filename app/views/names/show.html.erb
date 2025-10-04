@@ -1,0 +1,13 @@
+<p>
+  <strong>Shadow:</strong>
+  <%= @name.shadow_id %>
+</p>
+
+<p>
+	<strong>Label @ Lang:</strong>
+	<%# render 'label_lang' %>
+	<%= render 'name' %>
+</p>
+
+<%= link_to 'Edit', edit_name_path(@name) %> |
+<%= link_to 'Back', names_path %>

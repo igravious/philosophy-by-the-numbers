@@ -1,0 +1,30 @@
+{
+  "name": "corpus-builder",
+  "version": "0.0.1",
+  "authors": [
+    "Anthony Durity <a.durity@umail.ucc.ie>"
+  ],
+  "description": "Philosophical Archive of Clear Texts",
+  "keywords": [
+    "corpus"
+  ],
+  "license": "MIT",
+  "homepage": "http://dh.ucc.ie/corpus-builder",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "vendor/assets/bower_modules",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "venn.js": "~0.2.7",
+    "d3": "~3.5.13",
+    "milligram": "~1.0.3",
+    "picnic": "~5.0.1",
+    "pickadate": "~3.5.6",
+    "springy": "~2.7.1"
+  }
+}

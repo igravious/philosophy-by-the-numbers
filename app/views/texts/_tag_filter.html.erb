@@ -1,0 +1,6 @@
+	<div class="field">
+		<%# f.label :tag_id %><br>
+		<%# f.collection_select(:tag_id, ::Tag.all.collect{|t|[t.name,t.id]}, :last, :first, include_blank: '') %>
+		<%= label_tag :tag_id %><br>
+		<%= select_tag(:tag_id,  options_from_collection_for_select(::Tag.all, :id, :name, @tag_id), include_blank: '…') %>
+	</div>

@@ -1,0 +1,32 @@
+<%= link_to 'Switch to file view', fyles_path %> | <%= link_to 'Switch to text view', texts_path %> | <%= link_to '«New Author»', new_author_path %> | <%= link_to '«New Author from Wikipedia»', new_dbpedia_authors_path %>
+
+<hr/>
+<table>
+  <thead>
+    <tr>
+      <th>English name</th>
+      <th>Year of birth</th>
+      <th>Year of death</th>
+      <th>Where</th>
+      <th>About</th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <% @authors.each do |author| %>
+      <tr>
+        <td><%= raw author.english_name.gsub(' ','&nbsp;') %></td>
+        <td><%= author.date_of_birth %></td>
+				<td><%= author.when_died %></td>
+        <td><%= author.where %></td>
+        <td><%= author.about %></td>
+        <td><%= link_to 'Show', author %></td>
+        <td><%= link_to 'Edit', edit_author_path(author) %></td>
+        <td><%= link_to 'Destroy', author, method: :delete, data: { confirm: 'Are you sure?' } %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

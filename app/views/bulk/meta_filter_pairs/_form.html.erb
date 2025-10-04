@@ -1,0 +1,13 @@
+<!-- https://stackoverflow.com/questions/16264981/rails-dot-instead-of-slash-in-url -->
+<%= form_tag(
+	@meta_filter.id.nil? ? bulk_meta_filter_pairs_url : bulk_meta_filter_pair_url(@meta_filter),
+	method: (@meta_filter.id.nil? ? :post : :patch),
+	id: (@meta_filter.id.nil? ? :bulk_create_form : :bulk_edit_form)
+) do %>
+<%# form_for(@meta_filter, url: bulk_meta_filter_pair_url(@meta_filter)) do |f| %>
+	<%= hidden_field_tag :meta, @meta_filter.filter %>
+	<%= render '/meta_filter_pairs/inner_index' %>
+	<%= submit_tag "Store key/value pairs" %> <a href="javascript:history.back()">Refine Search</a>
+<% end %>
+
+<br>

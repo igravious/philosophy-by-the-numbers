@@ -1,0 +1,82 @@
+
+<!-- 
+	oh w3schools, is there nothing you can't teach?
+	http://www.w3schools.com/bootstrap/bootstrap_grid_system.asp
+-->
+
+
+<div class="container">
+	<div class="row">
+	  <div class="col-*-*"></div>
+	</div>
+	<div class="row">
+	  <div class="col-sm-4">
+			<%# image_tag("paperboy.jpeg", :alt => "paper delivery" :class => "paperboy") %>
+			<div class="paperboy"></div>
+		</div>
+		<div class="col-sm-4">
+
+			<div class="delivery">
+				<div>Personalised Paper Delivery System</div>
+				<ul>
+					<li>IP address</li>
+					<li>Operating System</li>
+					<li>Browser Fingerprint</li>
+				</ul>
+
+				<hr>
+
+				<div>Enter in your information below and get a unique PDF. The same details will always generate the same form of PDF. Pick something meaningful to you. For instance, <i>Identifier</i> could be your name or nickname or your first hamster's name, <i>Location</i> could be where you were born or where you live or where you died, <i>Date</i> could be your date of birth or the first time someone broke your heart.</div>
+
+				<hr>
+
+				<%= form_for(@delivery, method: :post, url: 'paper') do |f| %>
+					<% if @delivery.errors.any? %>
+						<div id="error_explanation">
+							<h2><%= pluralize(@text.errors.count, "error") %> prohibited this text from being saved:</h2>
+
+							<ul>
+							<% @text.errors.full_messages.each do |msg| %>
+								<li><%= msg %></li>
+							<% end %>
+							</ul>
+						</div>
+					<% end %>
+
+					<div class="field">
+						<%= f.label :identifier %><br>
+						<%= f.text_field :identifier %>
+					</div>
+					<div class="field">
+						<%= f.label :location %><br>
+						<%= f.text_field :location %>
+					</div>
+					<div class="field">
+						<%= f.label :date %><br>
+						<%= f.text_field :date %>
+					</div>
+
+					<div class="actions">
+					<%= f.submit %>
+					</div>
+				<% end %>
+
+				<hr>
+
+				<div>All the information will be stored in an undisclosed location and only shared for commercial purposes or in the interests of national security. Any information given ceases to be your property and becomes the property of the delivery system.</div>
+			</div>
+		</div>
+			
+		<div class="col-sm-4">
+			<%= image_tag("test.jpeg", :alt => "pdf preview", :class => "preview") %>
+		</div>
+	</div>
+</div>
+
+<script type="text/javascript">
+	$(document).ready(function(){
+		//$('#pages_controller_delivery_date').datepicker({});
+		//$('#pages_controller_delivery_date').pickadate();
+		$('#delivery_date').pickadate();
+	});
+</script>

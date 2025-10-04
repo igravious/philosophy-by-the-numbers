@@ -1,0 +1,6 @@
+<% if 'all' != @lang %>
+	<div class="field">
+		<%= label_tag :label, "case-insensitive partial match" %><br>
+		<%= text_field_tag(:label, @label) %>
+	</div>
+<% end %>

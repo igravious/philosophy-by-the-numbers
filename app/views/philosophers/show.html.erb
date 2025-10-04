@@ -1,0 +1,20 @@
+<p>
+  <strong>Type:</strong>
+  <%= wikidata_type(@shadow.type) %>
+</p>
+
+<p>
+  <strong>Entity:</strong>
+  <%= wikidata_entity_url(@shadow.entity_id) %>
+</p>
+
+<p>
+<strong>Labels:</strong>
+	<ul>
+  	<%= render @shadow.names %>
+  	<%# render partial: 'names/name', object: @shadow.names %>
+	</ul>
+</p>
+
+<%= link_to 'Edit', edit_philosopher_path(@shadow) %> |
+<%= link_to 'Back', philosophers_path(type: @shadow.type) %>

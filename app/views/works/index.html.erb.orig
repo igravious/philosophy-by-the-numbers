@@ -1,0 +1,137 @@
+<<<<<<< HEAD
+=======
+<p id="notice"><%= notice %></p>
+
+<h1>¡The Works!</h1>
+>>>>>>> e3b06b4 (Super big commit, but the whole app needs rewriting :()
+
+<table>
+  <thead>
+    <tr>
+			<th><%= sortable 'id', 'ID', w_extra %></th>
+			<th><%= sortable 'entity_id', 'Entity', w_extra %></th>
+			<th>Label</th>
+			<th>Who</th>
+			<th><%= sortable 'measure', 'Metric', w_extra %></th>
+			<th><%= sortable 'measure_pos', '#', w_extra %></th>
+			<% if params.key?(:info) %>
+			<th>When</th>
+			<th>Location</th>
+			<th>Language</th>
+			<th>Copyright</th>
+			<% else %>
+			<th>Rec</th>
+			<!--th>Brit</th-->
+			<th>Top</th>
+			<th>Genre</th>
+			<th title='Macmillan Reference USA
+The Encyclopedia of Philosophy, 2nd Edition'           style='padding-right: 0.6em'><%= toggleable 'borchert',  'M', w_extra %></th>
+			<th title='Cambridge Dictionary of Philosophy'   style='padding-right: 0.6em'><%= toggleable 'cambridge', 'C', w_extra %></th>
+			<th title='Routledge Encyclopedia of Philosophy' style='padding-right: 0.6em'><%= toggleable 'routledge', 'R', w_extra %></th>
+			<th><%= sortable 'linkcount', '#Links', w_extra %></th>
+			<th><%= sortable 'mention', 'Mention', w_extra %></th>
+			<!--th><%= sortable 'danker', 'Rank', w_extra %></th-->
+			<th>Viaf</th>
+			<% end %>
+			<th colspan="3"></th>
+    </tr>
+  </thead>
+
+  <tbody>
+		<% 
+			@works.each do |work|
+<<<<<<< HEAD
+				#foo = work.show_label(@lang, nil)
+				#Rails.logger.warn "$$$ #{foo.inspect}"
+				
+				w_label, w_lang, en_label, label = work.show_label(@lang, true)
+				en_label = work.name_hack.nil? ? en_label : work.name_hack # very hacky
+				label = truncate(label, 40) #label = work.label # should i use Wikidata's or mine?
+				
+				text = ::Text.where("name_in_english LIKE '"+en_label.gsub("'", "''")+"'").first # case insensitive i hope
+				plain = label.dup.gsub(' ','&nbsp;')
+=======
+				w_label, w_lang, en_label, label = work.show_label(@lang, true)
+				#foo = work.show_label(@lang, nil)
+				#Rails.logger.warn "$$$ #{foo.inspect}"
+				en_label = work.name_hack.nil? ? en_label : work.name_hack # very hacky
+				text = ::Text.where("name_in_english LIKE '"+en_label.gsub("'", "''")+"'").first # case insensitive i hope
+				#label = work.label # should i use Wikidata's or mine?
+				label = truncate(label, 40)
+				plain = label.dup
+				plain = plain.gsub(' ','&nbsp;')
+>>>>>>> e3b06b4 (Super big commit, but the whole app needs rewriting :()
+				if work.obsolete
+					color = 'red'
+				elsif 0.0 == work.measure
+					color = 'lightgray'
+				else
+				end
+<<<<<<< HEAD
+				plain_html = "<span style='color: #{color}'>#{plain}</span>"
+				
+=======
+				the_label = text.nil? ? (raw "<span style='color: #{color}'>#{plain}</span>") : (link_to label, text)
+>>>>>>> e3b06b4 (Super big commit, but the whole app needs rewriting :()
+				phils = Philosopher.where(id: Expression.where(work_id: work.id).pluck(:creator_id)).order(measure: :desc)
+				case @info
+				when 'url'
+					#phil_label = phils.collect{|phil| link_to phil.names.where(lang: 'en').pluck(:label).first, philosopher_works_url(phil.id, lang: @lang)}
+					#phil_label = phils.collect{|phil|link_to (phil.show_label(@lang, true)[3]+'('+phil.works.size.to_s+')'), philosopher_works_path(phil.id, lang: @lang)}.join(',')
+					phil_label = phils.collect{|phil|link_to (phil.show_label(@lang, true)[3]+'('+phil.works.size.to_s+')'), philosophers_path(entity_id: phil.entity_id, lang: @lang)}.join(',')
+				else
+					phil_label = work.phil_label(phils, @lang)
+				end
+<<<<<<< HEAD
+				simple_phil_label = work.simple_phil_label(phils, @lang)
+				what = {'what' => (simple_phil_label+' - '+label).downcase}
+				Rails.logger.info what
+				
+				the_label = text.nil? ? (raw plain_html)+' '+(link_to '=>', new_fyle_path(what)) : (link_to label, text)
+=======
+>>>>>>> e3b06b4 (Super big commit, but the whole app needs rewriting :()
+		%>
+      <tr>
+				<td><%= work.id %></td>
+        <td><%= wikidata_entity_url(work.entity_id) %></td>
+				<td title='<%= work.what_label %>'><%= the_label %></td>
+        <td><%= raw phil_label %></td>
+        <td><%= sprintf("%.3f",work.measure) %></td>
+        <td><%= work.measure_pos %></td>
+				<% if params.key?(:info) %>
+				<td><%= work.pub_year %></td>
+        <td><%= do_q(work, :country) %></td>
+        <td><%= do_q(work, :work_lang) %></td>
+        <td><%= do_q(work, :copyright) %></td>
+				<% else %>
+        <td><%= work.philrecord.nil? ? '' : link_to('link', 'https://philpapers.org/rec/'+work.philrecord) %></td>
+        <!--td><%= work.britannica.nil? ? '' : link_to('link', 'https://www.britannica.com/'+work.britannica) %></td-->
+        <td><%= work.philtopic.nil? ? '' : link_to('link', 'https://philpapers.org/browse/'+work.philtopic) %></td>
+        <td><%= work.genre ? '✓' : '' %></td>
+				<td style='padding-right: 0.6em'><%= work.borchert  ? '✓' : '' %></td>
+        <td style='padding-right: 0.6em'><%= work.cambridge ? '✓' : '' %></td>
+        <td style='padding-right: 0.6em'><%= work.routledge ? '✓' : '' %></td>
+        <td><%= work.linkcount %></td>
+        <td><%= work.mention %></td>
+				<!--td><%= sprintf("%.3f",work.danker) %></td-->
+				<td><%= work.viaf.present? ? link_to('__', "https://viaf.org/viaf/#{work.viaf}", {:style => 'background-position: center right; background-repeat: no-repeat; background-image: linear-gradient(transparent,transparent),url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22%3E %3Cpath fill=%22%23fff%22 stroke=%22%2336c%22 d=%22M1.5 4.518h5.982V10.5H1.5z%22/%3E %3Cpath fill=%22%2336c%22 d=%22M5.765 1H11v5.39L9.427 7.937l-1.31-1.31L5.393 9.35l-2.69-2.688 2.81-2.808L4.2 2.544z%22/%3E %3Cpath fill=%22%23fff%22 d=%22M9.995 2.004l.022 4.885L8.2 5.07 5.32 7.95 4.09 6.723l2.882-2.88-1.85-1.852z%22/%3E %3C/svg%3E")'}) : '' %></td>
+				<% end %>
+        <td><%= link_to 'Show', work %></td>
+        <td><%# link_to 'Edit', edit_work_path(work, philosopher_id: phils[0]) %></td>
+				<td><%= link_to 'Destroy', work, method: :delete, data: { confirm: 'Are you sure?' } %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+<% console %>
+<% if @works.size > 0 %>
+	<%= paginate @works %> <%= page_entries_info @works, entry_name: 'philosophical work' %> 
+	<%= link_to 'List Philosophical Figures', philosophers_path %>
+<% else %>
+	<p>&nbsp;try:&nbsp;<pre>bin/rake shadow:work:work_labels[<%= @creator_id %>]</pre></p>
+<% end %>
+
+<%# page_entries_info @works %>
+
+
+<%# link_to 'New Work', new_work_path %>

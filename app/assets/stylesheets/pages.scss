@@ -1,0 +1,24 @@
+// Place all the styles related to the pages controller here.
+// They will automatically be included in application.css.
+
+
+// http://www.w3schools.com/css/css3_borders.asp
+.delivery {
+	border-radius: 16px;
+	border: 2px solid #777777;
+	padding: 8px;
+}
+
+.paperboy {
+	height: 476px;
+	width: 100%;
+    position:relative;
+	background: asset-url("paperboy.jpeg") no-repeat;
+	background-size: cover;
+	background-position: center;
+}
+
+.preview {
+	width: 100%;
+    position:relative;
+}

@@ -1,0 +1,77 @@
+
+(00) ✓ pick author as well as add author
+
+(01) link to pdf and xlate to text (use pdftotext from poppler)
+
+(02) cache text
+
+(03) ✓ change actual_text to text_file
+
+(04) negotiate content type of text
+
+(05) ✓ wire up which role
+
+(06) wire up which corpus
+
+(07) ✓ wire up text to text_file
+
+(08) ✓ specify role from array of constants
+
+(09) make pick author and add author role aware (not just edit author)
+
+(10) ✓ serve in XML format Saffron needs
+
+(11) link to xml (tei) and xlate to text (use rexml standard lib)
+
+(12) ✓ english name of text and original year combined are unique (sanity check)
+
+(13) xml and pdf to be handled by a filter
+
+(14) handle charset
+
+(15) implement content-type setting as callback?
+
+(16) html to be handled by a filter
+
+(17) change text_file to file, dope - File is in Ruby StdLib, Fyle
+
+(18) new_from routes, new text from existing file
+
+(19) change `where' to `nationality'?
+
+(20) role is buggy on new author, not appearing
+
+(21) Change name_in_English of Author to just name, invariant but allow other scripts
+     i.e. Cyrillic, Trad. Chinese, Arabic, Greek, Hebrew, and so on
+     For our purposes Lat., Eng., Fr., De., Esp., It., all share a script
+
+(22) Licence: say if in public domain or fair use (research) doctrine
+
+(23) authors in drop down alphabetically
+
+(24) snarf/lookup button for getting linked data (metadata) on author/text/entity
+     does this exist?
+
+(25) date range or rough date or 'unknown' and so on (for collections)
+
+(26) collected works tick
+
+(27) do not know yet how to handle content type: application/x-gzip
+
+(28) Using SPARQL date variations, parse dates (roughly, +/-, x-y, …)
+
+(29) acquisition date for batch
+61421 Jan 22 14:14 odp.txt
+15251 Dec  1 13:13 pd_squeaky.txt
+83558 Jan 22 03:15 rep.txt
+39535 Dec  3 18:56 runes_squeaky.txt
+
+(30) xref to internal ref for equivalence
+
+(31) acquistion edition for batch
+
+---
+
+(98) WOW :: TextFile.all.each{|t|puts "#{printf('%02.0f',t.id)}__#{t.cache_file}"}.length
+
+(99) UX

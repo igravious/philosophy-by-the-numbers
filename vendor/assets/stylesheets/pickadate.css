@@ -1,0 +1,7 @@
+/*
+ * shim cuz there be two css files
+ *
+ *= require pickadate/lib/themes/default
+ *= require pickadate/lib/themes/default.date
+ *
+ */

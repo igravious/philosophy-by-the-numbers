@@ -1,0 +1,12 @@
+<h1>New file</h1>
+
+<!-- http://stackoverflow.com/questions/450903/how-to-make-div-not-larger-than-its-contents -->
+<div style='display: inline-block;'>
+	<% if flash[:alert] %>
+		<div class="alert"><%= flash[:alert] %></div>
+	<% end %>
+
+	<%= render 'form' %>
+</div>
+
+<%= link_to 'List of files', fyles_path %>

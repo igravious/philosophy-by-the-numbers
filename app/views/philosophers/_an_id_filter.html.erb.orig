@@ -1,0 +1,9 @@
+
+	<span class="field">
+		<%= label_tag :an_id, "equal to" %><br>
+<<<<<<< HEAD
+		<%= text_field_tag(:an_id, @ids.nil? ? @entity_qid : '') %>
+=======
+		<%= text_field_tag(:an_id, @entity_id) %>
+>>>>>>> e3b06b4 (Super big commit, but the whole app needs rewriting :()
+	</span>

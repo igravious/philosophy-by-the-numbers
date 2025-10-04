@@ -1,0 +1,20 @@
+
+// not sure how best to get the status
+
+// if the status is unprocessable entity
+console.log('capacity toggle failure: <%= raw @capacity.errors.to_json %>')
+// otherwise ?
+
+var el = $(document.activeElement) // handy!
+
+console.log(el)
+
+if(el.is(':checked')) {
+	//
+	console.log('deselecting')
+	el.prop('checked', false)
+} else {
+	//
+	console.log('reselecting')
+	el.prop('checked', true)
+}

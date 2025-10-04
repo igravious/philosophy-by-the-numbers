@@ -1,0 +1,17 @@
+<p>
+  <strong>Uri:</strong>
+  <%= @resource.URI %>
+</p>
+
+<p>
+  <strong>Values:</strong>
+  <%= @values.inspect %>
+</p>
+	
+<p>
+  <strong>???</strong>
+  <%= instance_variables.inspect %>
+</p>
+
+<%= link_to 'Edit', edit_resource_path(@resource) %> |
+<%= link_to 'Back', resources_path %>

@@ -1,0 +1,41 @@
+<div id="the-container" class="rounded container">
+	<div class="row">
+
+		<div class="">
+		</div>
+
+		<div class="">
+			<p id="notice"><%= notice %></p>
+
+			<h1><%= @page_title %></h1>
+
+			<table>
+				<thead>
+					<tr>
+						<th>Filter</th>
+						<th colspan="3"></th>
+					</tr>
+				</thead>
+
+				<tbody>
+					<% @meta_filters.each do |meta_filter| %>
+						<tr>
+							<td><%= meta_filter.filter %></td>
+							<td><%= link_to 'Show', bulk_meta_filter_pair_path(meta_filter) %></td>
+							<td><%= link_to 'Edit', edit_meta_filter_path(meta_filter) %></td>
+							<td><%= link_to 'Destroy', meta_filter.becomes(MetaFilter), method: :delete, data: { confirm: 'Are you sure? This will destroy all associated records.' } %></td>
+						</tr>
+					<% end %>
+				</tbody>
+			</table>
+
+			<br>
+
+			<%= link_to 'New Meta filter', new_meta_filter_path %>
+		</div>
+
+		<div class="">
+		</div>
+
+	</div>
+</div>

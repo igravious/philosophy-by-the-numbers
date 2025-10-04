@@ -1,0 +1,56 @@
+<!--
+
+https://apidock.com/rails/ActionView/RecordIdentifier/dom_id :/
+
+https://stackoverflow.com/questions/14683256/does-an-input-have-an-original-value-attribute
+
+? text_field_tag dom_id(capacity, :label)
+? 
+
+<form class="edit_capacity" id="edit_capacity_425" action="/corpus-builder/capacities/425" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="_method" value="patch" /><input type="hidden" name="authenticity_token" value="MLvOiVJ8hEq+/0QJDbUF/UgfXOtzxVkpuwTcoXUE1VrV5XLfxdsyryBnLzMo6TM8Hpg+Zp7gdihZ5mh1NGyUqg==" />
+
+<input type="text" value="monarch" name="capacity[label]" id="capacity_label" />
+
+===>
+
+Parameters: {"utf8"=>"✓", "authenticity_token"=>"sO8128p1kWAsSzV+0klML9Tuz8h2FfZ/IWg6WCycgs5VsYmNXdInhbLTXkT3FXrugmmtRZsw2X7Dio6MbfTDPg==", "capacity"=>{"entity_id"=>"116", "label"=>"monarchpoop", "relevant"=>"0"}, "commit"=>"Update Capacity", "id"=>"425"}
+
+-->
+
+<!-- https://github.com/rails/jquery-ujs/wiki/Unobtrusive-scripting-support-for-jQuery -->
+<!-- OMG https://stackoverflow.com/questions/15572371/rails-change-boolean-value-with-checkbox-and-jquery-ajax -->
+
+<table>
+  <thead>
+    <tr>
+			<th><%= sortable 'label', 'Label', c_extra %></th>
+			<th><%= sortable 'dynamic_count', 'Count', c_extra %></th>
+			<th><%= sortable 'relevant', 'Relevant?', c_extra %></th>
+      <th colspan="3"></th>
+    </tr>
+  </thead>
+
+	<tbody>
+		<!-- beyond moronic that these params are in this order for fields_for in the API -->
+		<% @capacities.each do |capacity| %> <%= fields_for :capacity, capacity do |c| %>
+			<tr>
+				<td><%= c.text_field :label, data: { url: scribble_capacity_path(capacity), remote: true }, style: '-webkit-appearance: none;' %></td>
+				<td><%= link_to capacity.dynamic_count, roles_path({filter: :entity_id, value: capacity.entity_id}) %></td>
+				<td>
+					<label style="float: left">
+						<%= c.check_box :relevant, data: { url: toggle_capacity_path(capacity), remote: true } %>
+						<span class="checkable"></span>
+					</label>
+				</td>
+        <td><%= link_to 'Show', capacity %></td>
+        <td><%= link_to 'Edit', edit_capacity_path(capacity) %></td>
+        <td><%= link_to 'Destroy', capacity, method: :delete, data: { confirm: 'Are you sure?' } %></td>
+			</tr>
+		<% end %>
+    <% end %>
+  </tbody>
+</table>
+
+<br>
+
+<%= link_to 'New Capacity', new_capacity_path %>

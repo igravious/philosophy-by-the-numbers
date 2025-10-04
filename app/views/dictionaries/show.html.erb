@@ -1,0 +1,11 @@
+<!-- http://stackoverflow.com/questions/450903/how-to-make-div-not-larger-than-its-contents -->
+<div style='display: inline-block;'>
+	<%= render 'fields' %>
+
+	<hr>
+</div>
+
+<div>
+	<%= link_to 'Edit', edit_dictionary_path(@dictionary) %> |
+	<%= link_to 'Back', dictionaries_path %>
+</div>

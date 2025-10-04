@@ -1,0 +1,39 @@
+<<<<<<< HEAD
+=======
+<p id="notice"><%= notice %></p>
+
+<h1>¡Work stats!</h1>
+
+>>>>>>> e3b06b4 (Super big commit, but the whole app needs rewriting :()
+<table>
+  <thead>
+    <tr>
+			<th>Q</th>
+			<th>Name</th>
+			<th>Score</th>
+    </tr>
+  </thead>
+
+  <tbody>
+		<% 
+			@top_phil.each do |value, keys|
+		%>
+      <tr>
+				<td><%= raw keys.collect{|key|wikidata_entity_url(key)}.join('<br>') %></td>
+				<td>
+					<%=
+						raw keys.collect{|key|
+							begin
+								do_english(key)
+							rescue
+								'…'
+							end
+						}.join('<br>')
+					%>
+				</td>
+				<td><%= sprintf('%.3f',value) %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+<%# paginate @top_phil %> <%# page_entries_info @top_phil %>

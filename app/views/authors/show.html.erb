@@ -1,0 +1,27 @@
+<p>
+  <strong>English name:</strong>
+  <%= @author.english_name %>
+</p>
+
+<p>
+  <strong>Year of birth:</strong>
+  <%= @author.date_of_birth %>
+</p>
+
+<p>
+  <strong>Year of death:</strong>
+	<%= @author.when_died %>
+</p>
+
+<p>
+  <strong>Where:</strong>
+  <%= @author.where %>
+</p>
+
+<p>
+  <strong>About:</strong>
+  <%= @author.about %>
+</p>
+
+<%= link_to 'Edit this author', edit_author_path(@author) %> |
+<%= link_to 'List of authors', authors_path %>

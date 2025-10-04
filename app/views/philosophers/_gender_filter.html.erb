@@ -1,0 +1,13 @@
+
+    <%= field_set_tag :gender_set do %>
+      <span title='male'>
+				<%= radio_button_tag :gender, 'm', @gender[:m], :onclick => "" %>
+				<%= label_tag :gender, "♂", :value => "m", :class => 'checkable', :for => 'gender_m' %>
+			</span>
+			&nbsp;
+      <span title='female'>
+				<%= radio_button_tag :gender, 'f', @gender[:f], :onclick => "" %>
+				<%= label_tag :gender, "♀", :value => "f", :class => 'checkable', :for => 'gender_f' %>
+			</span>
+		<% end %>
+

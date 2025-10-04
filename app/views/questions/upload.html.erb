@@ -1,0 +1,25 @@
+<div id="the-container" class="rounded container">
+	<div class="row">
+		<div class="">
+		</div>
+		<div class="">
+			<!-- set method to patch if you don't want yukky URLs, could be a dev versus prod switcheroo -->
+			<%= form_tag(@whereami, method: :post, id: :upload_form, enctype: "multipart/form-data") do %>
+				<input type="file" id="myFile" name="filename">
+				<label for="fileText">text goes here:</label>
+				<textarea id="fileText" name="fileText" rows="<%= @box.lines.size.to_s %>" cols="50"><%= @box %></textarea>
+				<input type="submit">
+			<% end %>
+			<%= form_tag(specific_philosophers_url, method: :patch, id: :specific_form) do %>
+				<% @entity_ids.each do |entity_id| %>
+					<%= hidden_field_tag "ids[]", entity_id %>
+				<% end %>
+				<div class="actions">
+					<%= submit_tag "(name of file?)" %>
+				</div>
+			<% end %>
+		</div>
+		<div class="">
+		</div>
+	</div>
+</div>

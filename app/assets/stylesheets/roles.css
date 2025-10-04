@@ -1,0 +1,13 @@
+// Place all the styles related to the roles controller here.
+// They will automatically be included in application.css.
+
+.warn {
+  animation: warn 1s ease-out;
+  animation-iteration-count: 1;
+}
+
+@keyframes warn {
+    0% { background-color: transparent; }
+    50% { background-color: #f2dede; }
+    100% { background-color: transparent; }
+}

@@ -1,0 +1,42 @@
+<p>
+  <strong>Name in English:</strong>
+  <%= @text.name_in_english %>
+</p>
+
+<p>
+  <strong>Original year:</strong>
+  <%= @text.original_year %>
+</p>
+
+<p>
+  <strong>Author names:</strong>
+  <%=raw @text.edit_author_names %>
+</p>
+
+<p>
+  <strong>Tag names:</strong>
+  <%=raw @text.edit_tag_names %>
+</p>
+
+<p>
+	<strong>File:</strong>
+	<%=
+				plain = if @text.fyle_id.nil?
+					''
+				else
+					link_to (fa_stacked_icon "file-text", base: "square-o", class: "fa-1x"), fyle_url(@text.fyle_id) # link name was @text.fyle_id.to_s
+				end
+	%>
+</p>
+
+<%= link_to 'Edit this text', edit_text_path(@text) %> |
+<%= link_to 'List of texts', texts_path %> |
+<%=
+		plain = if @text.fyle_id.nil?
+			'no file'
+		else
+			#"<a href='#{text.plain_file}'>#{File.basename text.plain_file}</a>"
+			link_to (fa_stacked_icon "file-text", base: "square-o", class: "fa-1x"), fyle_url(@text.fyle_id) # link name was text.fyle_id.to_s
+		end
+%> |
+<%= link_to '«New File»', new_fyle_path(what: @text.filename_suggestion) %>

@@ -1,0 +1,28 @@
+<table>
+  <thead>
+    <tr>
+			<th>Label</th>
+			<th>Entity Label</th>
+      <th>Relevant?</th>
+      <th colspan="3"></th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <% @capacities.each do |capacity| %>
+      <tr>
+        <td><%= capacity.label %></td>
+        <td><%= wikidata_entity_url(capacity.entity_id) %></td>
+				<td><%= capacity.relevant %></td>
+        <td><%= link_to 'Show', capacity %></td>
+        <td><%= link_to 'Edit', edit_capacity_path(capacity) %></td>
+        <td><%= link_to 'Destroy', capacity, method: :delete, data: { confirm: 'Are you sure?' } %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+<%= paginate @capacities %> <%= page_entries_info @capacities %>
+
+<br>
+
+<%= link_to 'New Capacity', new_capacity_path %> | <%= link_to 'All Capacities', capacities_path %> | <%= link_to 'Duplicate Capacities', capacities_path(filter: :duplicates) %>

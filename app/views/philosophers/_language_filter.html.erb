@@ -1,0 +1,4 @@
+	<span class="field">
+		<%= label_tag :lang, "language" %><br>
+		<%= select_tag(:lang,  options_for_select(@language_list, @lang), include_blank: '…') %>
+	</span>

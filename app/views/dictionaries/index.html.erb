@@ -1,0 +1,38 @@
+<table class="table table-striped table-hover ">
+  <thead>
+    <tr>
+      <th>Title</th>
+			<th>Long title</th>
+			<th>Year</th>
+      <th>Editor</th>
+      <th>Uri</th>
+      <th>Contact</th>
+      <th>Organisation</th>
+			<!-- <th>Missing</th> -->
+			<th colspan="2">Actions</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <% @dictionaries.each do |dictionary| %>
+      <tr>
+        <td><%= raw dictionary.content_title %></td>
+        <td><%= dictionary.long_title %></td>
+        <td><%= dictionary.year %></td>
+        <td><%= dictionary.current_editor %></td>
+				<td><%= link_to dictionary.URI.split('/')[2], dictionary.URI %></td> <!-- link to uri but display only the domain name -->
+        <td><%= dictionary.contact %></td>
+				<td><%= dictionary.organisation %></td>
+				<!-- <td><%= dictionary.missing %></td> -->
+				<td><%= link_to 'Show', dictionary %></td>
+				<td><%= link_to 'Entry', entry_dictionary_path(dictionary) %></td>
+				<!-- <td><%# render dictionary %></td> <!-- boostrap nav -->
+				<!-- <td><%# render picnic_actions %></td> <!-- picnic nav -->
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<br>
+
+<%= link_to 'new reference work', new_dictionary_path %> | <%= link_to 'compare & contrast', compare_dictionaries_path %>

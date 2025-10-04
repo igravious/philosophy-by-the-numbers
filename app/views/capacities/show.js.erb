@@ -1,0 +1,24 @@
+
+console.log('success for <%= raw @capacity.to_json %>')
+
+console.log('more…')
+
+/*
+var n, arg, name;
+alert("typeof this = " + typeof this);
+for (name in this) {
+    alert("this[" + name + "]=" + this[name]);
+}
+for (n = 0; n < arguments.length; ++n) {
+    arg = arguments[n];
+    alert("typeof arguments[" + n + "] = " + typeof arg);
+    for (name in arg) {
+        alert("arguments[" + n + "][" + name + "]=" + arg[name]);
+    }
+}
+*/
+
+/* this is probably more wrong in ways do not and surely will never understand */
+$(document).ready(function(){
+	$('[data-remote="true"]').on('ajax:error', alert('oops'));
+});

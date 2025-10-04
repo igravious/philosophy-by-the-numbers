@@ -1,0 +1,13 @@
+<pre>
+There are <%= @total.length %> texts.
+<%= @saffron.length %> texts have the Saffron_v1 tag.
+<%= @lda.length %> texts have the LDA_v1 tag.
+Of those <%= @lda.length %> texts <%= (not_linked = @lda.length - @lda_f.length) %> are not linked to any file.
+<%= (@lda.length - @lda_fh.length) %> (including obviously the <%= not_linked %> mentioned) do not have health data.
+Levaing <%= @lda_fh.length %> to play with.
+</pre>
+
+<%= link_to 'Texts as CSV', texts_path(:csv, :parts => '200') %> |
+<%= link_to 'Texts as JSON', texts_path(:json) %> |
+<%= link_to 'Texts as Zip', texts_path(:zip) %> |
+<%= link_to 'Texts as Archive', archive_texts_path(:zip) %> |

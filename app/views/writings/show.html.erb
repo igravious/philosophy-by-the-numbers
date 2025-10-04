@@ -1,0 +1,12 @@
+<p>
+  <strong>Author:</strong>
+  <%= @writing.author_id %>
+</p>
+
+<p>
+  <strong>Text:</strong>
+  <%= @writing.text_id %>
+</p>
+
+<%= link_to 'Edit', edit_writing_path(@writing) %> |
+<%= link_to 'Back', writings_path %>

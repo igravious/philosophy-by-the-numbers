@@ -1,0 +1,46 @@
+<form action="">
+
+<table>
+  <thead>
+		<tr>
+			<% if !params.key?('id') %>
+      	<th>Dictionary</th>
+			<% end %>
+			<th>Entry</th>
+			<% if params['action'] == 'what' %>
+      	<th>What It Is</th>
+      	<th>Confirmation</th>
+			<% end %>
+      <th>Normal Form</th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+
+	<tbody>
+		<% @units.each do |unit| %>
+			<tr>
+				<% if !params.key?('id') %>
+					<td><%= unit.dictionary_id %></td>
+				<% end %>
+				<td><%= link_to unit.display_name, search_path(q: unit.search) %></td>
+				<% if params['action'] == 'what' %>
+					<td><%= raw unit.tick	%></td>
+					<td><label style="float: right"><input type="checkbox" <%= unit.confirmation ? 'checked' : '' %>><span class="checkable"></span></label>
+				<% end %>
+				<td><%= unit.normal_form %></td>
+				<td><%= link_to 'Show', unit %></td>
+				<td><%= link_to 'Edit', edit_unit_path(unit) %></td>
+				<td><%= link_to 'Destroy', unit, method: :delete, data: { confirm: 'Are you sure?' } %></td>
+			</tr>
+		<% end %>
+	</tbody>
+</table>
+<%= paginate @units %> <%= page_entries_info @units %>
+
+</form>
+
+<br>
+
+<%= link_to 'New Unit', new_unit_path %>

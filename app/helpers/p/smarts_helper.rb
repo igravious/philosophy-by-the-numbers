@@ -1,0 +1,2 @@
+module P::SmartsHelper
+end

@@ -1,0 +1,35 @@
+<%= form_for(@text) do |f| %>
+  <% if @text.errors.any? %>
+    <div id="error_explanation">
+      <h2><%= pluralize(@text.errors.count, "error") %> prohibited this text from being saved:</h2>
+
+      <ul>
+      <% @text.errors.full_messages.each do |msg| %>
+        <li><%= msg %></li>
+      <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+	<h3>Text metadata fields</h3> <!-- static -->
+	<%= render 'text_fields', :f => f %>
+
+	<h3>Author metadata fields</h3> <!-- dynamic nested form -->
+	<%= render 'dynamic_author', :f => f %>
+
+	<h3>Pick existing author</h3>
+	<%= render 'pick_author', :f => f %>
+
+	<h3>Tag metadata fields</h3> <!-- dynamic nested form -->
+	<%= render 'dynamic_tag', :f => f %>
+
+	<h3>Pick existing tag</h3>
+	<%= render 'pick_tag', :f => f %>
+
+	<h3>File</h3>
+	<%= render 'file', :f => f %>
+	
+	<div class="actions">
+    <%= f.submit %>
+  </div>
+<% end %>

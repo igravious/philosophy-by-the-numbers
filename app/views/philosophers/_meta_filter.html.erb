@@ -1,0 +1,6 @@
+
+	<span class="field">
+		<%= label_tag :meta, "meta: #{@meta}" %><br>
+		<input type="text" name="meta[]" list="metaList" value="<%# @meta %>">
+		<%= raw select_tag(:metaList, options_for_select(@meta_list, []), include_blank: '…').gsub('<select','<datalist').gsub('select>','datalist>') %>
+	</span>

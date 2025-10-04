@@ -1,0 +1,29 @@
+<%= form_for(@meta_filter_pair) do |f| %>
+  <% if @meta_filter_pair.errors.any? %>
+    <div id="error_explanation">
+      <h2><%= pluralize(@meta_filter_pair.errors.count, "error") %> prohibited this meta_filter_pair from being saved:</h2>
+
+      <ul>
+      <% @meta_filter_pair.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="field">
+    <%= f.label :meta_filter_id %><br>
+    <%= f.number_field :meta_filter_id %>
+  </div>
+  <div class="field">
+    <%= f.label :key %><br>
+    <%= f.text_field :key %>
+  </div>
+  <div class="field">
+    <%= f.label :value %><br>
+    <%= f.text_field :value %>
+  </div>
+  <div class="actions">
+    <%= f.submit %>
+  </div>
+<% end %>

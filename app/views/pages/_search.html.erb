@@ -1,0 +1,5 @@
+<%= form_tag(search_path, :method => "get", id: "search-form") do %>
+	<%= label_tag "Enter your search terms here." %>
+	<%= text_field_tag :q, params[:q], placeholder: "Search Documents" %>
+	<%= submit_tag "Search" %>
+<% end %>

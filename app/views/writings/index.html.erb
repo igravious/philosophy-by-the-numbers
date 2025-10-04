@@ -1,0 +1,27 @@
+<table>
+  <thead>
+    <tr>
+      <th>Author</th>
+      <th>Text</th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <% @writings.each do |writing| %>
+      <tr>
+        <td><%= writing.author_id %></td>
+        <td><%= writing.text_id %></td>
+        <td><%= link_to 'Show', writing %></td>
+        <td><%= link_to 'Edit', edit_writing_path(writing) %></td>
+        <td><%= link_to 'Destroy', writing, method: :delete, data: { confirm: 'Are you sure?' } %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<br>
+
+<%= link_to 'New Writing', new_writing_path %>
