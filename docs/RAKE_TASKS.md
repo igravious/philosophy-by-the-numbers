@@ -2,7 +2,7 @@
 
 ## Overview
 
-The CorpusBuilder application provides several rake tasks for managing philosopher canonicity calculations and danker (PageRank-style) data imports. All tasks support configurable algorithms and comprehensive audit trails.
+The CorpusBuilder application provides comprehensive Rake tasks for building and maintaining a philosophical corpus database. Tasks are organized into several categories: data population from Wikidata, encyclopedia scraping, canonicity calculations, corpus management, and data analysis. All core tasks support configurable algorithms and comprehensive audit trails.
 
 ## Core Tasks
 

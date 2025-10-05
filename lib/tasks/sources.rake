@@ -9,7 +9,7 @@ namespace :sources do
 		end
 	end
 
-  desc 'urk'
+  desc 'Clear cached files by type (pdf, text, xml, html) for Fyle records'
   task :clear, [:type]  => :environment  do |t, args|
 		case args.type
 		when 'pdf'

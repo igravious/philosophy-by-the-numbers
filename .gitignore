@@ -72,3 +72,6 @@
 /.venv/
 __pycache__/
 *.pyc
+
+# Rake task analysis files
+/rake_analysis/

@@ -22,7 +22,7 @@ namespace :corpus do
 	#end
 
   desc "Show a list of snapshots"
-  task :list, [:type] => :environment  do |t, args|
+  task :ES_LIST, [:type] => :environment  do |t, args|
 		require 'elasticsearch'
 		begin
 			elastic(false) do |client|
@@ -47,27 +47,8 @@ namespace :corpus do
 		end
   end
 
-	desc "Find term within a snapshot"
-	task :find, [:term] => :environment do |t, args|
-		require 'elasticsearch'
-		begin
-			count = count_snapshots
-			if 0 == count
-				STDOUT.puts "There are no snapshots"
-			else
-				STDOUT.puts "Searching for #{args.term} within snapshot #{count}"
-				query = Elasticsearch::Client.new log: false
-				# res = query.search(index: 'corpus', type: 'snapshot', id: { query: { match: { content: args.term } } })
-				# res = query.search(index: 'corpus', type: 'snapshot', query: { query_string: { query: args.term}})
-				p res.keys
-			end
-		rescue Exception => msg
-			STDERR.puts "Very bad juju in find: #{msg}"
-		end
-	end
-
-  desc "Take a snapshot"
-  task :take, [:url, :year] => :environment do |t, args|
+  desc "Create new text corpus snapshot from URL and index in Elasticsearch"
+  task :ES_STORE_AS_ONE_DOC, [:url, :year] => :environment do |t, args|
 		require 'elasticsearch'
 		begin
 			next_id = count_snapshots + 1
@@ -124,8 +105,8 @@ namespace :corpus do
 
 	# that's not a nuke, _this_ is a nuke
 	# curl -XDELETE 'http://localhost:9200/corpus/'
-  desc "Nuke a snapshot"
-  task nuke: :environment do
+  desc "Delete the latest/(most recent) corpus snapshot"
+  task ES_DEL_LATEST: :environment do
 		require 'elasticsearch'
 		begin
 			the_id = count_snapshots
@@ -174,10 +155,10 @@ namespace :corpus do
 		return 'snapshot'+(args.snap.to_i).to_s
 	end
 
-	desc "PUT"
+	desc "Add single text document to existing corpus snapshot"
 	# task PUT: :environment
   # task :PUT, [:snap, :text] => :environment do |t, args|
-  task :PUT, [:snap, :text] => :environment do |t, args|
+  task :ES_ADD_DOC, [:snap, :text] => :environment do |t, args|
 		elastic(true) do |client|
 			snap = args_to_snap args
 			text_id = count_docs(snap) + 1
@@ -200,8 +181,8 @@ namespace :corpus do
 		'snapshot'+(count_snaps.to_s)
 	end
 
-	desc "TAKE"
-	task :TAKE, [:url, :year] => :environment do |t, args|
+	desc "Create new complete corpus snapshot from all files"
+	task :ES_MAKE_SNAPSHOT, [:url, :year] => :environment do |t, args|
 		elastic(false) do |client|
 			counter = count_snaps+1
 			next_snap = 'snapshot'+(counter.to_s)
@@ -251,19 +232,19 @@ namespace :corpus do
 		end
 	end
 
-	desc "MAP"
-	task MAP: :environment do
+	desc "Show Elasticsearch schema/mapping information for all corpus indices"
+	task ES_SCHEMA_INFO: :environment do
 		elastic(true) do |client|
 			# curl -XGET 'http://localhost:9200/_mapping?pretty'
 			client.indices.get_mapping
 		end
 	end
 
-	desc "LOOK"
-	task :LOOK, [:snap, :text] => :environment do |t, args|
+	desc "Search for text phrase within a specific corpus snapshot with highlighting"
+	task :ES_LOOK_FOR, [:snap, :term] => :environment do |t, args|
 		elastic(false) do |client|
 			snap = args_to_snap args
-			res = client.search(index: snap, body: { query: { match_phrase: { content: args.text } }, highlight: { fields: { content: {} } } })
+			res = client.search(index: snap, body: { query: { match_phrase: { content: args.term } }, highlight: { fields: { content: {} } } })
 			# p res.keys
 			# ["took", "timed_out", "_shards", "hits"]
 			# p res["hits"].keys
@@ -283,8 +264,8 @@ namespace :corpus do
 		end
 	end
 
-	desc "NUKE"
-	task :NUKE, [:snap] => :environment do |t, args|
+	desc "Self explanatory!"
+	task :ES_NUKE, [:snap] => :environment do |t, args|
 		elastic(true) do |client|
 			snap = args_to_snap args
 			client.indices.delete(index: snap)
@@ -292,13 +273,8 @@ namespace :corpus do
 	end
 
 
-	desc "WIBBLE"
-	task WIBBLE: :environment do |t, args|
-		Rails.logger.info "groobiest"
-	end
-
-	desc "number of snapshots"
-	task TOTAL: :environment do
+	desc "Display total count of corpus snapshots in Elasticsearch index"
+	task ES_TOTAL: :environment do
 		elastic(false) do |client|
 			if client.nil?
 				@total = -1
@@ -407,7 +383,7 @@ namespace :corpus do
 
 	# the git help
 	desc "Version Control: Help"
-	task HELP: :environment do
+	task GIT_HELP: :environment do
 
 	end
 

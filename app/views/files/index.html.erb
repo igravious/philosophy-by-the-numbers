@@ -41,7 +41,7 @@
 				<td><em><%= file.display_type %></em></td>
 				<td><%= file.file_size %></td>
 				<td><%= raw "#{file.display_cached} <span style='color: #BBB'>/</span> #{localed}" %></td>
-				<td><%= file.health.nil? ? '' : sprintf("%05.2f%", file.health) %></td>
+				<td><%= file.health.nil? ? '' : sprintf("%05.2f%%", file.health) %></td>
 				<!-- http://stackoverflow.com/questions/572298/css-how-to-stop-text-from-taking-up-more-than-1-line -->
 				<td style='white-space: nowrap; overflow: hidden;'><%= file.display_what %></td>
         <td><%= link_to 'Show', file %></td>

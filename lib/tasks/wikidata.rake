@@ -42,7 +42,7 @@ namespace :wikidata do
     end         
 	end
 
-	desc "wibble"
+	desc "Utility task for Wikidata file processing"
 	task wobble: :environment do
 	end
 

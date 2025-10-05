@@ -1,4 +1,4 @@
-namespace :cache do
+namespace :downloaded do
 	def foo(s)
 		Fyle.find_each do |f|
 			if f.type_negotiation == s
@@ -9,7 +9,7 @@ namespace :cache do
 		end
 	end
 
-  desc 'remove cached files, type is: all, text, pdf, xml, html'
+  desc 'Clear cached content for downloaded philosophical texts by type (pdf, text, xml, html)'
   task :clear, [:type]  => :environment  do |t, args|
 		case args.type
 		when 'pdf'
@@ -23,7 +23,7 @@ namespace :cache do
 		end
   end
 
-  desc 'report how many cached versus uncached'
+  desc 'Report how many downloaded philosophical texts have cached content vs. uncached'
   task report: :environment do
     c = 0
 		nc = 0
@@ -32,5 +32,20 @@ namespace :cache do
     end
 		puts "cached: #{c}"
 		puts "not cached: #{nc}"
+  end
+
+  desc 'List downloaded philosophical texts that have no cached content'
+  task uncached: :environment do
+    uncached_files = []
+    Fyle.find_each do |f|
+      if f.cache_file.blank?
+        uncached_files << f
+      end
+    end
+    
+    puts "Found #{uncached_files.count} uncached files:"
+    uncached_files.each do |f|
+      puts "ID: #{f.id}, URL: #{f.URL}, Type: #{f.type_negotiation}"
+    end
   end
 end

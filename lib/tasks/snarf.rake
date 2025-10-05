@@ -124,7 +124,7 @@ namespace :snarf do
 		}
 	end
 
-	desc "Urg"
+	desc "Additional processing for Dictionary of Philosophical Terms entries"
   task dic_phil_too: :environment do
 		headless = Headless.new
 		headless.start

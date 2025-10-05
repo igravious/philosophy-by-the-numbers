@@ -84,7 +84,7 @@ namespace :names do
 
 	out = ["'", "(", ")", ",", "-", ".", "0", "1", "2", "3", "4", "5", "8", "9", ":", "·", "A", "A", "A", "C", "E", "I", "O", "O", "O", "U", "U", "Þ", "ss", "a", "a", "a", "a", "a", "a", "ae", "c", "e", "e", "e", "e", "i", "i", "i", "i", "d", "n", "o", "o", "o", "o", "o", "o", "u", "u", "y", "a", "a", "a", "C", "c", "C", "c", "D", "d", "E", "e", "e", "e", "g", "i", "I", "i", "I", "i", "L", "L", "l", "n", "O", "o", "o", "oe", "r", "S", "s", "S", "s", "S", "s", "t", "u", "u", "z", "Z", "z", "Z", "z", "g", "S", "s", "T", "t", "ʹ", "ʻ", "ʾ", "ʿ", "d", "H", "h", "n", "r", "s", "t", "a", "ầ", "u", "u", "‘", "’"]
 
-  desc 'report how many funny characters there are in "en" as an array of characters'
+  desc 'Report special/non-ASCII characters found in English philosopher names'
   task funny: :environment do
 		Shadow.none
 		@en_names = Name.where(shadow_id: Philosopher.all, lang: 'en')
@@ -106,7 +106,7 @@ namespace :names do
 		p h.keys.sort
   end
 
-  desc 'organise names based on funny characters there are in "en" (i know, i know)'
+  desc 'Organize philosopher names by special characters in English labels'
   task bunny: :environment do
 		in_out = {}
 		in_.each_with_index do |c, idx|
