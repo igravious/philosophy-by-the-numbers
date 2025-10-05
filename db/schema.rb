@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20251004222349) do
+ActiveRecord::Schema.define(version: 20251005202920) do
 
   create_table "actual_texts", force: :cascade do |t|
     t.string   "URL",         limit: 255
@@ -176,17 +176,22 @@ ActiveRecord::Schema.define(version: 20251004222349) do
   add_index "meta_filters", ["filter"], name: "index_meta_filters_on_filter", unique: true
 
   create_table "metric_snapshots", force: :cascade do |t|
-    t.integer  "philosopher_id",                    null: false
-    t.datetime "calculated_at",                     null: false
+    t.integer  "philosopher_id",                     null: false
+    t.datetime "calculated_at",                      null: false
     t.float    "measure"
     t.integer  "measure_pos"
     t.string   "danker_version"
     t.string   "danker_file"
-    t.string   "algorithm_version", default: "1.0"
+    t.string   "algorithm_version",  default: "1.0"
     t.text     "notes"
-    t.datetime "created_at",                        null: false
-    t.datetime "updated_at",                        null: false
+    t.datetime "created_at",                         null: false
+    t.datetime "updated_at",                         null: false
     t.text     "weights_config"
+    t.text     "input_values"
+    t.float    "danker_score"
+    t.text     "encyclopedia_flags"
+    t.integer  "linkcount"
+    t.integer  "mention_count"
   end
 
   add_index "metric_snapshots", ["algorithm_version"], name: "index_metric_snapshots_on_algorithm_version"

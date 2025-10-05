@@ -4,6 +4,39 @@ require_relative 'sparql_queries'
 
 module Wikidata
   module ClientHelpers
+    
+    # SPARQL Query Logging Helper
+    def log_sparql_query(query, method_name, context = {})
+      timestamp = Time.now.strftime('%Y-%m-%d %H:%M:%S')
+      
+      # Console output if SPARQL_DEBUG is enabled
+      if ENV['SPARQL_DEBUG'] == 'true'
+        puts "\n" + "="*80
+        puts "SPARQL Query Debug [#{timestamp}]"
+        puts "Method: #{method_name}"
+        puts "Context: #{context.inspect}" unless context.empty?
+        puts "-" * 80
+        puts query.gsub("\t", '  ') # Replace tabs with spaces for readability
+        puts "="*80 + "\n"
+      end
+      
+      # Log file output if SPARQL_LOG is enabled
+      if ENV['SPARQL_LOG'] == 'true'
+        log_dir = Rails.root.join('log')
+        log_file = log_dir.join('sparql_queries.log')
+        
+        File.open(log_file, 'a') do |f|
+          f.puts "\n[#{timestamp}] Method: #{method_name}"
+          f.puts "Context: #{context.inspect}" unless context.empty?
+          f.puts "Query:"
+          f.puts query
+          f.puts "-" * 80
+        end
+      end
+    rescue => e
+      # Don't let logging errors break the main functionality
+      puts "Warning: SPARQL logging failed: #{e.message}" if ENV['SPARQL_DEBUG'] == 'true'
+    end
     include Wikidata::SparqlQueries
 
     ###
@@ -75,10 +108,14 @@ module Wikidata
     def interpolated_entity(sparql_query, substitution_hash)
       require 'knowledge'
       include Knowledge
-      w = Wikidata::Client.new
+      w = Knowledge::Wikidata::Client.new
       q = sparql_query % substitution_hash
-      # puts q.gsub("\t",'')
-      # exit
+      
+      # SPARQL Query Logging
+      if ENV['SPARQL_DEBUG'] == 'true' || ENV['SPARQL_LOG'] == 'true'
+        log_sparql_query(q, 'interpolated_entity', substitution_hash)
+      end
+      
       res = w.query(q) # take the first answer! :/
       while not res.bindings[:same].nil?
         entity = res.bindings[:same].first.to_s.split('/').last
@@ -113,7 +150,7 @@ module Wikidata
     def object(entity_id, property_id)
       require 'knowledge'
       include Knowledge
-      w = Wikidata::Client.new
+      w = Knowledge::Wikidata::Client.new
       entity = 'Q'+entity_id.to_s
       property = 'P'+property_id.to_s
       q = DATUM_ % {interpolated_entity: entity, interpolated_property: property}

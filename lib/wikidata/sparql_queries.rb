@@ -8,6 +8,7 @@ module Wikidata
     #
     ###
 
+    # Optimized philosopher query with sitelink counting
     THESE_PHILOSOPHERS = "
     PREFIX wd: <http://www.wikidata.org/entity/>
     PREFIX wdt: <http://www.wikidata.org/prop/direct/>
@@ -19,18 +20,23 @@ module Wikidata
     PREFIX bd: <http://www.bigdata.com/rdf#>
     PREFIX schema: <http://schema.org/>
 
-    SELECT ?entity ?entityLabel (COUNT(DISTINCT ?sitelink) AS ?linkcount) WHERE {
-      ?entity wdt:P31 wd:Q5 .
-      {{?entity p:P106 ?l0 . ?l0 ps:P106 wd:Q4964182 .} UNION {?entity p:P101 ?l0 . ?l0 ps:P101 wd:Q4964182 .} UNION {?entity p:P39 ?l0 . ?l0 ps:P39 wd:Q4964182 .}}
-      OPTIONAL {
-        ?sitelink schema:about ?entity .
+    SELECT ?entity ?entityLabel ?linkcount WHERE {
+      {
+        SELECT ?entity (COUNT(DISTINCT ?sitelink) AS ?linkcount) WHERE {
+          ?entity wdt:P31 wd:Q5 .
+          {{?entity p:P106 ?l0 . ?l0 ps:P106 wd:Q4964182 .} UNION {?entity p:P101 ?l0 . ?l0 ps:P101 wd:Q4964182 .} UNION {?entity p:P39 ?l0 . ?l0 ps:P39 wd:Q4964182 .}}
+          OPTIONAL {
+            ?sitelink schema:about ?entity .
+          }
+        }
+        GROUP BY ?entity
       }
       SERVICE wikibase:label {
         bd:serviceParam wikibase:language 'en, nl, fr, de, es, it, sv, da, ru, ca, ja, hu, pl, fi, cs, zh, fa, sk, uk, ar, he, et, sl, bg, el, hr, la, hy, zh-cn, sr, az, lv, krc' .
       }
     }
-    GROUP BY ?entity ?entityLabel
     ORDER BY DESC(?linkcount)
+    LIMIT 10000
     ".freeze
 
     # bd:serviceParam wikibase:language 'en','nl','fr','de','es','it','sv','nb','da','nn','ru','ca','ja','hu','pl','pt','fi','cs','zh','fa','sk','eo','uk','ar','tr','ro','he','et','eu','sl','oc','cy','ko','gl','bg','id','el','hr','la' .

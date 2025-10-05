@@ -234,8 +234,12 @@ namespace :corpus do
 
 	desc "Show Elasticsearch schema/mapping information for all corpus indices"
 	task ES_SCHEMA_INFO: :environment do
+		# NOTE: This task currently fails because modern Elasticsearch has security enabled
+		# and requires HTTPS + authentication. The original app was written for HTTP-only ES.
+		# TODO: Update elastic_helper.rb to support HTTPS and authentication
 		elastic(true) do |client|
 			# curl -XGET 'http://localhost:9200/_mapping?pretty'
+			# For modern ES with security: curl -k -u elastic:password -X GET "https://localhost:9200/_mapping?pretty"
 			client.indices.get_mapping
 		end
 	end

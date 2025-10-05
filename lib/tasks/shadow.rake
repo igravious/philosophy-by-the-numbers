@@ -1,6 +1,102 @@
 begin
 	require_relative '../knowledge'
 
+	# SPARQL Query Logging Helper
+	def log_sparql_query(query, method_name, context = {})
+		timestamp = Time.now.strftime('%Y-%m-%d %H:%M:%S')
+		
+		# Console output if SPARQL_DEBUG is enabled
+		if ENV['SPARQL_DEBUG'] == 'true'
+			puts "\n" + "="*80
+			puts "SPARQL Query Debug [#{timestamp}]"
+			puts "Method: #{method_name}"
+			puts "Context: #{context.inspect}" unless context.empty?
+			puts "-" * 80
+			puts query.gsub("\t", '  ') # Replace tabs with spaces for readability
+			puts "="*80 + "\n"
+		end
+		
+		# Always log to file (not just when SPARQL_LOG is enabled)
+		log_dir = Rails.root.join('log')
+		log_file = log_dir.join('sparql_queries.log')
+		
+		File.open(log_file, 'a') do |f|
+			f.puts "\n[#{timestamp}] Method: #{method_name}"
+			f.puts "Context: #{context.inspect}" unless context.empty?
+			f.puts "Query:"
+			f.puts query
+			f.puts "-" * 80
+		end
+	rescue => e
+		# Don't let logging errors break the main functionality
+		puts "Warning: SPARQL logging failed: #{e.message}" if ENV['SPARQL_DEBUG'] == 'true'
+	end
+
+	# Enhanced logging for task output
+	def log_task_output(message, method_name = 'task_output')
+		timestamp = Time.now.strftime('%Y-%m-%d %H:%M:%S')
+		
+		# Always print to console
+		# puts message
+		
+		# Always log to file
+		log_dir = Rails.root.join('log')
+		log_file = log_dir.join('sparql_queries.log')
+		
+		File.open(log_file, 'a') do |f|
+			f.puts "[#{timestamp}] #{method_name}: #{message}"
+		end
+	rescue => e
+		puts "Warning: Task logging failed: #{e.message}"
+	end
+
+	# Simple progress spinner/throbber
+	class ProgressSpinner
+		def initialize(message = "Processing")
+			@message = message
+			@chars = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
+			@index = 0
+			@thread = nil
+			@start_time = Time.now
+		end
+
+		def start
+			@start_time = Time.now
+			@thread = Thread.new do
+				loop do
+					elapsed = Time.now - @start_time
+					elapsed_str = format_time(elapsed)
+					print "\r#{@message} #{elapsed_str} #{@chars[@index]}"
+					@index = (@index + 1) % @chars.length
+					sleep(0.08)
+				end
+			end
+		end
+
+		def stop(final_message = nil)
+			@thread&.kill
+			elapsed = Time.now - @start_time
+			elapsed_str = format_time(elapsed)
+			if final_message
+				puts "\r#{final_message} #{elapsed_str} ✓"
+			else
+				puts "\r#{@message} #{elapsed_str} ✓"
+			end
+		end
+
+		private
+
+		def format_time(seconds)
+			if seconds < 60
+				"#{seconds.round(1)}s"
+			else
+				minutes = (seconds / 60).to_i
+				secs = (seconds % 60).round(1)
+				"#{minutes}m #{secs}s"
+			end
+		end
+	end
+
 	namespace :shadow do
 
 		###
@@ -53,7 +149,7 @@ begin
 			task explore2: :environment do
 				require 'knowledge'
 				include Knowledge
-				w = Wikidata::Client.new
+				w = Knowledge::Wikidata::Client.new
 				puts "About to execute Wikidata query"
 				start = Time.now
 				res = w.query(THESE_PHILOSOPHERS)
@@ -67,9 +163,47 @@ begin
 				begin
 					require 'knowledge'
 					include Knowledge
-					w = Wikidata::Client.new
-					str = THESE_PHILOSOPHERS
-					res = w.query(str)
+					w = Knowledge::Wikidata::Client.new
+					
+				# Use optimized philosopher query with sitelink counting
+				str = THESE_PHILOSOPHERS
+				query_type = 'optimized (with sitelink counting)'
+				
+				puts "Using #{query_type} query for philosopher population..."
+				
+				# SPARQL Query Logging
+				if ENV['SPARQL_DEBUG'] == 'true' || ENV['SPARQL_LOG'] == 'true'
+					log_sparql_query(str, 'populate_philosophers', {
+						task: 'shadow:philosopher:populate', 
+						query_type: query_type
+					})
+				end
+					
+					# Execute with retry logic for timeouts
+					res = nil
+					max_retries = 3
+					retry_count = 0
+					
+					begin
+						spinner = ProgressSpinner.new("Executing Wikidata query (attempt #{retry_count + 1}/#{max_retries})")
+						spinner.start
+						
+						res = w.query(str)
+						
+						spinner.stop("✓ Query completed")
+						log_task_output("✓ Wikidata query completed successfully", 'populate_query')
+					rescue Net::ReadTimeout => e
+						spinner&.stop("✗ Query timed out")
+						retry_count += 1
+						if retry_count < max_retries
+							log_task_output("⚠ Query timed out (attempt #{retry_count}/#{max_retries}). Retrying in #{retry_count * 5} seconds...", 'populate_retry')
+							sleep(retry_count * 5) # Progressive backoff: 5s, 10s, 15s
+							retry
+						else
+							log_task_output("✗ Query failed after all retry attempts: #{e.message}", 'populate_error')
+							raise e
+						end
+					end
 					Shadow.none
 					new = 0
 					total = res.length
@@ -87,9 +221,9 @@ begin
 							s = "https://www.wikidata.org/wiki/Q#{id.to_s.ljust(8)} with label '#{label}#{lang}'"
 							if not arg.force.nil? and ("true" == arg.force.downcase or 't' == arg.force.downcase)
 								Philosopher.create!(entity_id: id, populate: true)
-								puts "Creating! " + s
+								log_task_output("Creating! " + s, 'populate_create')
 							else
-								puts "Would have created: " + s
+								log_task_output("Would have created: " + s, 'populate_dryrun')
 							end
 							new += 1
 						end
@@ -97,11 +231,7 @@ begin
 					end.length
 					existing = Philosopher.all.length
 					str = "#{external} philosopher wikidata records in total. #{existing} existing ones. #{new} new ones."
-					if bar.nil?
-						puts str
-					else
-						STDERR.puts str
-					end
+					log_task_output(str, 'populate_summary')
 				rescue
 					barf $!, 'shadow:populate urk'
 				end
@@ -112,7 +242,7 @@ begin
 				begin
 					require 'knowledge'
 					include Knowledge
-					w = Wikidata::Client.new
+					w = Knowledge::Wikidata::Client.new
 					res = w.query(THESE_PHILOSOPHERS)
 					Shadow.none
 					extra = 0
@@ -629,7 +759,7 @@ begin
 				end
 				longest += 12 # accommodate (b-d)
 				nam = 0
-				w = Wikidata::Client.new
+				w = Knowledge::Wikidata::Client.new
 				Shadow.none
 				reach = false
 				#many = []
@@ -748,41 +878,101 @@ begin
 					total = shadows.length
 					bar = progress_bar(total, FORCE)
 					
-					# Use the latest symlinked data
-					danker_latest_dir = Rails.root.join('db', 'danker', 'latest')
-					unless danker_latest_dir.exist?
+					# Find latest danker directory
+					danker_dirs = Dir.glob(Rails.root.join('db', 'danker_*')).sort
+					if danker_dirs.empty?
 						STDERR.puts "ERROR: No danker data found. Run 'rake danker:update' first."
 						exit 1
 					end
 					
-					# Find the CSV file in the latest directory
-					csv_files = Dir.glob(danker_latest_dir.join('*.c.alphanum.csv'))
-					if csv_files.empty?
-						STDERR.puts "ERROR: No CSV file found in #{danker_latest_dir}"
+					latest_dir = danker_dirs.last
+					danker_version = File.basename(latest_dir)
+					
+					# Look for CSV file first (optimized for binary search), then compressed format
+					csv_files = Dir.glob(File.join(latest_dir, '*.c.alphanum.csv'))
+					bz2_files = Dir.glob(File.join(latest_dir, '*.rank.bz2'))
+					
+					fn = nil
+					use_look_command = false
+					
+					if !csv_files.empty?
+						fn = csv_files.first
+						use_look_command = true
+						puts "Found CSV format (optimized): #{File.basename(fn)}"
+					elsif !bz2_files.empty?
+						fn = bz2_files.first
+						use_look_command = false
+						puts "Found compressed format: #{File.basename(fn)}"
+						puts "⚠ Note: For better performance, run 'rake danker:process_files' to generate CSV"
+					else
+						STDERR.puts "ERROR: No danker data file found in #{latest_dir}"
+						STDERR.puts "Looking for: *.c.alphanum.csv or *.rank.bz2"
 						exit 1
 					end
 					
-					fn = csv_files.first
-					danker_version = danker_latest_dir.readlink.to_s
-					
 					puts "Using danker data: #{danker_version}"
 					puts "Data file: #{File.basename(fn)}"
+					puts "Lookup method: #{use_look_command ? 'Binary search (look command)' : 'Memory loading'}"
 					
 					shadows.each do |shade|
 						update_progress(bar)
 						ent = shade.entity_id
-						urk = `look Q#{ent}, #{fn}`
+						
+						# Get new danker score using optimized lookup
+						if use_look_command
+							# Use binary search with look command (fast!)
+							urk = `look Q#{ent}, #{fn}`
+							new_danker_score = urk.empty? ? 0.0 : urk.split(",")[1].to_f
+						else
+							# Fall back to memory lookup if no CSV available
+							danker_scores ||= {}
+							if danker_scores.empty?
+								puts "Loading compressed data into memory..."
+								IO.popen("bzcat #{fn}") do |io|
+									io.each_line do |line|
+										entity_id, score = line.strip.split("\t")
+										if entity_id&.start_with?('Q')
+											danker_scores[entity_id[1..-1].to_i] = score.to_f
+										end
+									end
+								end
+								puts "Loaded #{danker_scores.size} danker scores"
+							end
+							new_danker_score = danker_scores[ent] || 0.0
+						end
+						
 						q = "Q#{ent}".ljust(9)
-						r = "#{shade.dbpedia_pagerank}".ljust(8)
-						s = urk.split(",")[1].to_f
-						puts "#{q} #{r} #{s}" if bar.nil?
+						old_danker_score = shade.danker || 0.0
+						puts "#{q} #{old_danker_score} → #{new_danker_score}" if bar.nil?
 						
-						# Update the danker score
-						old_danker = shade.danker
-						shade.update(danker: s)
+						# Get current values for snapshot
 						
-						# Create snapshot if value changed
-						if old_danker != s
+						# Only create snapshot if danker score changed
+						if old_danker_score != new_danker_score
+							# Collect all current input values for self-contained snapshot
+							input_values = {
+								stanford: shade.stanford || false,
+								oxford: shade.oxford || false,
+								cambridge: shade.cambridge || false,
+								internet: shade.internet || false,
+								routledge: shade.routledge || false,
+								britannica: shade.britannica || false,
+								linkcount: shade.linkcount || 0,
+								mention_count: shade.mention || 0,
+								old_danker_score: old_danker_score,
+								new_danker_score: new_danker_score
+							}
+							
+							# Get encyclopedia flags for storage
+							encyclopedia_flags = {
+								stanford: shade.stanford || false,
+								oxford: shade.oxford || false,
+								cambridge: shade.cambridge || false,
+								internet: shade.internet || false,
+								routledge: shade.routledge || false,
+								britannica: shade.britannica || false
+							}
+							
 							MetricSnapshot.create!(
 								philosopher_id: shade.id,
 								calculated_at: Time.current,
@@ -790,13 +980,23 @@ begin
 								measure_pos: shade.measure_pos,
 								danker_version: danker_version,
 								danker_file: File.basename(fn),
-								algorithm_version: 'danker_import',
-								notes: "Danker score updated from #{old_danker} to #{s}"
+								algorithm_version: 'danker_import_v2_self_contained',
+								notes: "Danker score updated from #{old_danker_score} to #{new_danker_score}",
+								# Store input values in new self-contained fields
+								input_values: input_values.to_json,
+								danker_score: new_danker_score,
+								encyclopedia_flags: encyclopedia_flags.to_json,
+								linkcount: shade.linkcount || 0,
+								mention_count: shade.mention || 0
 							)
+							
+							# DO NOT update shadows.danker - preserve historical data
+							# shade.update(danker: new_danker_score)  # REMOVED FOR SELF-CONTAINED APPROACH
 						end
 					end
 					
 					puts "\n✓ Danker import completed using version #{danker_version}"
+					puts "✓ Self-contained snapshots created - historical data preserved"
 				rescue => e
 					STDERR.puts "ERROR: #{e.message}"
 					STDERR.puts e.backtrace.first(5)
@@ -1342,7 +1542,7 @@ begin
 			def filters
 				require 'knowledge'
 				include Knowledge
-				w = Wikidata::Client.new
+				w = Knowledge::Wikidata::Client.new
 				# lo = Name.all.group(:lang).order('count_all desc').count
 				# lo.each {|v| Name.where({lang: v[0]}).update_all({langorder: v[1]})}
 				lc = Name.all.group(:lang).order('count_all desc').count
@@ -1429,7 +1629,7 @@ begin
 			def mention_one(entity_id, filters)
 				require 'knowledge'
 				include Knowledge
-				w = Wikidata::Client.new
+				w = Knowledge::Wikidata::Client.new
 				case entity_id
 				when String
 					if entity_id.start_with?('Q')

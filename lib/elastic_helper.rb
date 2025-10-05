@@ -1,6 +1,15 @@
 
 	require 'elasticsearch'
 
+	# NOTE: This helper was written for older Elasticsearch without security.
+	# Modern ES requires HTTPS + authentication. To fix:
+	# Elasticsearch::Client.new(
+	#   url: 'https://localhost:9200',
+	#   user: 'elastic',
+	#   password: 'your_password',
+	#   transport_options: { ssl: { verify: false } }
+	# )
+
 	def elastic(log_switch)
 		begin
 			name = caller[0]

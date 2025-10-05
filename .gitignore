@@ -75,3 +75,7 @@ __pycache__/
 
 # Rake task analysis files
 /rake_analysis/
+lib/tasks/shadow.rake.monolithic
+
+# Danker data directories
+db/danker_*/
