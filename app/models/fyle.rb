@@ -302,6 +302,32 @@ class Fyle < ActiveRecord::Base
 		Fyle::gen_tmp_name(name, _ext)
 	end
 
+	# Get the absolute path for local_file, handling both relative and absolute paths
+	# This normalizes paths from old installations to current Rails.root
+	def absolute_local_file_path
+		return nil if local_file.blank?
+		
+		# If it's already an absolute path within current Rails.root, use as-is
+		if local_file.start_with?(Rails.root.to_s)
+			return local_file
+		end
+		
+		# If it's an absolute path from old installation, extract relative part
+		if local_file.start_with?('/var/www/RailsApps/CorpusBuilder/')
+			relative_path = local_file.sub('/var/www/RailsApps/CorpusBuilder/', '')
+			return Rails.root.join(relative_path).to_s
+		end
+		
+		# If it's already relative, join with Rails.root
+		unless local_file.start_with?('/')
+			return Rails.root.join(local_file).to_s
+		end
+		
+		# Fallback: try to extract just the filename and look in tmp/
+		filename = File.basename(local_file)
+		Rails.root.join('tmp', filename).to_s
+	end
+
 	# require 'text_filter'
 
 	# new content is (ought to be!) in utf-8, but old is not nececelery

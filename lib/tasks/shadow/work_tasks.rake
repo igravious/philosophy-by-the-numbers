@@ -33,6 +33,10 @@ begin
             res = Wikidata::QueryExecutor.execute(q, 'philosophical_works', {
               task_name: 'shadow:work:query'
             })
+          else
+            puts "No condition specified. Available conditions: works1, works2"
+            puts "Usage: bin/rake shadow:work:show[works1] or bin/rake shadow:work:show[works2]"
+            res = []
           end
           if arg.count
             p arg

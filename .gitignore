@@ -18,6 +18,13 @@
 # Ignore all logfiles and tempfiles.
 # (might selectively enable cached corpus items?)
 /log/*.log
+
+# Ignore delta of deltas analysis results
+/delta_of_deltas
+
+# Ignore Saffron build and config files
+mvn-output.txt
+saffron-os-config.json
 /tmp
 
 # Ignore API keys
