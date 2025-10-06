@@ -135,26 +135,24 @@ begin
 
 			desc "SPARQLy P.I. (length)"
 			task explore1: :environment do
-				require 'knowledge'
-				include Knowledge
-				w = Knowledge::Wikidata::Client.new
+				require_relative '../wikidata/query_executor'
 				str = THESE_PHILOSOPHERS
 				puts '# SPARQL for Wikidata philosopher query'
 				puts str.gsub("\t",'')
-				res = w.query(THESE_PHILOSOPHERS)
+				res = Wikidata::QueryExecutor.execute_philosopher_query({
+					task_name: 'shadow:philosopher:explore1',
+					show_spinner: false
+				})
 				puts "response length: #{res.length}"
 			end
 
 			desc "SPARQLy philosophical investigations (show stuff)"
 			task explore2: :environment do
-				require 'knowledge'
-				include Knowledge
-				w = Knowledge::Wikidata::Client.new
+				require_relative '../wikidata/query_executor'
 				puts "About to execute Wikidata query"
-				start = Time.now
-				res = w.query(THESE_PHILOSOPHERS)
-				finish = Time.now
-				puts "Query took #{finish-start} seconds"
+				res = Wikidata::QueryExecutor.execute_philosopher_query({
+					task_name: 'shadow:philosopher:explore2'
+				})
 				show_philosophical_stuff(res)
 			end
 
@@ -202,10 +200,10 @@ begin
 			desc "Find philosophers in Wikidata query results not yet in local database"
 			task additional: :environment do
 				begin
-					require 'knowledge'
-					include Knowledge
-					w = Knowledge::Wikidata::Client.new
-					res = w.query(THESE_PHILOSOPHERS)
+					require_relative '../wikidata/query_executor'
+					res = Wikidata::QueryExecutor.execute_philosopher_query({
+						task_name: 'shadow:philosopher:additional'
+					})
 					Shadow.none
 					extra = 0
 					these = []
@@ -1518,13 +1516,19 @@ begin
 					l = language_keys[(base*idx)..((base*(idx+1))-1)]
 					#p l
 					q = xlate2('Q5891', l) # philosophy
-					res1 = w.query(q)
+					res1 = Wikidata::QueryExecutor.execute_simple(q, 'xlate_philosophy', {
+						task_name: 'shadow:label:xlate'
+					})
 					#p res1
 					q = xlate2('Q4964182', l) # philosopher
-					res2 = w.query(q)
+					res2 = Wikidata::QueryExecutor.execute_simple(q, 'xlate_philosopher', {
+						task_name: 'shadow:label:xlate'
+					})
 					#p res2
 					q = xlate2('Q4964182', l) # philosophical #(
-					res3 = w.query(q)
+					res3 = Wikidata::QueryExecutor.execute_simple(q, 'xlate_philosophical', {
+						task_name: 'shadow:label:xlate'
+					})
 					#p res3
 					idx += 1
 
@@ -1612,7 +1616,9 @@ begin
 					if filter[:match]
 						q = HITS2 % {interpolated_entity: entity, interpolated_filter: filter[:xlate]}
 						#puts q
-						hits = w.query(q)
+						hits = Wikidata::QueryExecutor.execute_simple(q, 'hits_filter', {
+							task_name: 'shadow:philosophy:hits'
+						})
 						acc[idx] += hits.bindings[:hits].first.to_i
 					end
 					#end

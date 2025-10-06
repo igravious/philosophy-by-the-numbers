@@ -25,10 +25,14 @@ begin
             #
           when "works1"
             q = THESE_WORKS_BY_PHILOSOPHERS.gsub("\t",'')
-            res = w.query(q)
+            res = Wikidata::QueryExecutor.execute(q, 'works_by_philosophers', {
+              task_name: 'shadow:work:query'
+            })
           when "works2"
             q = THESE_PHILOSOPHICAL_WORKS.gsub("\t",'')
-            res = w.query(q)
+            res = Wikidata::QueryExecutor.execute(q, 'philosophical_works', {
+              task_name: 'shadow:work:query'
+            })
           end
           if arg.count
             p arg
@@ -84,11 +88,11 @@ begin
       #
       def deez_wurks(q)
         Shadow.none
-        require 'knowledge'
-        include Knowledge
-        w = Wikidata::Client.new
+        require_relative '../../wikidata/query_executor'
         puts q
-        res = w.query(q)
+        res = Wikidata::QueryExecutor.execute_simple(q, 'deez_wurks', {
+          task_name: 'shadow:work:deez_wurks'
+        })
         #bar = progress_bar(res.length, FORCE)
         bar = progress_bar(res.length)
         mult = [] # only used to suppress output
@@ -168,10 +172,12 @@ begin
           Shadow.none
           require 'knowledge'
           include Knowledge
-          w = Knowledge::Wikidata::Client.new
+          require_relative '../../wikidata/query_executor'
           q = THESE_PHILOSOPHICAL_WORKS.gsub("\t",'')
           puts q
-          solution_set = w.query(q)
+          solution_set = Wikidata::QueryExecutor.execute(q, 'philosophical_works_populate', {
+            task_name: 'shadow:work:populate'
+          })
           bar = progress_bar(solution_set.length)
           solution_set.each { |solution|
             work   = solution.bindings[:work]
@@ -516,12 +522,12 @@ begin
           exit if works.nil?
           total = works.length
           bar = progress_bar(total, true)
-          require 'knowledge'
-          include Knowledge
-          w = Knowledge::Wikidata::Client.new
+          require_relative '../../wikidata/query_executor'
           works.each {|work|
             q = query_str % {:interpolated_entity => work.entity_id}
-            solution_set = w.query(q)
+            solution_set = Wikidata::QueryExecutor.execute_simple(q, "work_#{work.entity_id}", {
+              task_name: 'shadow:work:iterate'
+            })
             yield solution_set, work
             update_progress(bar)
           }

@@ -122,13 +122,18 @@ module Wikidata
         log_sparql_query(q, 'interpolated_entity', substitution_hash)
       end
       
-      res = w.query(q) # take the first answer! :/
+      require_relative 'query_executor'
+      res = Wikidata::QueryExecutor.execute_simple(q, 'interpolated_entity', {
+        task_name: 'client_helpers'
+      }) # take the first answer! :/
       while not res.bindings[:same].nil?
         entity = res.bindings[:same].first.to_s.split('/').last
         puts "Properties: you splitting on #{entity}"
         substitution_hash[:interpolated_entity] = entity # must have at least that element
         q = sparql_query % substitution_hash
-        res = w.query(q) # res is result set
+        res = Wikidata::QueryExecutor.execute_simple(q, 'interpolated_entity_redirect', {
+          task_name: 'client_helpers'
+        }) # res is result set
       end
       res
     end
@@ -154,22 +159,24 @@ module Wikidata
     end
 
     def object(entity_id, property_id)
-      require 'knowledge'
-      include Knowledge
-      w = Knowledge::Wikidata::Client.new
+      require_relative 'query_executor'
       entity = 'Q'+entity_id.to_s
       property = 'P'+property_id.to_s
       q = DATUM_ % {interpolated_entity: entity, interpolated_property: property}
       begin
         # puts q.gsub("\t",'')
         # exit
-        res = w.query(q) # take the first answer! :/
+        res = Wikidata::QueryExecutor.execute_simple(q, 'object_query', {
+          task_name: 'client_helpers'
+        }) # take the first answer! :/
         while not res.bindings[:same].nil?
           new_entity = res.bindings[:same].first.to_s.split('/').last
           puts "Properties: you splitting on #{new_entity} from #{entity}"
           entity = new_entity
           q = DATUM_ % {interpolated_entity: entity, interpolated_property: property}
-          res = w.query(q) # res is result set
+          res = Wikidata::QueryExecutor.execute_simple(q, 'object_query_redirect', {
+            task_name: 'client_helpers'
+          }) # res is result set
         end
         len = res.length
         if len > 1

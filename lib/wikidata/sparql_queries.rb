@@ -36,7 +36,6 @@ module Wikidata
       }
     }
     ORDER BY DESC(?linkcount)
-    LIMIT 10000
     ".freeze
 
     # bd:serviceParam wikibase:language 'en','nl','fr','de','es','it','sv','nb','da','nn','ru','ca','ja','hu','pl','pt','fi','cs','zh','fa','sk','eo','uk','ar','tr','ro','he','et','eu','sl','oc','cy','ko','gl','bg','id','el','hr','la' .

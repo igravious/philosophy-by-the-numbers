@@ -192,6 +192,90 @@ module Wikidata
         })
       end
       
+      # Execute philosophical works queries
+      def execute_philosophical_works_query(options = {})
+        execute(
+          Wikidata::SparqlQueries::THESE_PHILOSOPHICAL_WORKS,
+          'philosophical_works',
+          {
+            task_name: 'shadow:work:philosophical_works',
+            **options
+          }
+        )
+      end
+      
+      # Execute works by philosophers query
+      def execute_works_by_philosophers_query(options = {})
+        execute(
+          Wikidata::SparqlQueries::THESE_WORKS_BY_PHILOSOPHERS,
+          'works_by_philosophers',
+          {
+            task_name: 'shadow:work:works_by_philosophers',
+            **options
+          }
+        )
+      end
+      
+      # Execute entity attribute query
+      def execute_entity_attributes_query(entity_id, options = {})
+        query = Wikidata::SparqlQueries::ATTR_ % {interpolated_entity: entity_id}
+        execute_simple(query, "entity_attributes_#{entity_id}", {
+          task_name: options[:task_name] || 'entity_attributes'
+        })
+      end
+      
+      # Execute hits filter query
+      def execute_hits_query(entity_id, filter_expression, options = {})
+        query = Wikidata::SparqlQueries::HITS2 % {
+          interpolated_entity: entity_id,
+          interpolated_filter: filter_expression
+        }
+        execute_simple(query, "hits_#{entity_id}", {
+          task_name: options[:task_name] || 'hits_query'
+        })
+      end
+      
+      # Performance monitoring: Get query performance stats
+      def performance_stats
+        log_file = File.join(Rails.root, 'log', 'task_output.log')
+        return {} unless File.exist?(log_file)
+        
+        stats = {
+          total_queries: 0,
+          avg_duration: 0,
+          total_results: 0,
+          fastest_query: { duration: Float::INFINITY, name: nil },
+          slowest_query: { duration: 0, name: nil },
+          query_counts: Hash.new(0)
+        }
+        
+        durations = []
+        
+        File.readlines(log_file).each do |line|
+          if line.match(/✓ (\w+) query completed successfully: (\d+) results in ([\d.]+)ms/)
+            query_name = $1
+            result_count = $2.to_i
+            duration = $3.to_f
+            
+            stats[:total_queries] += 1
+            stats[:total_results] += result_count
+            stats[:query_counts][query_name] += 1
+            durations << duration
+            
+            if duration < stats[:fastest_query][:duration]
+              stats[:fastest_query] = { duration: duration, name: query_name }
+            end
+            
+            if duration > stats[:slowest_query][:duration]
+              stats[:slowest_query] = { duration: duration, name: query_name }
+            end
+          end
+        end
+        
+        stats[:avg_duration] = durations.empty? ? 0 : (durations.sum / durations.length).round(2)
+        stats
+      end
+      
       private
       
       # Log SPARQL query details to file and console

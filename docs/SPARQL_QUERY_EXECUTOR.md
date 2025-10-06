@@ -62,6 +62,22 @@ philosopher = Wikidata::QueryExecutor.find_philosopher_by_id('Q5891', {
 philosopher = Wikidata::QueryExecutor.find_philosopher_by_name('Aristotle', {
   task_name: 'name_lookup'
 })
+
+# Execute philosophical works queries
+works = Wikidata::QueryExecutor.execute_philosophical_works_query
+works_by_philosophers = Wikidata::QueryExecutor.execute_works_by_philosophers_query
+
+# Get entity attributes
+attributes = Wikidata::QueryExecutor.execute_entity_attributes_query('Q5891')
+
+# Execute hits/filter queries
+hits = Wikidata::QueryExecutor.execute_hits_query('Q5891', 'some_filter_expression')
+
+# Performance monitoring
+stats = Wikidata::QueryExecutor.performance_stats
+puts "Total queries: #{stats[:total_queries]}"
+puts "Average duration: #{stats[:avg_duration]}ms"
+puts "Fastest query: #{stats[:fastest_query][:name]} (#{stats[:fastest_query][:duration]}ms)"
 ```
 
 ## Options
@@ -157,3 +173,38 @@ To migrate existing query calls:
 5. Add appropriate `task_name` and `metadata` for better logging
 
 This provides a significant improvement in code organization, debugging capabilities, and user experience across all SPARQL operations.
+
+## Performance Monitoring
+
+The QueryExecutor includes built-in performance monitoring capabilities:
+
+### Real-time Monitoring
+Every query execution automatically logs:
+- Query name and execution time
+- Result count and success/failure status  
+- Task context and metadata
+- Retry attempts and error details
+
+### Performance Statistics
+Access aggregated performance data:
+
+```ruby
+stats = Wikidata::QueryExecutor.performance_stats
+
+# Available metrics:
+stats[:total_queries]     # Total number of queries executed
+stats[:avg_duration]      # Average query duration in milliseconds
+stats[:total_results]     # Total results returned across all queries
+stats[:fastest_query]     # { duration: ms, name: query_name }
+stats[:slowest_query]     # { duration: ms, name: query_name }
+stats[:query_counts]      # Hash of query_name => execution_count
+```
+
+### Performance Optimization
+Use the stats to identify:
+- Slow queries that need optimization
+- Most frequently executed queries for caching candidates
+- Query patterns and usage trends
+- Performance regressions over time
+
+The performance data is automatically collected from the task output logs, providing historical performance tracking across all SPARQL operations.
