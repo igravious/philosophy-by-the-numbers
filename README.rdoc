@@ -26,28 +26,88 @@ Things you may want to cover:
 Please feel free to use a different markup language if you do not plan to run
 <tt>rake doc:app</tt>.
 
-== START HERE
+== Asset Pipeline & Bower Integration
 
-Assets, and the asset pipeline. If you get bower to store its assets
-under vendor/assets/FOO, say vendor/assets/bower_components/ using
-.bowerrc
-See http://guides.rubyonrails.org/asset_pipeline.html#asset-organization
+This Rails application uses Bower for front-end dependency management, integrated with the Rails asset pipeline.
+The setup allows us to manage CSS frameworks (like Picnic, Milligram) and JavaScript libraries through Bower
+while leveraging Rails' asset compilation and fingerprinting.
 
-=> lib/tasks/resolve.rake
-   bin/rake resolve:paths
+=== Bower Configuration & Directory Structure
+
+* .bowerrc - Configures bower to install packages under vendor/assets/bower_components/
+  This keeps third-party assets separate from application assets and follows Rails conventions.
+
+* bower.json - Defines project dependencies (d3, picnic, milligram, etc.)
+  Run 'bower install' to download packages to vendor/assets/bower_components/
+
+=== Asset Pipeline Integration
+
+The Rails asset pipeline searches for assets in this order:
+1. app/assets/stylesheets (application-specific styles)
+2. lib/assets/stylesheets (local libraries - currently empty)
+3. vendor/assets/stylesheets (third-party assets and bower components)
+4. vendor/assets/stylesheets of plugins
+
+=== Key Files & Their Purposes
+
+* lib/tasks/resolve.rake
+  Custom rake task that processes CSS files in bower components to resolve relative path issues.
+  Usage: bin/rake resolve:paths
+  
+  This task finds url() references in bower CSS files and converts them to Rails asset_path helpers,
+  then creates .erb versions of the CSS files. This ensures that asset fingerprinting works correctly
+  with bower components that reference images or fonts.
 
 * app/views/layouts/application.html.erb
+  Main layout template that includes stylesheets and sets up the page structure.
+  
+  Notice the stylesheet_link_tag calls:
+  - <%= stylesheet_link_tag "picnic", media: "all" %> - Loads Picnic CSS framework
+  - <%= stylesheet_link_tag "application", media: "all" %> - Loads compiled application CSS
+  
+  The Rails asset pipeline automatically finds these files in the search paths above.
 
 * app/assets/stylesheets/application.css
-	. = app/assets/stylesheets (app scaffolding styles),
-	    *= require_self
-	    *= require_tree .
-	or  lib/assets/stylesheets (local) - empty
-	or  vendor/assets/stylesheets (3rd-party),
-	or  vendor/assets/stylesheets of plugins
+  Master manifest file that controls which stylesheets get compiled together.
+  
+  Key directives:
+  *= require_self    - Includes styles defined in this file
+  *= require_tree .  - Recursively includes all CSS files in app/assets/stylesheets/
+  *= require pickadate - Explicitly includes pickadate styles (bower component)
+  *= require font-awesome - Explicitly includes font-awesome styles (bower component)
+  
+  The require directives pull in stylesheets from all asset paths, including bower_components.
 
-* vendor/assets/stylesheets/bower-sprockets.scss cuz of *= bower-sprockets in app/assets/stylesheets/application.css
+* vendor/assets/stylesheets/bower-sprockets.scss
+  Custom SCSS file that imports Bootstrap Sass components.
+  This demonstrates how to create shim files when bower components need special handling.
 
-* vendor/assets/bower_components/???/bower.jown
-  	main = FOO, "main": "releases/picnic.min.css" for instance
-  	<%= stylesheet_link_tag "FOO", media: "all" %> back in app/views/layouts/application.html.erb
+=== Working with Bower Components
+
+Each bower component has a bower.json file specifying its main files:
+
+* vendor/assets/bower_components/[package]/bower.json
+  Example: picnic/bower.json contains "main": "releases/picnic.min.css"
+  
+  For single-file components:
+  Just reference them directly: <%= stylesheet_link_tag "picnic", media: "all" %>
+  
+  For multi-file components:
+  Create explicit require directives in application.css (like pickadate, font-awesome)
+  or create a shim file in vendor/assets/stylesheets/
+
+=== Development Workflow
+
+1. Add new bower dependencies to bower.json
+2. Run 'bower install' to download them
+3. Either:
+   a) Add stylesheet_link_tag to application.html.erb for single-file components, OR
+   b) Add *= require [component] to application.css for multi-file components, OR
+   c) Create a custom shim file in vendor/assets/stylesheets/
+4. Run 'bin/rake resolve:paths' if the component has relative path issues
+5. Restart Rails server to pick up new assets
+
+=== Asset Pipeline Reference
+
+See http://guides.rubyonrails.org/asset_pipeline.html#asset-organization for detailed information
+about Rails asset organization and compilation.
