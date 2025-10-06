@@ -12,7 +12,7 @@ source 'https://rubygems.org'
 # gems are in default group by default
 
 # Bundle edge Rails instead with: gem 'rails', github: 'rails/rails'
-gem 'rails', '~> 4.2', '>= 4.2.10'
+gem 'rails', '~> 4.2.11', '>= 4.2.11.3'
 gem 'composite_primary_keys', '~> 8'
 
 # Use sqlite3 as the database for Active Record
@@ -145,4 +145,5 @@ end
 
 group :development do
  gem 'web-console'
+ # gem 'syntax_tree'
 end

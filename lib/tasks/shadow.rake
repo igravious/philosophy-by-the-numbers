@@ -139,9 +139,12 @@ begin
 				str = THESE_PHILOSOPHERS
 				puts '# SPARQL for Wikidata philosopher query'
 				puts str.gsub("\t",'')
-				res = Wikidata::QueryExecutor.execute_philosopher_query({
-					task_name: 'shadow:philosopher:explore1',
-					show_spinner: false
+				puts "\n# Executing query with limit for quick exploration..."
+				
+				# Add LIMIT for quick exploration
+				limited_query = str.gsub('LIMIT 10000', 'LIMIT 100')
+				res = Wikidata::QueryExecutor.execute_simple(limited_query, 'explore1_limited', {
+					task_name: 'shadow:philosopher:explore1'
 				})
 				puts "response length: #{res.length}"
 			end
