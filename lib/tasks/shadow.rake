@@ -161,49 +161,11 @@ begin
 			desc "Populate database with philosophers from Wikidata using SPARQL query (use force=true to actually create records)"
 			task :populate, [:force] => :environment do |task, arg|
 				begin
-					require 'knowledge'
-					include Knowledge
-					w = Knowledge::Wikidata::Client.new
+					require_relative '../wikidata/query_executor'
 					
-				# Use optimized philosopher query with sitelink counting
-				str = THESE_PHILOSOPHERS
-				query_type = 'optimized (with sitelink counting)'
-				
-				puts "Using #{query_type} query for philosopher population..."
-				
-				# SPARQL Query Logging
-				if ENV['SPARQL_DEBUG'] == 'true' || ENV['SPARQL_LOG'] == 'true'
-					log_sparql_query(str, 'populate_philosophers', {
-						task: 'shadow:philosopher:populate', 
-						query_type: query_type
-					})
-				end
+					# Execute query using the new utility
+					res = Wikidata::QueryExecutor.execute_philosopher_query
 					
-					# Execute with retry logic for timeouts
-					res = nil
-					max_retries = 3
-					retry_count = 0
-					
-					begin
-						spinner = ProgressSpinner.new("Executing Wikidata query (attempt #{retry_count + 1}/#{max_retries})")
-						spinner.start
-						
-						res = w.query(str)
-						
-						spinner.stop("✓ Query completed")
-						log_task_output("✓ Wikidata query completed successfully", 'populate_query')
-					rescue Net::ReadTimeout => e
-						spinner&.stop("✗ Query timed out")
-						retry_count += 1
-						if retry_count < max_retries
-							log_task_output("⚠ Query timed out (attempt #{retry_count}/#{max_retries}). Retrying in #{retry_count * 5} seconds...", 'populate_retry')
-							sleep(retry_count * 5) # Progressive backoff: 5s, 10s, 15s
-							retry
-						else
-							log_task_output("✗ Query failed after all retry attempts: #{e.message}", 'populate_error')
-							raise e
-						end
-					end
 					Shadow.none
 					new = 0
 					total = res.length
@@ -827,8 +789,9 @@ begin
 								discard = p.update(dbpedia: true, dbpedia_pagerank: v)
 							end
 						rescue ActiveRecord::RecordNotFound => oops # nope
-							q = FIND_BY_ID % {interpolated_entity: e}
-							res = w.query(q)
+							res = Wikidata::QueryExecutor.find_philosopher_by_id(e, {
+								task_name: 'shadow:danker:update'
+							})
 							attrs = res.bindings
 							same = attrs[:same]
 							lc = attrs[:linkcount].first.to_i

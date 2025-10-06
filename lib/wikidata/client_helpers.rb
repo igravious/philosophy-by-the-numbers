@@ -6,7 +6,7 @@ module Wikidata
   module ClientHelpers
     
     # SPARQL Query Logging Helper
-    def log_sparql_query(query, method_name, context = {})
+    def self.log_sparql_query(query, method_name, context = {})
       timestamp = Time.now.strftime('%Y-%m-%d %H:%M:%S')
       
       # Console output if SPARQL_DEBUG is enabled
@@ -37,6 +37,12 @@ module Wikidata
       # Don't let logging errors break the main functionality
       puts "Warning: SPARQL logging failed: #{e.message}" if ENV['SPARQL_DEBUG'] == 'true'
     end
+    
+    # Instance method version for backward compatibility
+    def log_sparql_query(query, method_name, context = {})
+      self.class.log_sparql_query(query, method_name, context)
+    end
+    
     include Wikidata::SparqlQueries
 
     ###
