@@ -1,0 +1,16 @@
+# Test fixtures for security testing
+
+# Properties table fixture
+one:
+  id: 1
+  entity_id: 1
+  data_id: 1
+  property_id: 1
+  data_label: "Test Property"
+
+two:
+  id: 2
+  entity_id: 2  
+  data_id: 2
+  property_id: 2
+  data_label: "Another Test Property"

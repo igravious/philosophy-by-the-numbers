@@ -55,8 +55,8 @@
 # Ignore pre-compiled assets
 /public/assets/*
 
-# Ignore tests until we have some :(
-/test
+# Tests are now included - security fixes and workarounds implemented
+# /test
 
 # Large data files and directories
 /WordNet-3.1/*
