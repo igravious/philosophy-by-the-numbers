@@ -58,10 +58,10 @@
 					begin
 						res = git.ls_file_name(f.local_file)
 					rescue Git::GitExecuteError => expected
-						untracked.push(f)
-					rescue Exception => unexpected
-						# don't need to do this, could just leave it unhandled
-						raise unexpected		
+						nil
+					rescue StandardError => e
+						Rails.logger.error "Git error checking tracked file: #{e.message}"
+						raise
 					end
 				end
 			end
@@ -79,9 +79,9 @@
 						tracked.push(f)
 					rescue Git::GitExecuteError => expected
 						nil
-					rescue Exception => unexpected
-						# don't need to do this, could just leave it unhandled
-						raise unexpected		
+					rescue StandardError => e
+						Rails.logger.error "Git error checking file status: #{e.message}"
+						raise
 					end
 				end
 			end

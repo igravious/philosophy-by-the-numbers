@@ -23,10 +23,14 @@ class PhilosophersController < ApplicationController
 			@living = ''
 			postamble(1, @shadows)
 			render 'index'
-		rescue
-			@notice = "Error retrieving single philosopher: #{$!}"
+		rescue ActiveRecord::RecordNotFound => e
+			@notice = "Philosopher not found: #{e.message}"
+			Rails.logger.warn @notice
+			@entity_qid = ''
+			postamble(0, Shadow.none)
+		rescue StandardError => e
+			@notice = "Error retrieving single philosopher: #{e.message}"
 			Rails.logger.error @notice
-
 			@entity_qid = ''
 			postamble(0, Shadow.none)
 		end
@@ -81,16 +85,17 @@ class PhilosophersController < ApplicationController
 			format.html do
 				@ids = params[:ids]
 				begin
-					if 1 == @ids.size
+					if @ids && @ids.respond_to?(:size) && @ids.size == 1
 						# they're Q's
-						@an_id = do_one('Q'+@ids[0]) if 1 == @ids.size
+						@an_id = do_one('Q'+@ids[0])
 						return # already rendered
 					end
-				rescue NoMethodError
+				rescue NoMethodError => e
 					# NoMethodError in PhilosophersController#specific
 					# undefined method `size' for nil:NilClass
-					Rails.logger.warn $!
-				rescue
+					Rails.logger.warn "NoMethodError in specific action: #{e.message}"
+				rescue StandardError => e
+					Rails.logger.error "Unexpected error in specific action: #{e.message}"
 				end
 
 				@all = Philosopher.where(entity_id: @ids)
@@ -137,8 +142,13 @@ class PhilosophersController < ApplicationController
 					@max = @all.size
 					@b_less_a = magic
 					@b_less_a = @b_less_a.page @page
-				rescue
-					@notice = $!
+				rescue ActiveRecord::RecordNotFound => e
+					@notice = "Meta filter not found: #{e.message}"
+					Rails.logger.warn @notice
+					blank_compare
+				rescue StandardError => e
+					@notice = "Error during comparison: #{e.message}"
+					Rails.logger.error @notice
 					blank_compare
 				end
 			end
@@ -225,7 +235,10 @@ class PhilosophersController < ApplicationController
 				where_clause[0] += ' AND metric_pos <= ?'
 				where_clause.push(@metric)
 			end
-		rescue # why?
+		rescue ArgumentError => e
+			Rails.logger.warn "Invalid metric parameter: #{e.message}"
+		rescue StandardError => e
+			Rails.logger.error "Error processing metric parameter: #{e.message}"
 		end
 
 		if params.key?(:gender)
@@ -272,7 +285,6 @@ class PhilosophersController < ApplicationController
 			end
 		end
 		#Rails.logger.info @shadows
-		String.include ::CoreExtensions::String::SplitPeas
 		year = Date.today.to_s.splat('-').first.to_i # cache :/
 		@before = nil
 		if params.key?(:before)
@@ -444,7 +456,6 @@ class PhilosophersController < ApplicationController
 			if not params.key?(:type)
 				params[:type] = ''
 			end
-			String.include ::CoreExtensions::String::SplitPeas
 			if (not params.key?(:lang)) or params[:lang].blank?
 				langs = request.env['HTTP_ACCEPT_LANGUAGE'].to_s.splat(",").map do |lang| 
 					l, q = lang.splat(";q=")

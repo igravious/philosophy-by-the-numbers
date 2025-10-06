@@ -7,6 +7,13 @@ class QuestionsController < ApplicationController
 	#    (136.8ms)  SELECT "properties"."property_id" FROM "properties"
 	#  => [27, 737, 1412, 19, 20]
 
+	def index
+		# Default index action - initialize empty collections to prevent view errors
+		@property_list = []
+		@entity_ids = []
+		@grouping = "Questions"
+	end
+
 	def setup
 		@property_names = {
 			# places
@@ -72,7 +79,6 @@ class QuestionsController < ApplicationController
 
 			list = params[:fileText].lines
 
-			String.include ::CoreExtensions::String::SplitPeas
 			# compress all whitespace to one unit
 			@entity_ids = list.collect{|line| line.gsub(/\s+/m, ' ').strip.splat(' ')[0][1..-1]}
 
@@ -88,7 +94,8 @@ class QuestionsController < ApplicationController
 		setup
 		@grouping = params[:connection]
 
-		@property_list = Property.where("data_id = #{params[:data_id]}")
+		# Fixed: Use parameterized query to prevent SQL injection
+		@property_list = Property.where(data_id: params[:data_id])
 
 		@entity_ids = @property_list.pluck(:entity_id).uniq
 
@@ -99,7 +106,8 @@ class QuestionsController < ApplicationController
 		setup
 		@grouping = params[:connection]
 
-		@property_list = Property.where("data_id = #{params[:data_id]}")
+		# Fixed: Use parameterized query to prevent SQL injection
+		@property_list = Property.where(data_id: params[:data_id])
 
 		@entity_ids = @property_list.pluck(:entity_id).uniq
 
@@ -208,7 +216,10 @@ class QuestionsController < ApplicationController
 		Rails.logger.warn discard.inspect
 		@multiplex = params[:multiplex]
 		ids = params[:ids]
-		send(@multiplex, ids)
+		
+		# Fixed: Use security configuration for method validation
+		validated_method = SecurityConfig.validate_method_call(@multiplex)
+		send(validated_method, ids)
 	end
 	
 	### FROM FILTER
@@ -220,17 +231,19 @@ class QuestionsController < ApplicationController
 		@meta_filter_pairs.each {|m|
 			params[m.key] = m.value
 		}
-		# TODO the following is all deeply troubling
+		# Fixed: Added security check for method calling
 		@multiplex = params[:multiplex]
 		# Rails.logger.warn request.path
 		require_relative '../../lib/app_config'
 		@whereami = "#{AppConfig.get('RELATIVE_URL_ROOT', '')}/questions/#{@multiplex}" # ? :/
 		params.delete(:multiplex)
 		# this is not from a param, it's from the db (marshalled)
-		String.include ::CoreExtensions::String::SplitPeas
 		@features = params[:features].collect(&:to_i) # {|id| id.to_i} # .first.splat(' ').collect{|id| id.to_i}
 		params.delete(:features)
-		send(@multiplex)
+		
+		# Fixed: Use security configuration for method validation
+		validated_method = SecurityConfig.validate_method_call(@multiplex)
+		send(validated_method)
 	end
 
 	### INFLUENCES

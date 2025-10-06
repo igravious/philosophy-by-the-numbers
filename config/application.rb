@@ -29,6 +29,9 @@ module CorpusBuilder
 		
 		config.assets.paths << Rails.root.join('vendor', 'assets', 'bower_components')
 
+		# Add app/lib to autoload paths for custom modules
+		config.autoload_paths += %W(#{config.root}/app/lib)
+
 		# http://stackoverflow.com/questions/9927630/ruby-on-rails-log-file-to-big-remove-params-from-it
 		config.filter_parameters += [:content]
 

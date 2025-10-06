@@ -4,10 +4,14 @@ module Philosoraptor
 	BASE_URL='http://version1.api.memegenerator.net/Instance_Create'
 
 	def self.create(top, bottom)
+		# Fixed: Use security configuration for credential loading
+		require_relative 'security_config'
+		username = SecurityConfig.load_credential('MEMEGENERATOR_USERNAME')
+		password = SecurityConfig.load_credential('MEMEGENERATOR_PASSWORD')
 
 		http_params = {
-			username: 'igravious',
-			password: 'Mrc%8JtUhX',
+			username: username,
+			password: password,
 			languageCode: 'en',
 			generatorID: 17,
 			imageID: 984,
@@ -26,8 +30,14 @@ module Philosoraptor
 			j = JSON.parse(r)
 			ret = j['result']['instanceImageUrl']
 			return ret
-		rescue Exception => e
-			Rails.logger.error "#{e}"
+		rescue OpenURI::HTTPError => e
+			Rails.logger.error "HTTP error creating meme: #{e.message}"
+			'images/onwards.jpg'
+		rescue JSON::ParserError => e
+			Rails.logger.error "JSON parsing error: #{e.message}"
+			'images/onwards.jpg'
+		rescue StandardError => e
+			Rails.logger.error "Error creating meme: #{e.message}"
 			'images/onwards.jpg'
 		end
 	end
@@ -43,8 +53,8 @@ module Philosoraptor
 				y = Philosoraptor::create(top, bottom)
 				Rails.logger.info "y #{y}"
 				y
-			rescue Exception => e
-				Rails.logger.error ":( #{e}"
+			rescue StandardError => e
+				Rails.logger.error "Error in cached create: #{e.message}"
 				''
 			end
 		end

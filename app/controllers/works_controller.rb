@@ -172,7 +172,6 @@ class WorksController < ApplicationController
 			#if not params.key?(:type)
 			#	params[:type] = ''
 			#end
-			String.include ::CoreExtensions::String::SplitPeas
 			if (not params.key?(:lang)) or params[:lang].blank?
 				langs = request.env['HTTP_ACCEPT_LANGUAGE'].to_s.splat(",").map do |lang| 
 					l, q = lang.splat(";q=")

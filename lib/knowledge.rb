@@ -25,8 +25,9 @@ module Knowledge
 					else
 						terms = $1.dup.split(/[,]? /)
 					end
-				rescue
-					binding.pry
+				rescue StandardError => e
+					Rails.logger.error "Error processing terms: #{e.message}"
+					raise
 				end
 				bad_match = 0
 				terms.each do |term|
@@ -126,7 +127,9 @@ module Knowledge
 				Rails.logger.info "Using cached #{key}"
 				return res
 			end
-			api_key = IO.read("#{Rails.root}/.google_api_key").strip
+			
+			require_relative 'security_config'
+			api_key = SecurityConfig.load_credential('GOOGLE_API_KEY', '.google_api_key')
 			service_url = 'https://kgsearch.googleapis.com/v1/entities:search'
 			http_params = {
 				query: entity,
@@ -162,7 +165,9 @@ module Knowledge
 				Rails.logger.info "Using cached #{key}"
 				return res
 			end
-			api_key = IO.read("#{Rails.root}/.google_api_key").strip
+			
+			require_relative 'security_config'
+			api_key = SecurityConfig.load_credential('GOOGLE_API_KEY', '.google_api_key')
 			service_url = 'https://kgsearch.googleapis.com/v1/entities:search'
 			http_params = {
 				query: 'philosopher',
@@ -198,7 +203,9 @@ module Knowledge
 				Rails.logger.info "Using cached #{key}"
 				return res
 			end
-			api_key = IO.read("#{Rails.root}/.languagelayer_api_key").strip
+			
+			require_relative 'security_config'
+			api_key = SecurityConfig.load_credential('LANGUAGELAYER_API_KEY', '.languagelayer_api_key')
 			service_url = 'http://apilayer.net/api/detect'
 			http_params = { access_key: api_key, query: phrase, show_query: 1 }
 			url = service_url + '?' + http_params.to_query

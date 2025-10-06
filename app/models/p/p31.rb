@@ -4,7 +4,6 @@ class P::P31 < P::Smart
 	end
 
 	def self.one_long_label(id)
-		Array.include ::CoreExtensions::Array::JointPeas
 		where(entity_id: id).collect{|r| r.object_label}.unsplat(' / ')
 	end
 end

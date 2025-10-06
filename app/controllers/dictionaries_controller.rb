@@ -25,8 +25,16 @@ class DictionariesController < ApplicationController
   end
 
 	def entry
-		# "#{Rails.application.config.relative_url_root}/comparison/#{params[:id]}.txt"
-		send_file( "#{Rails.root}/public/comparison/#{params[:id]}.txt", :disposition => 'inline', :type => 'text/plain; charset=UTF-8', :x_sendfile => true)
+		# Fixed: Use security configuration for file path validation
+		file_id = SecurityConfig.validate_file_id(params[:id])
+		file_path = Rails.root.join('public', 'comparison', "#{file_id}.txt")
+		
+		# Ensure the resolved path is within the expected directory
+		unless file_path.to_s.start_with?(Rails.root.join('public', 'comparison').to_s)
+			raise ArgumentError, "File path is outside allowed directory"
+		end
+		
+		send_file(file_path, :disposition => 'inline', :type => 'text/plain; charset=UTF-8', :x_sendfile => true)
 	end
 
   # GET /dictionaries/new
