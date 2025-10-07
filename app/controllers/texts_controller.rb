@@ -84,8 +84,9 @@ class TextsController < ApplicationController
 			}
 			`zip -j -r archive.zip archive/*`
 			send_file 'archive.zip'
-		rescue
-			Rails.logger.warn $!
+		rescue StandardError => e
+			Rails.logger.warn e.message
+			Rails.logger.warn e.backtrace.first
 		end
 	end
 
@@ -128,7 +129,7 @@ class TextsController < ApplicationController
 
 	def to_boolean(str)
 		str.downcase == 'true'
-	rescue
+	rescue NoMethodError, ArgumentError
 		return false
 	end
 

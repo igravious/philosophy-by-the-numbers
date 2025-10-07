@@ -38,7 +38,7 @@ module ShadowsHelper
 		fn = "db/wikidata_#{attribute}.json"
 		begin
 			xlate = JSON.parse(File.read(fn))
-		rescue
+		rescue Errno::ENOENT, JSON::ParserError
 			xlate = {}
 		end
 		if xlate.key?(q)

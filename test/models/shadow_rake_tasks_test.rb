@@ -123,7 +123,7 @@ class ShadowRakeTasksTest < ActiveSupport::TestCase
     
     # Mock the look command to return our test data
     original_system = method(:system)
-    original_backtick = method(:`})
+    original_backtick = Kernel.method('`')
     
     define_method(:system) do |cmd|
       if cmd.include?('danker:update')
@@ -133,7 +133,7 @@ class ShadowRakeTasksTest < ActiveSupport::TestCase
       end
     end
     
-    define_method(:`}) do |cmd|
+    define_method('`') do |cmd|
       if cmd.include?('look Q9992')
         "Q9992,0.75\n"
       else

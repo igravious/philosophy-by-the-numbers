@@ -6,8 +6,9 @@ Fyle.all.each do |f|
 		hash = Digest::SHA256.hexdigest str
 		f.health_hash = hash
 		f.save!
-	rescue
-		binding.pry
+	rescue StandardError => e
+		STDERR.puts "Error processing file #{f.id}: #{e.message}"
+		STDERR.puts e.backtrace.first
 	end
 end
 

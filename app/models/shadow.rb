@@ -26,7 +26,7 @@ class Shadow < ActiveRecord::Base
 				boom = self[date_sym].split(';')
 				Date._parse(boom[0])[:year]
 			end
-		rescue
+		rescue ArgumentError, TypeError, NoMethodError
 			nil
 		end
 	end
@@ -70,7 +70,7 @@ class Shadow < ActiveRecord::Base
 		end
 		begin
 			en_label = Name.find_by(shadow_id: self.id, lang: 'en').label
-		rescue
+		rescue NoMethodError
 			Rails.logger.warn "Philosopher.find(#{self.id}) needs an English label"
 			en_label = "…"
 		end

@@ -15,12 +15,13 @@ begin
   namespace :shadow do
     namespace :work do
 
-      desc "SPARQLy textual investigations       (show 'em)"
+      # 
+      desc ""
       task :show, [:cond,:count] => :environment do |task, arg|
         begin
           require 'knowledge'
           include Knowledge
-          w = Knowledge::Wikidata::Client.new
+          # w = Knowledge::Wikidata::Client.new
           case arg.cond
             #
           when "works1"
@@ -97,7 +98,7 @@ begin
         res = Wikidata::QueryExecutor.execute_simple(q, 'deez_wurks', {
           task_name: 'shadow:work:deez_wurks'
         })
-        #bar = progress_bar(res.length, FORCE)
+        # bar = progress_bar(res.length, FORCE)
         bar = progress_bar(res.length)
         mult = [] # only used to suppress output
         res.each_with_index do |val, idx|
@@ -164,9 +165,8 @@ begin
             langorder(FORCE, works.pluck(:id))
           else
           end
-        rescue
-          barf $!, 'work:labels urk'
-          binding.pry
+        rescue StandardError => e
+          barf e, 'work:labels urk'
         end
       end
 
@@ -191,8 +191,8 @@ begin
             begin
               work = Work.find_by!(entity_id: entity_id)
               work.genre = true
-              work.save!	
-            rescue
+              work.save!
+            rescue ActiveRecord::RecordNotFound
               if entity == name
                 puts "FIXME: Work w/ entity id #{entity_id} is not in the db, prolly no author."
               else
@@ -201,9 +201,8 @@ begin
             end
             # update_progress(bar)
           }
-        rescue
-          barf $!, 'work:snarf urk'
-          binding.pry
+        rescue StandardError => e
+          barf e, 'work:snarf urk'
         end
       end
 
@@ -221,9 +220,8 @@ begin
           else
             puts 'Work it baby!'
           end
-        rescue
-          barf $!, 'work:snarf urk'
-          binding.pry
+        rescue StandardError => e
+          barf e, 'work:snarf urk'
         end
       end
 
@@ -239,7 +237,7 @@ begin
           tmp.keys.each do|p|
             begin
               predicates[p] = predicates[p]+1
-            rescue
+            rescue NoMethodError
               predicates[p] = 1
             end
           end
@@ -301,9 +299,8 @@ begin
             work.update_attributes(attrs)
             update_progress(bar)
           }
-        rescue
-          barf $!, 'work:signal urk'
-          binding.pry
+        rescue StandardError => e
+          barf e, 'work:signal urk'
         end
       end
 
@@ -368,18 +365,18 @@ begin
             STDERR.puts "Q#{work.entity_id} has no author!"
           end
 
-          if work.mention.nil? or work.mention == 0
-            mention = min_mention
+          mention = if work.mention.nil? or work.mention == 0
+            min_mention
           else
-            mention = work.mention
+            work.mention
           end
-          if work.danker.nil?
-            rank = min_rank
+          rank = if work.danker.nil?
+            min_rank
           else
-            rank = work.danker
+            work.danker
           end
           # FOUR signals: description * connectedness * authority * size
-          tmp = (mention/max_mention) * (rank/max_rank) * (genre) * (sourcey+ exists) * 1000000
+          tmp = (mention / max_mention) * (rank / max_rank) * (genre) * (sourcey + exists) * 1000000
           work.update(measure: tmp)
           q = "Q#{work.entity_id}".ljust(9); update_progress(bar, "#{q} #{tmp}")
         end
@@ -448,7 +445,7 @@ begin
 
         require 'knowledge'
         include Knowledge
-        w = Knowledge::Wikidata::Client.new
+        # w = Knowledge::Wikidata::Client.new
         require 'net/http'
 
         phils.each {|phil|
@@ -712,7 +709,6 @@ begin
     end
   end
 
-rescue => e
+rescue StandardError => e
   barf e, 'shadow work tasks'
-  binding.pry
 end

@@ -26,6 +26,9 @@ CorpusBuilder::Application.configure do
   # Disable request forgery protection in test environment.
   config.action_controller.allow_forgery_protection = false
 
+  # Force loading of all route helpers in tests
+  config.action_controller.include_all_helpers = true
+
   # Tell Action Mailer not to deliver emails to the real world.
   # The :test delivery method accumulates sent emails in the
   # ActionMailer::Base.deliveries array.

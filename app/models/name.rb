@@ -12,8 +12,9 @@ class Name < ActiveRecord::Base
 		dc = Dalli::Client.new('localhost:11211')
 		begin
 			res = dc.get(key)
-		rescue
-			binding.pry
+		rescue Dalli::DalliError, StandardError => e
+			Rails.logger.error "Memcached error for key #{key}: #{e.message}"
+			res = nil
 		end
 		if not res.nil? and not skip
 			Rails.logger.info "Using cached #{key}"

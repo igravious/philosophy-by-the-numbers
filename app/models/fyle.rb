@@ -52,8 +52,8 @@ class Fyle < ActiveRecord::Base
 
 	def snarf
 		materialize()[1]
-	rescue
-		$!.inspect
+	rescue StandardError => e
+		e.inspect
 	end
 
 	#

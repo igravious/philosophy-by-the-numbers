@@ -23,8 +23,8 @@ namespace :wikidata do
 			w = Wikidata::Client.new
 			meros, labels = w.recurse_query(arg.term)
 			cache(arg.term, meros, labels)
-		rescue
-			binding.pry
+		rescue StandardError => e
+			barf e, "wikidata:recurse for term '#{arg.term}'"
 		end
 	end
 
@@ -48,7 +48,6 @@ namespace :wikidata do
 
 end
 
-rescue
-	barf $!, "wikidata urk: $! has wot you want"
-	binding.pry
+rescue StandardError => e
+	barf e, "wikidata urk"
 end

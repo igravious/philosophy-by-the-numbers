@@ -75,7 +75,7 @@ class QuestionsController < ApplicationController
 		begin
 			@box = file.read.strip
 			@entity_ids = []
-		rescue
+		rescue NoMethodError, ArgumentError
 
 			list = params[:fileText].lines
 

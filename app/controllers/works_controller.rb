@@ -183,7 +183,7 @@ class WorksController < ApplicationController
 				# Rails.logger.info ordered_langs
 				begin
 					params[:lang] = ordered_langs[0].splat('-')[0] # TODO fix en-GB and such
-				rescue
+				rescue NoMethodError, IndexError
 					params[:lang] = 'all' #?
 				end
 			end

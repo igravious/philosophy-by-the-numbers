@@ -167,14 +167,14 @@ namespace :snarf do
 						tmp.h2.wait_until_present 13
 						foo = tmp.h2.text.gsub("\n",' ')
 						puts "#{foo} - #{url}"
-					rescue
-						binding.pry
+					rescue Watir::Wait::TimeoutError => e
+						STDERR.puts "Timeout waiting for h2 element at #{url}: #{e.message}"
 					end
 				else
 					puts "? #{line}"
 				end
-			rescue
-				binding.pry
+			rescue StandardError => e
+				STDERR.puts "Error processing line '#{line}': #{e.message}"
 			end
 		end
 	end
@@ -338,7 +338,6 @@ namespace :snarf do
 			b.goto url
 			b.as.each do |a|
 				if !a.name.blank?
-					binding.pry
 					puts a.name
 				end
 			end

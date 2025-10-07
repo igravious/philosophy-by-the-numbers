@@ -13,7 +13,7 @@ class MetaFilterPair < ActiveRecord::Base
 		require 'base64'
 		begin
 			Marshal.load(Base64.decode64(read_attribute :value))
-		rescue
+		rescue ArgumentError, NoMethodError, TypeError
 			# undefined method `unpack' for nil:NilClass
 			nil
 		end

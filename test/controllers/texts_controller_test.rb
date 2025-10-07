@@ -1,6 +1,7 @@
 require 'test_helper'
 
 class TextsControllerTest < ActionController::TestCase
+  fixtures :texts
   setup do
 		# how to call this before only some tests and not each test
     @text = texts(:one)

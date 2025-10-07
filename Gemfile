@@ -145,5 +145,6 @@ end
 
 group :development do
  gem 'web-console'
+ gem 'standard'
  # gem 'syntax_tree'
 end

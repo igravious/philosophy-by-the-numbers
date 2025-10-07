@@ -207,9 +207,10 @@ module Wikidata
       rescue Net::ReadTimeout
         puts q.gsub("\t",'')
         puts "Read Timeout for datum(entity, property) => `datum(#{entity_id}, #{property_id})`"
-      rescue
+      rescue StandardError => e
         #... catch all error handler
-        binding.pry
+        puts "Error in datum(#{entity_id}, #{property_id}): #{e.class} - #{e.message}"
+        puts e.backtrace.first
       else
         #... executes when no error
       ensure
@@ -254,8 +255,9 @@ module Wikidata
           # Date._parse(res.bindings[:birth].first.to_s)
           # => {:zone=>"Z", :hour=>0, :min=>0, :sec=>0, :year=>-550, :mon=>1, :mday=>1, :offset=>0}
         end
-      rescue
-        binding.pry
+      rescue StandardError => e
+        Rails.logger.error "Error in properties(#{entity}): #{e.class} - #{e.message}"
+        Rails.logger.error e.backtrace.first
       end
     end
 
@@ -278,8 +280,9 @@ module Wikidata
           # Date._parse(res.bindings[:birth].first.to_s)
           # => {:zone=>"Z", :hour=>0, :min=>0, :sec=>0, :year=>-550, :mon=>1, :mday=>1, :offset=>0}
         end
-      rescue
-        binding.pry
+      rescue StandardError => e
+        Rails.logger.error "Error in roles(#{entity}): #{e.class} - #{e.message}"
+        Rails.logger.error e.backtrace.first
       end
     end
   end

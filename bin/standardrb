@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Wrapper script to run standardrb via bin/bundle
+cd "$(dirname "$0")/.." || exit 1
+exec bin/bundle exec standardrb "$@"

@@ -45,8 +45,8 @@ module Knowledge
 						rescue wn::LemmaNotFound
 							# possible name cuz unrecognised
 							# possibly cuz functional category which is cool by us for our present purposes
-						rescue wn::LemmaPeculiar
-							binding.pry
+						rescue wn::LemmaPeculiar => e
+							STDERR.puts "LemmaPeculiar error for term '#{term}': #{e.message}"
 						end
 					end
 					print "#{term} "
