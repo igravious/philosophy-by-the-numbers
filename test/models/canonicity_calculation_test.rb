@@ -54,41 +54,38 @@ class CanonicityCalculationTest < ActiveSupport::TestCase
   end
   
   test "philosopher with all sources has higher measure than partial sources" do
-    @philosopher1.calculate_canonicity_measure
-    @philosopher2.calculate_canonicity_measure
-    
-    assert @philosopher1.measure > @philosopher2.measure, 
+    measure1 = @philosopher1.calculate_canonicity_measure
+    measure2 = @philosopher2.calculate_canonicity_measure
+
+    assert measure1 > measure2,
            "Philosopher with all sources should have higher measure"
   end
   
   test "measure calculation is deterministic" do
-    @philosopher1.calculate_canonicity_measure
-    first_measure = @philosopher1.measure
-    
-    @philosopher1.calculate_canonicity_measure
-    second_measure = @philosopher1.measure
-    
-    assert_equal first_measure, second_measure, 
+    first_measure = @philosopher1.calculate_canonicity_measure
+    second_measure = @philosopher1.calculate_canonicity_measure
+
+    assert_equal first_measure, second_measure,
                  "Same inputs should produce same measure"
   end
   
   test "measure is positive for valid philosophers" do
-    @philosopher1.calculate_canonicity_measure
-    assert @philosopher1.measure > 0, "Valid philosopher should have positive measure"
+    measure = @philosopher1.calculate_canonicity_measure
+    assert measure > 0, "Valid philosopher should have positive measure"
   end
   
   test "philosopher with zero mention gets minimum measure" do
     @philosopher2.update!(mention: 0)
-    @philosopher2.calculate_canonicity_measure
-    
+    measure = @philosopher2.calculate_canonicity_measure
+
     # Should get minimum values in calculation
-    assert @philosopher2.measure >= 0, "Zero mention should not produce negative measure"
+    assert measure >= 0, "Zero mention should not produce negative measure"
   end
   
   test "philosopher with nil danker gets minimum rank" do
     @philosopher2.update!(danker: nil)
-    @philosopher2.calculate_canonicity_measure
-    
-    assert @philosopher2.measure >= 0, "Nil danker should not produce negative measure"
+    measure = @philosopher2.calculate_canonicity_measure
+
+    assert measure >= 0, "Nil danker should not produce negative measure"
   end
 end

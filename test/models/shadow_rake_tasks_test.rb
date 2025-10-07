@@ -73,7 +73,7 @@ class ShadowRakeTasksTest < ActiveSupport::TestCase
     
     # Capture output to avoid cluttering test output
     output = capture_io do
-      Rake::Task['shadow:metric'].invoke
+      Rake::Task['shadow:philosopher:metric'].invoke
     end
     
     # Restore original method
@@ -94,7 +94,7 @@ class ShadowRakeTasksTest < ActiveSupport::TestCase
     end
     
     # Clean up rake task state
-    Rake::Task['shadow:metric'].reenable
+    Rake::Task['shadow:philosopher:metric'].reenable
   end
 
   test "shadow:danker task updates danker scores without iterating all records" do
@@ -120,36 +120,10 @@ class ShadowRakeTasksTest < ActiveSupport::TestCase
     # Create a mock CSV file
     csv_file = danker_dir.join('2024-10-04.all.links.c.alphanum.csv')
     File.write(csv_file, "Q9992,0.75\n")
-    
-    # Mock the look command to return our test data
-    original_system = method(:system)
-    original_backtick = Kernel.method('`')
-    
-    define_method(:system) do |cmd|
-      if cmd.include?('danker:update')
-        true # Mock successful update
-      else
-        original_system.call(cmd)
-      end
-    end
-    
-    define_method('`') do |cmd|
-      if cmd.include?('look Q9992')
-        "Q9992,0.75\n"
-      else
-        original_backtick.call(cmd)
-      end
-    end
-    
+
     initial_danker = test_phil.danker
     initial_snapshots = MetricSnapshot.count
-    
-    # Mock the task's select method
-    task_instance = Object.new
-    def task_instance.select(cond)
-      Philosopher.where("entity_id > 9000")
-    end
-    
+
     # Since we can't easily mock the rake task internals, test the core logic
     # This simulates what the danker task does
     shadows = Philosopher.where("entity_id > 9000")
