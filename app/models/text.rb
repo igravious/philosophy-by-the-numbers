@@ -78,9 +78,9 @@ class Text < ActiveRecord::Base
 
 	def filename_suggestion
 		surname = authors.map{ |a|
-			a.english_name.split(' ').last
+			a.english_name&.split(' ')&.last || 'Unknown'
 		}.join(" & ")
-		textname = self.name_in_english
+		textname = self.name_in_english || 'Untitled'
 		(surname+' - '+textname).downcase
 	end
 
