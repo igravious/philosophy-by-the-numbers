@@ -23,10 +23,13 @@
     <%= f.label :label %><br>
     <%= f.text_field :label %>
   </div>
+  <% if @role.capacity %>
   <div class="field">
-    <%= f.label :relevant %><br>
-    <%= f.check_box :relevant %>
+    <%= label_tag :capacity_relevant, "Relevant" %><br>
+    <%= check_box_tag :capacity_relevant, "1", @role.capacity.relevant, disabled: true %>
+    <em>(Managed via Capacity)</em>
   </div>
+  <% end %>
   <div class="actions">
     <%= f.submit %>
   </div>

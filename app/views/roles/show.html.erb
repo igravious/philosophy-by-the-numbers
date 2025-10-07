@@ -15,7 +15,7 @@
 
 <p>
   <strong>Relevant:</strong>
-  <%= @role.relevant %>
+  <%= @role.capacity&.relevant %>
 </p>
 
 <%= link_to 'Edit', edit_role_path(@role) %> |

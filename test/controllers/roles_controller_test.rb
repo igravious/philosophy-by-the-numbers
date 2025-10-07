@@ -2,7 +2,10 @@ require 'test_helper'
 
 class RolesControllerTest < ActionController::TestCase
   setup do
-    @role = roles(:one)
+    # Create a test role with valid attributes
+    @shadow = Shadow.create!(entity_id: 9999, type: 'Philosopher')
+    @capacity = Capacity.create!(entity_id: 5891, label: 'test_capacity', relevant: true)
+    @role = Role.create!(shadow_id: @shadow.id, entity_id: @capacity.entity_id, label: 'test_role')
   end
 
   test "should get index" do
@@ -18,7 +21,7 @@ class RolesControllerTest < ActionController::TestCase
 
   test "should create role" do
     assert_difference('Role.count') do
-      post :create, role: { entity_id: @role.entity_id, label: @role.label, relevant: @role.relevant, shadow_id: @role.shadow_id }
+      post :create, role: { entity_id: @role.entity_id, label: @role.label, shadow_id: @role.shadow_id }
     end
 
     assert_redirected_to role_path(assigns(:role))
@@ -35,7 +38,7 @@ class RolesControllerTest < ActionController::TestCase
   end
 
   test "should update role" do
-    patch :update, id: @role, role: { entity_id: @role.entity_id, label: @role.label, relevant: @role.relevant, shadow_id: @role.shadow_id }
+    patch :update, id: @role, role: { entity_id: @role.entity_id, label: @role.label, shadow_id: @role.shadow_id }
     assert_redirected_to role_path(assigns(:role))
   end
 
