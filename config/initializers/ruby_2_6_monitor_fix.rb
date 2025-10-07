@@ -41,6 +41,9 @@ if RUBY_VERSION.start_with?('2.6') && Rails.version.start_with?('4.2')
       end
     end
   end
-  
-  puts "🔧 Ruby 2.6.10 + Rails 4.2.11.3 Monitor compatibility fix loaded"
+
+  # Only show message when running with debug/verbose flags
+  if $DEBUG || $VERBOSE || ENV['RAILS_VERBOSE']
+    puts "🔧 Ruby 2.6.10 + Rails 4.2.11.3 Monitor compatibility fix loaded"
+  end
 end

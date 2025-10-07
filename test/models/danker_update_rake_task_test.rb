@@ -27,9 +27,19 @@ class DankerUpdateRakeTaskTest < ActiveSupport::TestCase
   end
   
   def teardown
-    # Clean up test data
+    # Clean up test data but restore the symlink for other tests
     FileUtils.rm_rf(@test_danker_dir) if @test_danker_dir.exist?
-    FileUtils.rm_f(@latest_link) if @latest_link.exist?
+
+    # Restore the latest symlink if we removed it
+    if @latest_link.exist? && !@latest_link.symlink?
+      FileUtils.rm_rf(@latest_link)
+    end
+
+    unless @latest_link.exist?
+      dated_dir = @latest_link.dirname.join('2024-10-04')
+      FileUtils.mkdir_p(dated_dir) unless dated_dir.exist?
+      FileUtils.ln_s(dated_dir, @latest_link)
+    end
   end
 
   test "danker:update task creates proper directory structure" do
