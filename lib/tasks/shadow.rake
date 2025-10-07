@@ -1503,7 +1503,7 @@ begin
 			def unpack_one(res)
 			end
 
-			def filters
+			def apply_language_filters
 				require 'knowledge'
 				include Knowledge
 				w = Knowledge::Wikidata::Client.new
