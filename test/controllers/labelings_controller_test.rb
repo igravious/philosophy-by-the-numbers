@@ -18,7 +18,8 @@ class LabelingsControllerTest < ActionController::TestCase
 
   test "should create labeling" do
     assert_difference('Labeling.count') do
-      post :create, labeling: { tag_id: @labeling.tag_id, text_id: @labeling.text_id }
+      # Use different text_id to avoid unique constraint violation
+      post :create, labeling: { tag_id: @labeling.tag_id, text_id: 2 }
     end
 
     assert_redirected_to labeling_path(assigns(:labeling))

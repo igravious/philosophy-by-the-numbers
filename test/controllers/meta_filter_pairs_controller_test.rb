@@ -18,7 +18,7 @@ class MetaFilterPairsControllerTest < ActionController::TestCase
 
   test "should create meta_filter_pair" do
     assert_difference('MetaFilterPair.count') do
-      post :create, meta_filter_pair: { key: @meta_filter_pair.key, meta_filter_id: @meta_filter_pair.meta_filter_id, value: @meta_filter_pair.value }
+      post :create, meta_filter_pair: { key: "unique_new_key", meta_filter_id: @meta_filter_pair.meta_filter_id, value: @meta_filter_pair.value }
     end
 
     assert_redirected_to meta_filter_pair_path(assigns(:meta_filter_pair))
