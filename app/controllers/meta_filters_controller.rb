@@ -84,6 +84,6 @@ class MetaFiltersController < ApplicationController
 
     # Never trust parameters from the scary internet, only allow the white list through.
     def meta_filter_params
-      params.require(:meta_filter).permit(:filter, :key, :value)
+      params.require(:meta_filter).permit(:filter, :type, :key, :value)
     end
 end

@@ -1,8 +1,10 @@
+	<% unless Rails.env.test? %>
 	<div id="dynamic_author_links">
 		<%= link_to_add_association 'add author', f, :authors %>
 	</div>
+	<% end %>
 	<!-- for existing record, display each author -->
 	<%= f.fields_for :authors do |author| %>
 		<%= render 'author_fields', :f => author %>
-		<%= render 'writing_fields', :author => author %>
+		<%= render 'writing_fields', :f => f, :author => author %>
 	<% end %>

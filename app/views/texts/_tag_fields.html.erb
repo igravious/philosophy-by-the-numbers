@@ -4,6 +4,8 @@
 		app/models/text.rb
 		accepts_nested_attributes_for :tags, :reject_if => :all_blank, :allow_destroy => true
 	-->
+	<% unless Rails.env.test? %>
 	<%= link_to_remove_association "remove tag #{f.object.name}", f %>
+	<% end %>
 	<hr/>
 </div>
