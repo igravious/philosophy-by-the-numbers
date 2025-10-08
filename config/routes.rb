@@ -151,7 +151,9 @@ CorpusBuilder::Application.routes.draw do
 	get 'semantic-web' => 'pages#semantic_web'	# taxonomic
 	get 'dracula' => 'pages#dracula'						# taxonomic
 
-	root 'pages#welcome'
+	root 'pages#index'
+	get 'about' => 'pages#about', as: 'about'
+	get 'welcome' => 'pages#welcome'
 	get 'rails/info/schema' => 'info#schema'
 
 	post 'Ctrl-C-Poetry' => 'pages#do_pome', as: 'do_pome'

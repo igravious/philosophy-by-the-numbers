@@ -8,6 +8,7 @@
       <th>Uri</th>
       <th>Contact</th>
       <th>Organisation</th>
+			<th>Encyclopedia Flag</th>
 			<!-- <th>Missing</th> -->
 			<th colspan="2">Actions</th>
     </tr>
@@ -23,6 +24,7 @@
 				<td><%= link_to dictionary.URI.split('/')[2], dictionary.URI %></td> <!-- link to uri but display only the domain name -->
         <td><%= dictionary.contact %></td>
 				<td><%= dictionary.organisation %></td>
+				<td><%= dictionary.encyclopedia_flag %></td>
 				<!-- <td><%= dictionary.missing %></td> -->
 				<td><%= link_to 'Show', dictionary %></td>
 				<td><%= link_to 'Entry', entry_dictionary_path(dictionary) %></td>

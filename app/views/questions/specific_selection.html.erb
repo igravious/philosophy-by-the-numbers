@@ -1,0 +1,69 @@
+<h1>Custom Queries</h1>
+
+<p>Select a query type to explore philosophical data:</p>
+
+<div class="query-options">
+  <h2>Available Query Methods</h2>
+
+  <p>This interface allows you to run specific analytical queries on the corpus. Choose a method below:</p>
+
+  <ul>
+    <% @available_methods.each do |method| %>
+      <li>
+        <strong><%= method %></strong>
+        <% if method == 'irish' %>
+          - <a href="<%= questions_irish_path %>">View Irish Philosophers</a>
+        <% elsif method == 'thinkers' %>
+          - Thinkers Analysis
+        <% elsif method == 'schools' %>
+          - <a href="<%= questions_schools_path %>">Philosophical Schools</a>
+        <% elsif method == 'countries' %>
+          - <a href="<%= questions_countries_path %>">Countries</a>
+        <% elsif method == 'birth_places' %>
+          - <a href="<%= questions_birth_places_path %>">Birth Places</a>
+        <% elsif method == 'death_places' %>
+          - <a href="<%= questions_death_places_path %>">Death Places</a>
+        <% elsif method == 'influences' %>
+          - <a href="<%= questions_influences_path %>">Influences</a>
+        <% else %>
+          - Query method available via API
+        <% end %>
+      </li>
+    <% end %>
+  </ul>
+
+  <h3>Advanced Usage</h3>
+  <p>
+    To use this interface programmatically, provide the <code>multiplex</code> parameter with one of the allowed methods above.
+    Example: <code>/questions/specific?multiplex=irish</code>
+  </p>
+</div>
+
+<style>
+.query-options {
+  max-width: 800px;
+  margin: 20px auto;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.query-options ul {
+  list-style: none;
+  padding: 0;
+}
+
+.query-options li {
+  margin: 15px 0;
+  padding: 10px;
+  background: white;
+  border-radius: 4px;
+}
+
+.query-options code {
+  background: #e9ecef;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: monospace;
+}
+</style>

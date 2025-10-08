@@ -37,7 +37,13 @@
 
 		%>
 			<tr>
-        <td><%= ('P'==property.type[3])?wikidata_property_url(property.property_id):property.type %></td>
+        <td>
+          <% if property.respond_to?(:type) && property.type %>
+            <%= ('P'==property.type[3])?wikidata_property_url(property.property_id):property.type %>
+          <% else %>
+            <%= wikidata_property_url(property.property_id) %>
+          <% end %>
+        </td>
 				<td><%= property.class.english_label %><%# @property_names[property.property_id] %></td>
         <td><%= wikidata_entity_url(property.entity_id) %></td>
 				<td><%= property.entity_label %></td>

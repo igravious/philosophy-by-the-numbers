@@ -1,0 +1,65 @@
+<h1>Springy Force-Directed Graph Visualization</h1>
+
+<p>This visualization tool creates interactive network graphs from Wikidata philosophical concepts.</p>
+
+<div class="springy-info">
+  <h2>How to Use</h2>
+
+  <p>To view a graph, you need to specify a <code>term</code> parameter. The term should match a cached Wikidata entity.</p>
+
+  <h3>Examples:</h3>
+  <ul>
+    <li><a href="/springy?term=philosophy">Philosophy</a></li>
+    <li><a href="/springy?term=epistemology">Epistemology</a></li>
+    <li><a href="/springy?term=ethics">Ethics</a></li>
+    <li><a href="/springy?term=metaphysics">Metaphysics</a></li>
+  </ul>
+
+  <h3>Available Terms</h3>
+  <p>Available terms are those that have been cached in <code>db/wikidata/</code>. Check the directory for available <code>meros_*.nt</code> files.</p>
+
+  <% if File.directory?(Rails.root.join('db', 'wikidata')) %>
+    <% available_files = Dir.glob(Rails.root.join('db', 'wikidata', 'meros_*.nt')) %>
+    <% if available_files.any? %>
+      <h4>Cached Terms:</h4>
+      <ul>
+        <% available_files.each do |file| %>
+          <% term = File.basename(file, '.nt').sub('meros_', '') %>
+          <li><a href="/springy?term=<%= term %>"><%= term %></a></li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p><em>No cached terms found. Terms must be pre-processed before visualization.</em></p>
+    <% end %>
+  <% end %>
+
+  <h3>Advanced Usage</h3>
+  <p>You can combine multiple terms using commas:</p>
+  <code>/springy?term=philosophy,epistemology</code>
+</div>
+
+<style>
+.springy-info {
+  max-width: 800px;
+  margin: 20px auto;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.springy-info ul {
+  list-style: disc;
+  padding-left: 40px;
+}
+
+.springy-info li {
+  margin: 10px 0;
+}
+
+.springy-info code {
+  background: #e9ecef;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: monospace;
+}
+</style>

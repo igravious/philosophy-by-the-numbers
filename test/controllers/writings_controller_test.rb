@@ -18,7 +18,7 @@ class WritingsControllerTest < ActionController::TestCase
 
   test "should create writing" do
     assert_difference('Writing.count') do
-      post :create, writing: { author_id: @writing.author_id, text_id: @writing.text_id }
+      post :create, writing: { author_id: 2, text_id: 1 }
     end
 
     assert_redirected_to writing_path(assigns(:writing))

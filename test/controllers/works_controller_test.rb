@@ -35,7 +35,7 @@ class WorksControllerTest < ActionController::TestCase
   end
 
   test "should update work" do
-    patch :update, id: @work, work: {  }
+    patch :update, id: @work, work: { }, name_hack: texts(:one).id
     assert_redirected_to work_path(assigns(:work))
   end
 

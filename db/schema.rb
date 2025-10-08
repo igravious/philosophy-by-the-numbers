@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20251005202920) do
+ActiveRecord::Schema.define(version: 20251008111032) do
 
   create_table "actual_texts", force: :cascade do |t|
     t.string   "URL",         limit: 255
@@ -67,20 +67,21 @@ ActiveRecord::Schema.define(version: 20251005202920) do
   add_index "capacities", ["entity_id"], name: "index_capacities_on_entity_id", unique: true
 
   create_table "dictionaries", force: :cascade do |t|
-    t.string   "title",            limit: 255
-    t.string   "long_title",       limit: 255
-    t.string   "URI",              limit: 255
-    t.string   "current_editor",   limit: 255
-    t.string   "contact",          limit: 255
-    t.string   "organisation",     limit: 255
+    t.string   "title",             limit: 255
+    t.string   "long_title",        limit: 255
+    t.string   "URI",               limit: 255
+    t.string   "current_editor",    limit: 255
+    t.string   "contact",           limit: 255
+    t.string   "organisation",      limit: 255
     t.datetime "created_at"
     t.datetime "updated_at"
-    t.boolean  "machine",                      default: false
+    t.boolean  "machine",                       default: false
     t.integer  "entity_id"
     t.float    "dbpedia_pagerank"
     t.integer  "year"
     t.integer  "missing"
     t.string   "content_uri"
+    t.string   "encyclopedia_flag"
   end
 
   create_table "expressions", id: false, force: :cascade do |t|

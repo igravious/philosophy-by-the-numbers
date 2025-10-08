@@ -20,9 +20,9 @@
         <td><%= p_smart.redirect_id %></td>
         <td><%= p_smart.object_id %></td>
         <td><%= p_smart.type %></td>
-        <td><%= link_to 'Show', p_smart %></td>
+        <td><%= link_to 'Show', p_smart_path(p_smart) %></td>
         <td><%= link_to 'Edit', edit_p_smart_path(p_smart) %></td>
-        <td><%= link_to 'Destroy', p_smart, method: :delete, data: { confirm: 'Are you sure?' } %></td>
+        <td><%= link_to 'Destroy', p_smart_path(p_smart), method: :delete, data: { confirm: 'Are you sure?' } %></td>
       </tr>
     <% end %>
   </tbody>

@@ -26,6 +26,9 @@ class ShadowRakeTasksTest < ActiveSupport::TestCase
   end
 
   test "shadow:metric task calculates canonicity for test philosophers" do
+    # Ensure rake task can be invoked (in case other tests ran it)
+    Rake::Task['shadow:philosopher:metric'].reenable
+
     # Create test philosophers with different source combinations
     high_canon_phil = Philosopher.create!(
       entity_id: 9990,
@@ -50,27 +53,52 @@ class ShadowRakeTasksTest < ActiveSupport::TestCase
     )
     
     # Mock the task to only process our test philosophers
+    # Only intercept .order(:entity_id) which the rake task uses for iteration
     original_method = Philosopher.method(:order)
-    Philosopher.define_singleton_method(:order) do |*args|
-      if args.first == :entity_id
-        where("entity_id > 9000").order(*args)
+    Philosopher.define_singleton_method(:order) do |column_or_sql|
+      if column_or_sql == :entity_id
+        where("entity_id > 9000").order(column_or_sql)
       else
-        original_method.call(*args)
+        original_method.call(column_or_sql)
       end
     end
     
-    initial_snapshots = MetricSnapshot.count
-    
+    # Get IDs of our test philosophers
+    test_phil_ids = [high_canon_phil.id, low_canon_phil.id]
+    initial_snapshots = MetricSnapshot.where(philosopher_id: test_phil_ids).count
+
     # Capture output to avoid cluttering test output
     output = capture_io do
       Rake::Task['shadow:philosopher:metric'].invoke
     end
-    
+
     # Restore original method
     Philosopher.define_singleton_method(:order, original_method)
-    
-    # Verify snapshots were created
-    final_snapshots = MetricSnapshot.count
+
+    # Verify snapshots were created (only count our test philosophers' snapshots)
+    final_snapshots = MetricSnapshot.where(philosopher_id: test_phil_ids).count
+    snapshots_created = MetricSnapshot.where(philosopher_id: test_phil_ids)
+
+    # Debug: show what snapshots exist
+    if final_snapshots != initial_snapshots + 2
+      puts "\nDEBUG: Expected #{initial_snapshots + 2} snapshots, got #{final_snapshots}"
+      puts "Test philosopher IDs created: #{test_phil_ids.inspect}"
+      puts "High canon phil: id=#{high_canon_phil.id}, entity_id=#{high_canon_phil.entity_id}"
+      puts "Low canon phil: id=#{low_canon_phil.id}, entity_id=#{low_canon_phil.entity_id}"
+      puts "Snapshots for philosopher IDs #{test_phil_ids.inspect}:"
+      snapshots_created.each do |s|
+        puts "  - Philosopher #{s.philosopher_id}, created at #{s.created_at}, algorithm: #{s.algorithm_version}"
+      end
+      puts "ALL snapshots with entity_id > 9000:"
+      phils_with_snapshots = Philosopher.where("entity_id > 9000")
+      phils_with_snapshots.each do |p|
+        puts "  Philosopher: id=#{p.id}, entity_id=#{p.entity_id}"
+        MetricSnapshot.where(philosopher_id: p.id).each do |s|
+          puts "    Snapshot: algorithm=#{s.algorithm_version}, created_at=#{s.created_at}"
+        end
+      end
+    end
+
     assert_equal initial_snapshots + 2, final_snapshots, "Should create 2 new snapshots"
     
     # Verify the calculations used configurable weights

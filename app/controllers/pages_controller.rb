@@ -1,5 +1,18 @@
 class PagesController < ApplicationController
 
+	def index
+		# New landing page
+	end
+
+	def about
+		# About/welcome page with Rails info
+	end
+
+	def welcome
+		# Redirect to about page
+		redirect_to about_path
+	end
+
 	def info
 		require 'rouge'
 	end
@@ -116,6 +129,13 @@ class PagesController < ApplicationController
 		# meros = RDF::Graph.load("http://ruby-rdf.github.com/rdf/etc/doap.nt")
 		#
 		term = params['term']
+
+		# Show selection page if no term provided
+		if term.blank?
+			render 'springy_selection'
+			return
+		end
+
 		meros = RDF::Graph.new
 		labels = {}
 		term.split(',').each do |t|

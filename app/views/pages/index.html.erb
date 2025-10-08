@@ -1,0 +1,225 @@
+<style media="screen">
+  .landing-header {
+    background: #0074d9;
+    color: white;
+    padding: 2em;
+    text-align: center;
+    margin-bottom: 2em;
+  }
+
+  .landing-header h1 {
+    font-size: 2.5em;
+    margin-bottom: 0.3em;
+  }
+
+  .landing-header p {
+    font-size: 1.2em;
+    opacity: 0.95;
+  }
+
+  .landing-intro {
+    text-align: center;
+    margin-bottom: 3em;
+    padding: 1em 2em;
+  }
+
+  .landing-intro p {
+    font-size: 1.1em;
+    color: #555;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .landing-sections {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2em;
+    margin-bottom: 2em;
+    padding: 0 1em;
+  }
+
+  .landing-card {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 1.5em;
+    background: white;
+  }
+
+  .landing-card h2 {
+    color: #0074d9;
+    margin-bottom: 0.5em;
+    font-size: 1.5em;
+    border-bottom: 2px solid #0074d9;
+    padding-bottom: 0.3em;
+  }
+
+  .landing-card p {
+    color: #666;
+    margin-bottom: 1em;
+    line-height: 1.6;
+  }
+
+  .landing-card ul {
+    list-style: none;
+    padding: 0;
+  }
+
+  .landing-card ul li {
+    margin-bottom: 0.5em;
+  }
+
+  .landing-card ul li a {
+    display: block;
+    padding: 0.5em 0.8em;
+    color: #0074d9;
+    text-decoration: none;
+    border-left: 3px solid transparent;
+    transition: all 0.2s ease;
+  }
+
+  .landing-card ul li a:hover {
+    background: #f0f8ff;
+    border-left-color: #0074d9;
+  }
+
+  .landing-footer {
+    text-align: center;
+    padding: 2em;
+    background: #f8f9fa;
+    color: #666;
+    font-size: 0.9em;
+    margin-top: 3em;
+  }
+
+  .landing-footer a {
+    color: #0074d9;
+    text-decoration: none;
+  }
+
+  .landing-footer a:hover {
+    text-decoration: underline;
+  }
+
+  .highlight-card {
+    background: #f0f8ff;
+    border-color: #0074d9;
+    border-width: 2px;
+  }
+</style>
+
+<div class="landing-header">
+  <h1>CorpusBuilder</h1>
+  <p>Digital Humanities Philosophy Corpus & Analysis Platform</p>
+</div>
+
+<div class="landing-intro">
+  <p>
+    A comprehensive platform for exploring philosophical texts, analyzing thinkers,
+    and discovering connections in the history of philosophy through computational methods
+    and semantic web technologies.
+  </p>
+</div>
+
+<div class="landing-sections">
+  <div class="landing-card highlight-card">
+    <h2>Core Collections</h2>
+    <p>Browse and explore the primary collections of philosophical content</p>
+    <ul>
+      <li><a href="<%= philosophers_path %>">Philosophers</a></li>
+      <li><a href="<%= works_path %>">Philosophical Works</a></li>
+      <li><a href="<%= texts_path %>">Corpus Texts</a></li>
+      <li><a href="<%= authors_path %>">Authors</a></li>
+    </ul>
+  </div>
+
+  <div class="landing-card">
+    <h2>Questions & Analysis</h2>
+    <p>Query the corpus and explore philosophical relationships</p>
+    <ul>
+      <li><a href="<%= questions_path %>">All Questions</a></li>
+      <li><a href="<%= questions_irish_path %>">Irish Philosophers</a></li>
+      <li><a href="<%= questions_thinkers_path %>">Thinkers Analysis</a></li>
+      <li><a href="<%= questions_schools_path %>">Philosophical Schools</a></li>
+      <li><a href="<%= questions_influences_path %>">Influences & Connections</a></li>
+      <li><a href="<%= specific_questions_path %>">Custom Queries</a></li>
+    </ul>
+  </div>
+
+  <div class="landing-card">
+    <h2>Filters & Classification</h2>
+    <p>Organize and filter content using custom taxonomies</p>
+    <ul>
+      <li><a href="<%= filters_path %>">Content Filters</a></li>
+      <li><a href="<%= meta_filters_path %>">Meta Filters</a></li>
+      <li><a href="<%= tags_path %>">Tags</a></li>
+      <li><a href="<%= labelings_path %>">Labelings</a></li>
+    </ul>
+  </div>
+
+  <div class="landing-card">
+    <h2>Dictionary & Lexicon</h2>
+    <p>Explore the linguistic structure of philosophical texts</p>
+    <ul>
+      <li><a href="<%= dictionaries_path %>">Dictionaries</a></li>
+      <li><a href="<%= units_path %>">Lexical Units</a></li>
+    </ul>
+  </div>
+
+  <div class="landing-card">
+    <h2>Document Management</h2>
+    <p>Manage and process source documents and files</p>
+    <ul>
+      <li><a href="<%= fyles_path %>">Files & Sources</a></li>
+      <li><a href="<%= writings_path %>">Text-Author Relationships</a></li>
+    </ul>
+  </div>
+
+  <div class="landing-card">
+    <h2>Semantic Web & Linked Data</h2>
+    <p>Explore connections to external knowledge bases</p>
+    <ul>
+      <li><a href="<%= links_path %>">External Links</a></li>
+      <li><a href="<%= p_smarts_path %>">Smart Properties</a></li>
+      <li><a href="<%= semantic_web_path %>">Semantic Web Visualization</a></li>
+    </ul>
+  </div>
+
+  <div class="landing-card">
+    <h2>Geographic Analysis</h2>
+    <p>Explore the geographical dimensions of philosophy</p>
+    <ul>
+      <li><a href="<%= questions_birth_places_path %>">Birth Places</a></li>
+      <li><a href="<%= questions_death_places_path %>">Death Places</a></li>
+      <li><a href="<%= questions_countries_path %>">Countries</a></li>
+      <li><a href="<%= questions_all_places_path %>">All Places</a></li>
+    </ul>
+  </div>
+
+  <div class="landing-card">
+    <h2>Visualizations</h2>
+    <p>Visual explorations of philosophical networks</p>
+    <ul>
+      <li><a href="<%= springy_path %>">Force-Directed Graph</a></li>
+      <li><a href="<%= dracula_path %>">Dracula Network View</a></li>
+      <li><a href="<%= collect_path %>">Data Collection</a></li>
+    </ul>
+  </div>
+
+  <div class="landing-card">
+    <h2>Computational Tools</h2>
+    <p>Advanced analysis and generation tools</p>
+    <ul>
+      <li><a href="<%= search_path %>">Search Corpus</a></li>
+      <li><a href="<%= pome_path %>">Poetry Generator (Ctrl-C)</a></li>
+      <li><a href="<%= paper_path %>">Paper Analysis</a></li>
+    </ul>
+  </div>
+</div>
+
+<div class="landing-footer">
+  <p>
+    <strong>CorpusBuilder</strong> |
+    <a href="<%= about_path %>">About This Application</a> |
+    Built with Ruby on Rails <%= Rails.version %> & Semantic Web Technologies
+  </p>
+</div>

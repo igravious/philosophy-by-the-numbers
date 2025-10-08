@@ -216,7 +216,14 @@ class QuestionsController < ApplicationController
 		Rails.logger.warn discard.inspect
 		@multiplex = params[:multiplex]
 		ids = params[:ids]
-		
+
+		# If no multiplex parameter, show the query selection interface
+		if @multiplex.blank?
+			@available_methods = SecurityConfig::ALLOWED_QUESTION_METHODS
+			render 'specific_selection'
+			return
+		end
+
 		# Fixed: Use security configuration for method validation
 		validated_method = SecurityConfig.validate_method_call(@multiplex)
 		send(validated_method, ids)
