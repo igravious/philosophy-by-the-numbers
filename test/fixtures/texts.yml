@@ -1,4 +1,19 @@
 one:
   id: 1
   name: "Test Text"
-  original_year: 2023
+  name_in_english: "Test Text"
+  original_year: 1900
+  edition_year: 1950
+  original_language: "Ancient Greek"
+  created_at: 2023-01-01 00:00:00
+  updated_at: 2023-01-01 00:00:00
+
+two:
+  id: 2
+  name: "Another Test Text"
+  name_in_english: "Another Test Text"
+  original_year: 1800
+  edition_year: 1900
+  original_language: "Classical Latin"
+  created_at: 2023-01-01 00:00:00
+  updated_at: 2023-01-01 00:00:00

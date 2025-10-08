@@ -1,5 +1,26 @@
 one:
   id: 1
   name: "Test Author"
+  english_name: "Test Author"
+  year_of_birth: 1900
+  year_of_death: 2000
+  created_at: 2023-01-01 00:00:00
+  updated_at: 2023-01-01 00:00:00
+
+two:
+  id: 2
+  name: "Another Author"
+  english_name: "Another Author"
+  year_of_birth: 1850
+  year_of_death: 1950
+  created_at: 2023-01-01 00:00:00
+  updated_at: 2023-01-01 00:00:00
+
+a:
+  id: 3
+  name: "Author A"
+  english_name: "Author A"
+  year_of_birth: 1800
+  year_of_death: 1900
   created_at: 2023-01-01 00:00:00
   updated_at: 2023-01-01 00:00:00

@@ -18,7 +18,7 @@ class FiltersControllerTest < ActionController::TestCase
 
   test "should create filter" do
     assert_difference('Filter.count') do
-      post :create, filter: { inequality: @filter.inequality, name: @filter.name, original_year: @filter.original_year, tag_id: @filter.tag_id }
+      post :create, filter: { inequality: @filter.inequality, name: "New Unique Filter", original_year: @filter.original_year, tag_id: @filter.tag_id }
     end
 
     assert_redirected_to filter_path(assigns(:filter))

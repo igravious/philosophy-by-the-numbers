@@ -1,0 +1,14 @@
+# P::Smart is a composite primary key model
+one:
+  entity_id: 1
+  redirect_id: 100
+  object_id: 200
+  object_label: "Test Object"
+  type: "TestType"
+
+two:
+  entity_id: 2
+  redirect_id: 101
+  object_id: 201
+  object_label: "Another Object"
+  type: "TestType"
