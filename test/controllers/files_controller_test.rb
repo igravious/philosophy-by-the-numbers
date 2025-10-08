@@ -18,7 +18,7 @@ class FilesControllerTest < ActionController::TestCase
 
   test "should create file" do
     assert_difference('Fyle.count') do
-      post :create, fyle: { URL: @fyle.URL, what: @fyle.what }
+      post :create, fyle: { URL: "http://example.com/unique_new_file.txt", what: @fyle.what }
     end
 
     assert_redirected_to fyle_path(assigns(:file))
