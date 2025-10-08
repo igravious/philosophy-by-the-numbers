@@ -2,19 +2,9 @@ require 'test_helper'
 
 # Focused tests for the canonicity calculation functionality
 class PhilosopherCanonicityTest < ActiveSupport::TestCase
-  # Disable fixtures entirely to avoid conflicts with existing data
-  self.use_transactional_fixtures = false
-  self.use_instantiated_fixtures = false
-  
-  # Override fixture methods to prevent loading
-  def self.fixture_path
-    nil
-  end
-  
-  def self.fixtures(*args)
-    # Do nothing to prevent fixture loading
-  end
-  
+  # Create our own test data to avoid fixture conflicts
+  # Fixtures are loaded but we use high entity_ids (> 9000) to avoid conflicts
+
   def setup
     # Clean up any existing test data
     MetricSnapshot.where("philosopher_id > 9000").delete_all

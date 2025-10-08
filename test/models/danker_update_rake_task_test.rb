@@ -1,18 +1,8 @@
 require 'test_helper'
 
 class DankerUpdateRakeTaskTest < ActiveSupport::TestCase
-  # Disable fixtures to avoid conflicts with existing data
-  self.use_transactional_fixtures = false
-  self.use_instantiated_fixtures = false
-  
-  # Override fixture methods to prevent loading
-  def self.fixture_path
-    nil
-  end
-  
-  def self.fixtures(*args)
-    # Do nothing to prevent fixture loading
-  end
+  # Create our own test data and file structure for testing rake tasks
+  # Fixtures are loaded but we use isolated test directories
 
   def setup
     @test_danker_dir = Rails.root.join('db', 'danker', 'test')

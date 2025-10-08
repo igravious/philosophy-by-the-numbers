@@ -18,7 +18,7 @@ class MetaFiltersControllerTest < ActionController::TestCase
 
   test "should create meta_filter" do
     assert_difference('MetaFilter.count') do
-      post :create, meta_filter: { filter: @meta_filter.filter, key: @meta_filter.key, value: @meta_filter.value }
+      post :create, meta_filter: { filter: "new_unique_filter", type: @meta_filter.type }
     end
 
     assert_redirected_to meta_filter_path(assigns(:meta_filter))
@@ -35,7 +35,7 @@ class MetaFiltersControllerTest < ActionController::TestCase
   end
 
   test "should update meta_filter" do
-    patch :update, id: @meta_filter, meta_filter: { filter: @meta_filter.filter, key: @meta_filter.key, value: @meta_filter.value }
+    patch :update, id: @meta_filter, meta_filter: { filter: @meta_filter.filter, type: @meta_filter.type }
     assert_redirected_to meta_filter_path(assigns(:meta_filter))
   end
 
