@@ -1,6 +1,6 @@
 one:
   id: 1
-  type: Philosopher
+  type: Shadow
   entity_id: 1
   created_at: 2023-01-01 00:00:00
   updated_at: 2023-01-01 00:00:00

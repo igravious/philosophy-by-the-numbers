@@ -18,7 +18,7 @@ class NamesControllerTest < ActionController::TestCase
 
   test "should create name" do
     assert_difference('Name.count') do
-      post :create, name: { label: @name.label, lang: @name.lang, shadow_id: @name.shadow_id }
+      post :create, name: { label: @name.label, lang: "fr", shadow_id: @name.shadow_id }
     end
 
     assert_redirected_to name_path(assigns(:name))
