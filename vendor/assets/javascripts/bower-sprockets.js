@@ -8,8 +8,7 @@
 //= require venn.js/venn.js
 //= require springy/springy.js
 //= require springy/springyui.js
-//= require dracula/lib/dracula.js
-//= require dracula/lib/algorithms.js
-//= require dracula/lib/renderer/raphael.js
+//= require graphdracula/vendor/raphael.js
+//= require dracula/dist/dracula.dev.js
 //= require pickadate/lib/picker.js
 //= require pickadate/lib/picker.date.js
