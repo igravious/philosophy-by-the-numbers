@@ -7,7 +7,7 @@ class ShadowRakeTasksTest < ActiveSupport::TestCase
 
   def setup
     # Clean up any existing test data
-    MetricSnapshot.where("philosopher_id > 9000").delete_all
+    MetricSnapshot.where("shadow_id > 9000 AND shadow_type = 'Philosopher'").delete_all
     Philosopher.where("entity_id > 9000").delete_all
     
     # Ensure we have the algorithm weights for testing
@@ -21,7 +21,7 @@ class ShadowRakeTasksTest < ActiveSupport::TestCase
   
   def teardown
     # Clean up test data
-    MetricSnapshot.where("philosopher_id > 9000").delete_all
+    MetricSnapshot.where("shadow_id > 9000 AND shadow_type = 'Philosopher'").delete_all
     Philosopher.where("entity_id > 9000").delete_all
   end
 
@@ -65,7 +65,7 @@ class ShadowRakeTasksTest < ActiveSupport::TestCase
     
     # Get IDs of our test philosophers
     test_phil_ids = [high_canon_phil.id, low_canon_phil.id]
-    initial_snapshots = MetricSnapshot.where(philosopher_id: test_phil_ids).count
+    initial_snapshots = MetricSnapshot.where(shadow_id: test_phil_ids, shadow_type: 'Philosopher').count
 
     # Capture output to avoid cluttering test output
     output = capture_io do
@@ -76,8 +76,8 @@ class ShadowRakeTasksTest < ActiveSupport::TestCase
     Philosopher.define_singleton_method(:order, original_method)
 
     # Verify snapshots were created (only count our test philosophers' snapshots)
-    final_snapshots = MetricSnapshot.where(philosopher_id: test_phil_ids).count
-    snapshots_created = MetricSnapshot.where(philosopher_id: test_phil_ids)
+    final_snapshots = MetricSnapshot.where(shadow_id: test_phil_ids, shadow_type: 'Philosopher').count
+    snapshots_created = MetricSnapshot.where(shadow_id: test_phil_ids, shadow_type: 'Philosopher')
 
     # Debug: show what snapshots exist
     if final_snapshots != initial_snapshots + 2
@@ -87,13 +87,13 @@ class ShadowRakeTasksTest < ActiveSupport::TestCase
       puts "Low canon phil: id=#{low_canon_phil.id}, entity_id=#{low_canon_phil.entity_id}"
       puts "Snapshots for philosopher IDs #{test_phil_ids.inspect}:"
       snapshots_created.each do |s|
-        puts "  - Philosopher #{s.philosopher_id}, created at #{s.created_at}, algorithm: #{s.algorithm_version}"
+        puts "  - Philosopher #{s.shadow_id}, created at #{s.created_at}, algorithm: #{s.algorithm_version}"
       end
       puts "ALL snapshots with entity_id > 9000:"
       phils_with_snapshots = Philosopher.where("entity_id > 9000")
       phils_with_snapshots.each do |p|
         puts "  Philosopher: id=#{p.id}, entity_id=#{p.entity_id}"
-        MetricSnapshot.where(philosopher_id: p.id).each do |s|
+        MetricSnapshot.where(shadow_id: p.id, shadow_type: 'Philosopher').each do |s|
           puts "    Snapshot: algorithm=#{s.algorithm_version}, created_at=#{s.created_at}"
         end
       end
@@ -157,7 +157,8 @@ class ShadowRakeTasksTest < ActiveSupport::TestCase
         # Create snapshot if value changed (as the task does)
         if old_danker != s
           MetricSnapshot.create!(
-            philosopher_id: shade.id,
+            shadow_id: shade.id,
+            shadow_type: 'Philosopher',
             calculated_at: Time.current,
             measure: shade.measure,
             measure_pos: shade.measure_pos,

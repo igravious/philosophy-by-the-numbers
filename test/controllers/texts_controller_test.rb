@@ -54,9 +54,17 @@ class TextsControllerTest < ActionController::TestCase
     # @text = texts(:one)
 		@text = nil
 		response = get :index, format: 'xml', parts: true
-		# call @fyles = Fyle.all
-		p response.body
-		# need data from dev db
+
 		assert_response :success
+		assert_match /application\/xml/, @response.content_type
+
+		# Verify XML structure
+		assert_match /<\?xml version="1\.0" encoding="UTF-8"\?>/, response.body
+		assert_match /<sxf>/, response.body
+		assert_match /<conference url="">/, response.body
+		assert_match /<acronym>PHIL<\/acronym>/, response.body
+		assert_match /<name>Philosophical texts<\/name>/, response.body
+		assert_match /<description>Corpus of philosophical texts<\/description>/, response.body
+		assert_match /<events>/, response.body
 	end
 end

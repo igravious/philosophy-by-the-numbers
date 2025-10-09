@@ -2,9 +2,19 @@ require 'test_helper'
 
 class CanonicityCalculationTest < ActiveSupport::TestCase
   setup do
+    # Clean up any existing test data
+    MetricSnapshot.where("shadow_id > 9000 AND shadow_type = 'Philosopher'").delete_all
+    Philosopher.where("entity_id > 9000").delete_all
+
+    # Ensure we have the algorithm weights for testing
+    unless CanonicityWeights.exists?(algorithm_version: '2.0')
+      seed_canonicity_weights
+    end
+
     # Create test philosophers with known values for predictable testing
+    # Use entity_id > 9000 for isolation from fixture data
     @philosopher1 = Philosopher.create!(
-      entity_id: 1001,
+      entity_id: 9010,
       mention: 200,
       danker: 1.0,
       oxford: true,
@@ -20,7 +30,7 @@ class CanonicityCalculationTest < ActiveSupport::TestCase
     )
     
     @philosopher2 = Philosopher.create!(
-      entity_id: 1002,
+      entity_id: 9011,
       mention: 50,
       danker: 0.25,
       oxford: false,
@@ -35,7 +45,42 @@ class CanonicityCalculationTest < ActiveSupport::TestCase
       populate: false
     )
   end
-  
+
+  def teardown
+    # Clean up test data
+    MetricSnapshot.where("shadow_id > 9000 AND shadow_type = 'Philosopher'").delete_all
+    Philosopher.where("entity_id > 9000").delete_all
+  end
+
+  private
+
+  def seed_canonicity_weights
+    weights_v2 = [
+      { source_name: 'runes', weight_value: 0.0, description: 'Runes (biased, excluded)' },
+      { source_name: 'inphobool', weight_value: 0.15, description: 'Internet Encyclopedia of Philosophy' },
+      { source_name: 'borchert', weight_value: 0.25, description: 'Macmillan Encyclopedia (Borchert)' },
+      { source_name: 'internet', weight_value: 0.05, description: 'Internet sources' },
+      { source_name: 'cambridge', weight_value: 0.2, description: 'Cambridge Dictionary of Philosophy' },
+      { source_name: 'kemerling', weight_value: 0.1, description: 'Kemerling Philosophy Pages' },
+      { source_name: 'populate', weight_value: 0.02, description: 'Wikipedia (as philosopher)' },
+      { source_name: 'oxford', weight_value: 0.2, description: 'Oxford Reference' },
+      { source_name: 'routledge', weight_value: 0.25, description: 'Routledge Encyclopedia of Philosophy' },
+      { source_name: 'dbpedia', weight_value: 0.01, description: 'DBpedia (as philosopher)' },
+      { source_name: 'stanford', weight_value: 0.15, description: 'Stanford Encyclopedia of Philosophy' },
+      { source_name: 'all_bonus', weight_value: 0.13, description: 'Bonus for having any authoritative sources' }
+    ]
+
+    weights_v2.each do |weight|
+      CanonicityWeights.create!(
+        algorithm_version: '2.0',
+        source_name: weight[:source_name],
+        weight_value: weight[:weight_value],
+        description: weight[:description],
+        active: true
+      )
+    end
+  end
+
   test "canonicity metric calculation preserves input values" do
     original_mention1 = @philosopher1.mention
     original_danker1 = @philosopher1.danker

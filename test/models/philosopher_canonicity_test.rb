@@ -7,7 +7,7 @@ class PhilosopherCanonicityTest < ActiveSupport::TestCase
 
   def setup
     # Clean up any existing test data
-    MetricSnapshot.where("philosopher_id > 9000").delete_all
+    MetricSnapshot.where("shadow_id > 9000 AND shadow_type = 'Philosopher'").delete_all
     Philosopher.where("entity_id > 9000").delete_all
     
     # Ensure we have the algorithm weights for testing
@@ -47,7 +47,7 @@ class PhilosopherCanonicityTest < ActiveSupport::TestCase
   
   def teardown
     # Clean up test data
-    MetricSnapshot.where("philosopher_id > 9000").delete_all
+    MetricSnapshot.where("shadow_id > 9000 AND shadow_type = 'Philosopher'").delete_all
     Philosopher.where("entity_id > 9000").delete_all
   end
   
