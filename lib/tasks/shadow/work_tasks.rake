@@ -307,6 +307,8 @@ begin
       desc "SPARQLy textual investigations (of the order2ing variety)"
       task order2: :environment do
         Shadow.none
+
+        # Update measure_pos based on current measure values in shadow table
         works = Work.order('measure desc').group(:measure)
         work_groupings = works.count
         num_work_blocks = work_groupings.length
@@ -315,73 +317,71 @@ begin
           Work.where(measure: measure[0]).update_all(measure_pos: idx+1)
           update_progress(bar)
         end
+
+        # Also update measure_pos in latest snapshots for each work
+        puts "Updating measure_pos in metric snapshots..."
+        snapshot_bar = progress_bar(Work.count, FORCE, 'updating snapshots')
+        Work.find_each do |work|
+          latest_snapshot = work.metric_snapshots.order(calculated_at: :desc).first
+          if latest_snapshot && latest_snapshot.measure_pos != work.measure_pos
+            latest_snapshot.update(measure_pos: work.measure_pos)
+          end
+          update_progress(snapshot_bar)
+        end
       end
 
       desc "SPARQLy textual investigations (of the measureful variety)"
       task measure: :environment do
         Shadow.none
-        File.open('works.json'){|f|
-          json_works = f.read
-          works = JSON.parse(json_works)
-          total = works.length
-          bar = progress_bar(total, FORCE)
-          works.each do |work|
-            w = Work.find_by(entity_id: work[0])
-            w.cambridge = ('y' == work[2])
-            w.borchert = ('y' == work[3])
-            w.routledge = ('y' == work[4])
-            w.save!
-            update_progress(bar)
-          end
+
+        # Phase 1: Update encyclopedia flags from works.json
+        if File.exist?('works.json')
+          File.open('works.json'){|f|
+            json_works = f.read
+            works = JSON.parse(json_works)
+            total = works.length
+            bar = progress_bar(total, FORCE, 'updating encyclopedia flags')
+            works.each do |work|
+              w = Work.find_by(entity_id: work[0])
+              w.cambridge = ('y' == work[2])
+              w.borchert = ('y' == work[3])
+              w.routledge = ('y' == work[4])
+              w.save!
+              update_progress(bar)
+            end
+          }
+        else
+          puts "Warning: works.json not found, skipping encyclopedia flag updates"
+        end
+
+        # Phase 2: Calculate canonicity measures using new method
+        total = Work.all.size
+        bar = progress_bar(total, FORCE, 'calculating measures')
+
+        danker_info = {
+          version: 'current',
+          file: 'calculated_from_shadow_work_measure_task'
         }
 
-        total = Work.all.size
-        bar = progress_bar(total, FORCE)
-
-        max_mention = (Work.order('mention desc').first.mention)*1.0
-        min_mention = 0.5 # if no mention, reduce to zero!
-        unranked = Work.where(danker: nil)
-        ranked = Work.where.not(danker: 0.0) # o.o
-        max_rank = Work.order('danker desc').first.danker # desc (first)
-        min_rank = (ranked.order('danker asc').first.danker)/2.0  # asc (first) / 2.0 o.o
-
         Work.order(:entity_id).each do |work|
-          all_bonus = 0.1
-          borchert  = work.borchert  ? 0.25 : (all_bonus=0.0) # M 
-          cambridge = work.cambridge ? 0.2  : (all_bonus=0.0) # C
-          routledge = work.routledge ? 0.25 : (all_bonus=0.0) # R
-          philpapers= (work.philrecord or work.philtopic) ? 0.2 : 0.0
+          # Use the new calculate_canonicity_measure method
+          normalized_measure = work.calculate_canonicity_measure(
+            algorithm_version: '2.0-work',
+            danker_info: danker_info
+          )
 
-          genre = work.genre ? 1.0 : 0.5
-          sourcey = borchert+ cambridge+ routledge+ philpapers+ all_bonus
-          if 0.0 == sourcey
-            sourcey = 0.1 # don't be zero
-          end
-          exists = 0.0
-          phils = Philosopher.where(id: Expression.where(work_id: work.id).pluck(:creator_id))
-          if phils.length > 0
-            exists = -sourcey if 0.0 == phils.collect{|phil| phil.measure }.sum # counterbalance
-          else
-            STDERR.puts "Q#{work.entity_id} has no author!"
-          end
+          # Also update the shadow record for backward compatibility
+          # The method already creates a snapshot, so we just update the measure field
+          raw_measure = normalized_measure * (work.genre ? 1.0 : 0.5) * 1_000_000
+          work.update(measure: raw_measure)
 
-          mention = if work.mention.nil? or work.mention == 0
-            min_mention
-          else
-            work.mention
-          end
-          rank = if work.danker.nil?
-            min_rank
-          else
-            work.danker
-          end
-          # FOUR signals: description * connectedness * authority * size
-          tmp = (mention / max_mention) * (rank / max_rank) * (genre) * (sourcey + exists) * 1000000
-          work.update(measure: tmp)
-          q = "Q#{work.entity_id}".ljust(9); update_progress(bar, "#{q} #{tmp}")
+          q = "Q#{work.entity_id}".ljust(9)
+          update_progress(bar, "#{q} #{raw_measure.round(2)}")
         end
+
         null_point = Work.where(measure: 0.0).size
         puts "Null point is #{null_point}, usable works is #{total-null_point}"
+        puts "Created #{MetricSnapshot.for_works.count} work snapshots"
       end
 
       desc "SPARQLy textual investigations (of the mentioning variety)"

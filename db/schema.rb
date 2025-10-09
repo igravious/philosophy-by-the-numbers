@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20251008111032) do
+ActiveRecord::Schema.define(version: 20251009021950) do
 
   create_table "actual_texts", force: :cascade do |t|
     t.string   "URL",         limit: 255
@@ -177,7 +177,7 @@ ActiveRecord::Schema.define(version: 20251008111032) do
   add_index "meta_filters", ["filter"], name: "index_meta_filters_on_filter", unique: true
 
   create_table "metric_snapshots", force: :cascade do |t|
-    t.integer  "philosopher_id",                     null: false
+    t.integer  "shadow_id",                          null: false
     t.datetime "calculated_at",                      null: false
     t.float    "measure"
     t.integer  "measure_pos"
@@ -193,12 +193,13 @@ ActiveRecord::Schema.define(version: 20251008111032) do
     t.text     "encyclopedia_flags"
     t.integer  "linkcount"
     t.integer  "mention_count"
+    t.string   "shadow_type",                        null: false
   end
 
   add_index "metric_snapshots", ["algorithm_version"], name: "index_metric_snapshots_on_algorithm_version"
   add_index "metric_snapshots", ["calculated_at"], name: "index_metric_snapshots_on_calculated_at"
-  add_index "metric_snapshots", ["philosopher_id", "calculated_at"], name: "index_metric_snapshots_on_philosopher_id_and_calculated_at"
-  add_index "metric_snapshots", ["philosopher_id"], name: "index_metric_snapshots_on_philosopher_id"
+  add_index "metric_snapshots", ["shadow_type", "shadow_id", "calculated_at"], name: "index_metric_snapshots_on_shadow_and_calculated_at"
+  add_index "metric_snapshots", ["shadow_type", "shadow_id"], name: "index_metric_snapshots_on_shadow_type_and_shadow_id"
 
   create_table "names", force: :cascade do |t|
     t.integer  "shadow_id",  null: false
