@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20251009021950) do
+ActiveRecord::Schema.define(version: 20251009103308) do
 
   create_table "actual_texts", force: :cascade do |t|
     t.string   "URL"
@@ -302,6 +302,8 @@ ActiveRecord::Schema.define(version: 20251009021950) do
     t.string   "country"
     t.string   "copyright"
     t.string   "image"
+    t.boolean  "oxford2",          default: false
+    t.boolean  "oxford3",          default: false
   end
 
   add_index "shadows", ["entity_id"], name: "index_shadows_on_entity_id", unique: true

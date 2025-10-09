@@ -9,6 +9,25 @@ class DictionariesController < ApplicationController
 		@page_title = 'Listing Reference Works'
 
     @dictionaries = Dictionary.all
+
+    # Get algorithm version from params or use default
+    @algorithm_version = params[:algorithm_version] || '2.0'
+
+    # Fetch canonicity weights for display
+    @weights = CanonicityWeights.where(algorithm_version: @algorithm_version, active: true)
+                                 .index_by(&:source_name)
+
+    # Get list of available algorithm versions for dropdown
+    @algorithm_versions = CanonicityWeights.select(:algorithm_version)
+                                            .distinct
+                                            .order(:algorithm_version)
+                                            .pluck(:algorithm_version)
+
+    # Count philosophers for each encyclopedia flag
+    @philosopher_counts = {}
+    Dictionary.where.not(encyclopedia_flag: nil).pluck(:encyclopedia_flag).uniq.each do |flag|
+      @philosopher_counts[flag] = Philosopher.where(flag => true).count
+    end
   end
 
 	# GET /dictionaries/compare

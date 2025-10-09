@@ -196,13 +196,14 @@ bin/rake snarf:sep
 ### Step 5.2: Oxford Reference Works
 ```bash
 # Cross-reference with Oxford sources
-bin/rake snarf:oxford
+bin/rake snarf:oxford2  # Oxford Dictionary of Philosophy, 2nd ed.
+bin/rake snarf:oxford3  # Oxford Dictionary of Philosophy, 3rd ed.
 ```
 
 **Encyclopedia Sources:**
-- Oxford Dictionary of Philosophy
-- Oxford Companion to Philosophy
-- Sets `oxford` boolean flag for canonicity weighting
+- Oxford Dictionary of Philosophy, 2nd edition → Sets `oxford2` flag
+- Oxford Dictionary of Philosophy, 3rd edition → Sets `oxford3` flag
+- Note: Previously unified `oxford` flag has been split to track edition-specific coverage
 
 ### Step 5.3: Cambridge Dictionary of Philosophy
 ```bash
@@ -337,16 +338,28 @@ bin/rails console
 **Weight Configuration:**
 The system uses configurable weights stored in the `canonicity_weights` table:
 
-| Source | Default Weight | Description |
-|--------|---------------|-------------|
-| stanford | 0.25 | Stanford Encyclopedia presence |
-| oxford | 0.20 | Oxford reference works |
-| cambridge | 0.15 | Cambridge dictionary presence |
-| danker | 0.15 | Wikipedia PageRank score |
-| mentions | 0.10 | Mentions in philosophical texts |
-| routledge | 0.05 | Routledge encyclopedia |
-| internet | 0.05 | Internet Encyclopedia |
-| linkcount | 0.05 | Wikidata sitelink count |
+| Source | Weight | Description |
+|--------|--------|-------------|
+| stanford | 0.15 | Stanford Encyclopedia presence |
+| oxford2 | 0.00 | Oxford Dictionary of Philosophy, 2nd ed. (legacy, display only) |
+| oxford3 | 0.20 | Oxford Dictionary of Philosophy, 3rd ed. |
+| cambridge | 0.20 | Cambridge Dictionary presence |
+| borchert | 0.25 | Macmillan Encyclopedia (Borchert) |
+| routledge | 0.25 | Routledge Encyclopedia |
+| inphobool | 0.15 | Internet Encyclopedia of Philosophy |
+| internet | 0.05 | Internet sources |
+| kemerling | 0.10 | Kemerling Philosophy Pages |
+| populate | 0.02 | Wikipedia (as philosopher) |
+| dbpedia | 0.01 | DBpedia (as philosopher) |
+| all_bonus | 0.13 | Bonus for having any authoritative sources |
+| runes | 0.00 | Runes (excluded as biased) |
+
+**Total Base Weights:** 1.38 (sources only)
+**Total with Bonus:** 1.51 (base + all_bonus, when philosopher has at least one source)
+
+**Weight Determination:** Source weights were determined using Wikipedia PageRank data (danker scores) to measure the relative significance of each encyclopedia source.
+
+**Note:** The `all_bonus` is conditional—it only applies if the philosopher appears in at least one authoritative source. The Oxford Dictionary of Philosophy is tracked separately by edition. The 2nd edition (`oxford2`) is a legacy source (weight = 0.0) displayed for reference only. The 3rd edition (`oxford3`) actively contributes to canonicity calculations.
 
 **Algorithm Versioning:**
 - Supports multiple algorithm versions
@@ -538,7 +551,8 @@ bin/rake shadow:work:populate[works2]
 ```bash
 # Encyclopedia cross-reference updates
 bin/rake snarf:sep
-bin/rake snarf:oxford
+bin/rake snarf:oxford2
+bin/rake snarf:oxford3
 bin/rake snarf:cambridge
 # ... other encyclopedia sources
 ```

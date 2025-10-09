@@ -41,7 +41,8 @@ class ShadowRakeTasksTest < ActiveSupport::TestCase
       stanford: true,
       cambridge: true,
       routledge: true,
-      oxford: true
+      oxford2: true,
+      oxford3: true
     )
 
     low_canon_phil = Philosopher.create!(
@@ -52,7 +53,8 @@ class ShadowRakeTasksTest < ActiveSupport::TestCase
       stanford: false,
       cambridge: false,
       routledge: false,
-      oxford: false
+      oxford2: false,
+      oxford3: false
     )
 
     # Get IDs of our test philosophers
@@ -130,7 +132,8 @@ class ShadowRakeTasksTest < ActiveSupport::TestCase
       mention: 100,
       danker: 0.5,
       inphobool: true,
-      oxford: true
+      oxford2: true,
+      oxford3: true
     )
     
     # Mock the select method to return only our test philosopher
@@ -207,7 +210,8 @@ class ShadowRakeTasksTest < ActiveSupport::TestCase
       { source_name: 'cambridge', weight_value: 0.2, description: 'Cambridge Dictionary of Philosophy' },
       { source_name: 'kemerling', weight_value: 0.1, description: 'Kemerling Philosophy Pages' },
       { source_name: 'populate', weight_value: 0.02, description: 'Wikipedia (as philosopher)' },
-      { source_name: 'oxford', weight_value: 0.2, description: 'Oxford Reference' },
+      { source_name: 'oxford2', weight_value: 0.1, description: 'Oxford Dictionary of Philosophy, 2nd ed.' },
+      { source_name: 'oxford3', weight_value: 0.1, description: 'Oxford Dictionary of Philosophy, 3rd ed.' },
       { source_name: 'routledge', weight_value: 0.25, description: 'Routledge Encyclopedia of Philosophy' },
       { source_name: 'dbpedia', weight_value: 0.01, description: 'DBpedia (as philosopher)' },
       { source_name: 'stanford', weight_value: 0.15, description: 'Stanford Encyclopedia of Philosophy' },

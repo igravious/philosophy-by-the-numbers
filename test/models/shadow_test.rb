@@ -13,7 +13,8 @@ class ShadowTest < ActiveSupport::TestCase
   
   test "philosopher has source presence fields" do
     philosopher = Philosopher.new
-    assert_respond_to philosopher, :oxford
+    assert_respond_to philosopher, :oxford2
+    assert_respond_to philosopher, :oxford3
     assert_respond_to philosopher, :stanford
     assert_respond_to philosopher, :routledge
     assert_respond_to philosopher, :cambridge
@@ -32,7 +33,8 @@ class PhilosopherTest < ActiveSupport::TestCase
       entity_id: 1234,
       mention: 100,
       danker: 0.5,
-      oxford: true,
+      oxford2: false,
+      oxford3: true,
       stanford: true,
       routledge: false,
       cambridge: true,
@@ -53,11 +55,12 @@ class PhilosopherTest < ActiveSupport::TestCase
   
   test "philosopher canonicity calculation inputs are preserved" do
     @philosopher.save!
-    
+
     saved_philosopher = Philosopher.find(@philosopher.id)
     assert_equal 100, saved_philosopher.mention
     assert_equal 0.5, saved_philosopher.danker
-    assert saved_philosopher.oxford
+    assert_not saved_philosopher.oxford2
+    assert saved_philosopher.oxford3
     assert saved_philosopher.stanford
     assert_not saved_philosopher.routledge
     assert saved_philosopher.cambridge

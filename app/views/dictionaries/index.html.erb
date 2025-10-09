@@ -1,3 +1,15 @@
+<% if @algorithm_versions.present? %>
+<div style="margin-bottom: 1em;">
+  <strong>Algorithm Version:</strong>
+  <%= form_tag(dictionaries_path, method: :get, style: 'display: inline;') do %>
+    <%= select_tag :algorithm_version, options_for_select(@algorithm_versions, @algorithm_version), onchange: 'this.form.submit()' %>
+  <% end %>
+  <span style="margin-left: 1em; color: #666;">
+    (showing canonicity weights for algorithm <%= @algorithm_version %>)
+  </span>
+</div>
+<% end %>
+
 <table class="table table-striped table-hover ">
   <thead>
     <tr>
@@ -9,6 +21,8 @@
       <th>Contact</th>
       <th>Organisation</th>
 			<th>Encyclopedia Flag</th>
+			<th>Canonicity Weight</th>
+			<th>Philosophers</th>
 			<!-- <th>Missing</th> -->
 			<th colspan="2">Actions</th>
     </tr>
@@ -25,6 +39,23 @@
         <td><%= dictionary.contact %></td>
 				<td><%= dictionary.organisation %></td>
 				<td><%= dictionary.encyclopedia_flag %></td>
+				<td>
+					<% if dictionary.encyclopedia_flag && @weights[dictionary.encyclopedia_flag] %>
+						<%= @weights[dictionary.encyclopedia_flag].weight_value %>
+						<% if @weights[dictionary.encyclopedia_flag].weight_value == 0.0 %>
+							<span style="color: #999; font-size: 0.9em;">(legacy)</span>
+						<% end %>
+					<% else %>
+						<span style="color: #ccc;">—</span>
+					<% end %>
+				</td>
+				<td>
+					<% if dictionary.encyclopedia_flag && @philosopher_counts[dictionary.encyclopedia_flag] %>
+						<%= number_with_delimiter(@philosopher_counts[dictionary.encyclopedia_flag]) %>
+					<% else %>
+						<span style="color: #ccc;">—</span>
+					<% end %>
+				</td>
 				<!-- <td><%= dictionary.missing %></td> -->
 				<td><%= link_to 'Show', dictionary %></td>
 				<td><%= link_to 'Entry', entry_dictionary_path(dictionary) %></td>

@@ -28,7 +28,7 @@ The algorithm combines three primary components using normalized importance weig
 
 ## Source Weights (Algorithm v2.0)
 
-The algorithm uses configurable weights stored in the `canonicity_weights` table:
+The algorithm uses configurable weights stored in the `canonicity_weights` table. Weights were determined by analyzing the relative significance of each encyclopedia source using Wikipedia PageRank data (danker scores).
 
 | Source | Weight | Description |
 |--------|--------|-------------|
@@ -38,14 +38,34 @@ The algorithm uses configurable weights stored in the `canonicity_weights` table
 | `cambridge` | 0.20 | Cambridge Dictionary of Philosophy |
 | `kemerling` | 0.10 | Kemerling Philosophy Pages |
 | `populate` | 0.02 | Wikipedia (as philosopher) |
-| `oxford` | 0.20 | Oxford Reference |
+| `oxford2` | 0.00 | Oxford Dictionary of Philosophy, 2nd ed. (legacy, display only) |
+| `oxford3` | 0.20 | Oxford Dictionary of Philosophy, 3rd ed. |
 | `routledge` | 0.25 | Routledge Encyclopedia of Philosophy |
 | `dbpedia` | 0.01 | DBpedia (as philosopher) |
 | `stanford` | 0.15 | Stanford Encyclopedia of Philosophy |
 | `all_bonus` | 0.13 | Bonus for having any authoritative sources |
 | `runes` | 0.00 | Runes (excluded as biased) |
 
-**Total Weight Sum**: ~1.31 (intentionally slightly over 1.0 as no philosopher achieves perfect scores)
+**Total Weight Sum**: 1.51 (intentionally slightly over 1.0 as no philosopher achieves perfect scores)
+
+### Weight Determination Methodology
+
+Source weights were determined empirically using Wikipedia PageRank data (danker scores) to measure the relative significance and authority of each encyclopedia source:
+
+1. **Danker Analysis**: Each encyclopedia's Wikipedia article was analyzed for its PageRank score
+2. **Relative Weighting**: Weights were assigned proportionally based on comparative authority
+3. **Expert Adjustment**: Final weights incorporate domain knowledge about philosophical authority
+
+### Legacy Sources
+
+- **`oxford2`** (0.00): Oxford Dictionary of Philosophy, 2nd edition - tracked for display and historical comparison but does not contribute to canonicity scores
+- **`runes`** (0.00): Philosophy Dictionary (Runes) - excluded as potentially biased
+
+### Edition-Specific Tracking
+
+The Oxford Dictionary of Philosophy is tracked separately by edition:
+- **`oxford2`**: 2nd edition (legacy source, weight = 0.0, displayed in UI for reference)
+- **`oxford3`**: 3rd edition (active source, weight = 0.20, contributes to canonicity)
 
 ## Mathematical Formula
 

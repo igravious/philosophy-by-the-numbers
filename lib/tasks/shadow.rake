@@ -250,7 +250,7 @@ begin
 								lang = "@#{n.lang}"
 							end
 							# if they're not mentioned anywhere else
-							if not e.borchert and not e.internet and not e.cambridge and not e.kemerling and not e.oxford and not e.routledge and not e.dbpedia and not e.inphobool and not e.stanford
+							if not e.borchert and not e.internet and not e.cambridge and not e.kemerling and not e.oxford2 and not e.oxford3 and not e.routledge and not e.dbpedia and not e.inphobool and not e.stanford
 								# if they have no pages in the wikiverse
 								if 0 == e.linkcount 
 									if 0 == e.works.count
@@ -916,7 +916,8 @@ begin
 							# Collect all current input values for self-contained snapshot
 							input_values = {
 								stanford: shade.stanford || false,
-								oxford: shade.oxford || false,
+								oxford2: shade.oxford2 || false,
+								oxford3: shade.oxford3 || false,
 								cambridge: shade.cambridge || false,
 								internet: shade.internet || false,
 								routledge: shade.routledge || false,
@@ -926,11 +927,12 @@ begin
 								old_danker_score: old_danker_score,
 								new_danker_score: new_danker_score
 							}
-							
+
 							# Get encyclopedia flags for storage
 							encyclopedia_flags = {
 								stanford: shade.stanford || false,
-								oxford: shade.oxford || false,
+								oxford2: shade.oxford2 || false,
+								oxford3: shade.oxford3 || false,
 								cambridge: shade.cambridge || false,
 								internet: shade.internet || false,
 								routledge: shade.routledge || false,

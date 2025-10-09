@@ -163,7 +163,7 @@ class Philosopher < Shadow
 		
 		# Calculate individual source contributions using Linear Weighted Combination
 		source_contributions = {}
-		%w[runes inphobool borchert internet cambridge kemerling populate oxford routledge dbpedia stanford].each do |source|
+		%w[runes inphobool borchert internet cambridge kemerling populate oxford2 oxford3 routledge dbpedia stanford].each do |source|
 			source_contributions[source] = self.send(source.to_sym) ? weights[source].to_f : 0.0
 		end
 		
@@ -219,8 +219,8 @@ class Philosopher < Shadow
 		self.where.not(date_hack: nil).update_all(date_hack: nil)
 	end
 
-	def self.repo # I M I C K W O R D S
-		self.where(inphobool: false, borchert: false, internet: false, cambridge: false, kemerling: false, populate: false, oxford: false, routledge: false, dbpedia: false, stanford: false)
+	def self.repo # I M I C K W O R D S (now O O)
+		self.where(inphobool: false, borchert: false, internet: false, cambridge: false, kemerling: false, populate: false, oxford2: false, oxford3: false, routledge: false, dbpedia: false, stanford: false)
 	end
 end
 
