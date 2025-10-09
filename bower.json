@@ -25,6 +25,7 @@
     "milligram": "~1.0.3",
     "picnic": "~5.0.1",
     "pickadate": "~3.5.6",
-    "springy": "~2.7.1"
+    "springy": "~2.7.1",
+    "dracula": "https://github.com/strathausen/dracula.git"
   }
 }
