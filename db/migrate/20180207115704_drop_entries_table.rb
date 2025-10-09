@@ -1,6 +1,6 @@
 class DropEntriesTable < ActiveRecord::Migration
   def up
-		drop_table :entries
+		drop_table :entries if table_exists?(:entries)
 	end
 
 	def down
