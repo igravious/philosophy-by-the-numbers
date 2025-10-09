@@ -16,11 +16,14 @@ module TaskUtilities
       require 'progress_bar'
       bar = ProgressBar.new(total, :bar, :counter, :percentage, :elapsed, :eta)
     end
-    str = "About to process #{@total} #{objects}"
-    if bar.nil?
-      puts str
-    else
-      STDERR.puts str
+    # Only show progress messages in development/production, not in test
+    unless Rails.env.test?
+      str = "About to process #{@total} #{objects}"
+      if bar.nil?
+        puts str
+      else
+        STDERR.puts str
+      end
     end
     bar
   end
