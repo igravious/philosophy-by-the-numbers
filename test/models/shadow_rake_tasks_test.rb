@@ -6,9 +6,10 @@ class ShadowRakeTasksTest < ActiveSupport::TestCase
   # Fixtures are loaded but we use high entity_ids (> 9000) to avoid conflicts
 
   def setup
-    # Clean up any existing test data
-    MetricSnapshot.where("shadow_id > 9000 AND shadow_type = 'Philosopher'").delete_all
-    Philosopher.where("entity_id > 9000").delete_all
+    # Clean up any existing test data (9100-9199 range for this test file)
+    philosophers_to_cleanup = Philosopher.where("entity_id >= 9100 AND entity_id < 9200")
+    MetricSnapshot.where(shadow_id: philosophers_to_cleanup.pluck(:id), shadow_type: 'Philosopher').delete_all
+    philosophers_to_cleanup.delete_all
     
     # Ensure we have the algorithm weights for testing
     unless CanonicityWeights.exists?(algorithm_version: '2.0')
@@ -20,9 +21,10 @@ class ShadowRakeTasksTest < ActiveSupport::TestCase
   end
   
   def teardown
-    # Clean up test data
-    MetricSnapshot.where("shadow_id > 9000 AND shadow_type = 'Philosopher'").delete_all
-    Philosopher.where("entity_id > 9000").delete_all
+    # Clean up test data (9100-9199 range for this test file)
+    philosophers_to_cleanup = Philosopher.where("entity_id >= 9100 AND entity_id < 9200")
+    MetricSnapshot.where(shadow_id: philosophers_to_cleanup.pluck(:id), shadow_type: 'Philosopher').delete_all
+    philosophers_to_cleanup.delete_all
   end
 
   test "shadow:metric task calculates canonicity for test philosophers" do
@@ -30,8 +32,9 @@ class ShadowRakeTasksTest < ActiveSupport::TestCase
     Rake::Task['shadow:philosopher:metric'].reenable
 
     # Create test philosophers with different source combinations
+    # Use 9100-9199 range to avoid conflicts with other tests
     high_canon_phil = Philosopher.create!(
-      entity_id: 9990,
+      entity_id: 9100,
       mention: 200,
       danker: 0.8,
       inphobool: true,
@@ -40,9 +43,9 @@ class ShadowRakeTasksTest < ActiveSupport::TestCase
       routledge: true,
       oxford: true
     )
-    
+
     low_canon_phil = Philosopher.create!(
-      entity_id: 9991,
+      entity_id: 9101,
       mention: 50,
       danker: 0.2,
       inphobool: false,
@@ -51,21 +54,25 @@ class ShadowRakeTasksTest < ActiveSupport::TestCase
       routledge: false,
       oxford: false
     )
-    
+
+    # Get IDs of our test philosophers
+    test_phil_ids = [high_canon_phil.id, low_canon_phil.id]
+
+    # Ensure clean slate - delete any existing snapshots for these philosophers
+    # (in case another test created them with same entity_ids)
+    MetricSnapshot.where(shadow_id: test_phil_ids, shadow_type: 'Philosopher').delete_all
+    initial_snapshots = 0  # We know it's 0 after cleanup
+
     # Mock the task to only process our test philosophers
     # Only intercept .order(:entity_id) which the rake task uses for iteration
     original_method = Philosopher.method(:order)
     Philosopher.define_singleton_method(:order) do |column_or_sql|
       if column_or_sql == :entity_id
-        where("entity_id > 9000").order(column_or_sql)
+        where("entity_id >= 9100 AND entity_id < 9200").order(column_or_sql)
       else
         original_method.call(column_or_sql)
       end
     end
-    
-    # Get IDs of our test philosophers
-    test_phil_ids = [high_canon_phil.id, low_canon_phil.id]
-    initial_snapshots = MetricSnapshot.where(shadow_id: test_phil_ids, shadow_type: 'Philosopher').count
 
     # Capture output to avoid cluttering test output
     output = capture_io do
@@ -117,8 +124,9 @@ class ShadowRakeTasksTest < ActiveSupport::TestCase
 
   test "shadow:danker task updates danker scores without iterating all records" do
     # Create test philosophers
+    # Use 9100-9199 range to avoid conflicts with other tests
     test_phil = Philosopher.create!(
-      entity_id: 9992,
+      entity_id: 9102,
       mention: 100,
       danker: 0.5,
       inphobool: true,
@@ -128,28 +136,28 @@ class ShadowRakeTasksTest < ActiveSupport::TestCase
     # Mock the select method to return only our test philosopher
     shadow_task = Object.new
     def shadow_task.select(cond)
-      Philosopher.where("entity_id > 9000")
+      Philosopher.where("entity_id >= 9100 AND entity_id < 9200")
     end
-    
+
     # Mock file system operations for danker data
     danker_dir = Rails.root.join('db', 'danker', 'latest')
     FileUtils.mkdir_p(danker_dir) unless danker_dir.exist?
-    
+
     # Create a mock CSV file
     csv_file = danker_dir.join('2024-10-04.all.links.c.alphanum.csv')
-    File.write(csv_file, "Q9992,0.75\n")
+    File.write(csv_file, "Q9102,0.75\n")
 
     initial_danker = test_phil.danker
     initial_snapshots = MetricSnapshot.count
 
     # Since we can't easily mock the rake task internals, test the core logic
     # This simulates what the danker task does
-    shadows = Philosopher.where("entity_id > 9000")
+    shadows = Philosopher.where("entity_id >= 9100 AND entity_id < 9200")
     danker_version = '2024-10-04'
     
     shadows.each do |shade|
       # Simulate look command result
-      if shade.entity_id == 9992
+      if shade.entity_id == 9102
         s = 0.75
         old_danker = shade.danker
         shade.update(danker: s)
