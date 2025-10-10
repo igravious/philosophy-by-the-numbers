@@ -19,7 +19,7 @@ gem 'composite_primary_keys', '~> 8'
 gem 'sqlite3', '~> 1.3.0'
 
 # Use SCSS for stylesheets
-gem 'sass-rails', '~> 5'
+gem 'sassc-rails'
 
 # Use Uglifier as compressor for JavaScript assets
 # gem 'uglifier', '>= 1.3.0'
