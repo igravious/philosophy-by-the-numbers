@@ -2,7 +2,7 @@ class DictionariesController < ApplicationController
   before_action :set_dictionary, only: [:show, :edit, :update, :destroy, :entry]
 
 	# Collections
-	
+
   # GET /dictionaries
   # GET /dictionaries.json
   def index
@@ -26,7 +26,7 @@ class DictionariesController < ApplicationController
     # Count philosophers for each encyclopedia flag
     @philosopher_counts = {}
     Dictionary.where.not(encyclopedia_flag: nil).pluck(:encyclopedia_flag).uniq.each do |flag|
-      @philosopher_counts[flag] = Philosopher.where(flag => true).count
+      @philosopher_counts[flag] = ::Philosopher.where(flag => true).count
     end
   end
 

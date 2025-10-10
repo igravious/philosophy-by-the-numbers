@@ -1,0 +1,2 @@
+class Philosopher < Shadow
+end
