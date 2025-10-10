@@ -1,5 +1,6 @@
 # Philosophers are stored in the shadows table via STI
 # The 'type' column must be 'Philosopher'
+# Philosopher-specific attributes (birth_year, death_year, etc.) are now in philosopher_attrs fixtures
 one:
   id: 1
   type: Philosopher
@@ -9,12 +10,6 @@ one:
   mention: 1
   danker: 0.6
   measure: 0.6
-  obsolete: false
-  genre: false
-  inpho: 0
-  inphobool: false
-  birth_year: 1800
-  death_year: 1900
 
 two:
   id: 21
@@ -25,9 +20,3 @@ two:
   mention: 1
   danker: 0.5
   measure: 0.5
-  obsolete: false
-  genre: false
-  inpho: 0
-  inphobool: false
-  birth_year: 1750
-  death_year: 1850

@@ -1,0 +1,14 @@
+# WorkAttrs fixtures for test data
+one:
+  shadow_id: 10
+  obsolete: false
+  genre: false
+  created_at: 2023-01-01 00:00:00
+  updated_at: 2023-01-01 00:00:00
+
+two:
+  shadow_id: 11
+  obsolete: false
+  genre: false
+  created_at: 2023-01-01 00:00:00
+  updated_at: 2023-01-01 00:00:00

@@ -85,8 +85,71 @@ end
 # class Philosopher < Shadow; end
 
 # https://medium.com/@jbmilgrom/active-record-many-to-many-self-join-table-e0992c27c1e
-	
+
 class Philosopher < Shadow
+		has_one :attrs, class_name: 'PhilosopherAttrs', foreign_key: :shadow_id,
+						autosave: true, dependent: :destroy
+		has_one :obsolete_data, -> { where(shadow_type: 'Philosopher') },
+						class_name: 'ObsoleteAttrs', foreign_key: :shadow_id
+
+		accepts_nested_attributes_for :attrs
+
+		# List of attributes that should be delegated to attrs
+		DELEGATED_ATTRIBUTES = %w[
+			birth birth_approx birth_year death death_approx death_year
+			floruit period dbpedia oxford2 oxford3 stanford internet
+			kemerling runes populate inpho inphobool gender philosopher
+		]
+
+		delegate :birth, :birth=,
+						 :birth_approx, :birth_approx=,
+						 :birth_year, :birth_year=,
+						 :death, :death=,
+						 :death_approx, :death_approx=,
+						 :death_year, :death_year=,
+						 :floruit, :floruit=,
+						 :period, :period=,
+						 :dbpedia, :dbpedia=,
+						 :oxford2, :oxford2=,
+						 :oxford3, :oxford3=,
+						 :stanford, :stanford=,
+						 :internet, :internet=,
+						 :kemerling, :kemerling=,
+						 :runes, :runes=,
+						 :populate, :populate=,
+						 :inpho, :inpho=,
+						 :inphobool, :inphobool=,
+						 :gender, :gender=,
+						 :philosopher, :philosopher=,
+						 to: :attrs_with_autobuild
+
+		# Ensure attrs record is created with the philosopher
+		after_initialize :build_attrs_if_needed
+
+		# Override initialize to handle mass assignment of delegated attributes
+		def initialize(attributes = nil, options = {})
+			# Extract delegated attributes from the hash
+			delegated_attrs = {}
+			if attributes.is_a?(Hash)
+				DELEGATED_ATTRIBUTES.each do |attr|
+					attr_sym = attr.to_sym
+					if attributes.key?(attr_sym)
+						delegated_attrs[attr_sym] = attributes.delete(attr_sym)
+					elsif attributes.key?(attr)
+						delegated_attrs[attr_sym] = attributes.delete(attr)
+					end
+				end
+			end
+
+			# Call parent initialize with remaining attributes
+			super(attributes, options)
+
+			# Now set the delegated attributes through delegation
+			delegated_attrs.each do |key, value|
+				self.send("#{key}=", value)
+			end
+		end
+
 		has_many :metric_snapshots, -> { where(shadow_type: 'Philosopher') }, foreign_key: :shadow_id, dependent: :destroy
 		# source: :work matches with the belongs_to :work in the Expression join model
 		has_many :works, through: :route_a, source: :work
@@ -222,9 +285,73 @@ class Philosopher < Shadow
 	def self.repo # I M I C K W O R D S (now O O)
 		self.where(inphobool: false, borchert: false, internet: false, cambridge: false, kemerling: false, populate: false, oxford2: false, oxford3: false, routledge: false, dbpedia: false, stanford: false)
 	end
+
+	private
+
+	def attrs_with_autobuild
+		# Always ensure attrs exists before delegating
+		build_attrs if attrs.nil?
+		attrs
+	end
+
+	def build_attrs_if_needed
+		build_attrs if attrs.nil?
+	end
 end
 
 class Work < Shadow
+	has_one :attrs, class_name: 'WorkAttrs', foreign_key: :shadow_id,
+					autosave: true, dependent: :destroy
+	has_one :obsolete_data, -> { where(shadow_type: 'Work') },
+					class_name: 'ObsoleteAttrs', foreign_key: :shadow_id
+
+	# List of attributes that should be delegated to attrs
+	DELEGATED_ATTRIBUTES = %w[
+		pub pub_year pub_approx work_lang copyright genre obsolete
+		philrecord philtopic britannica image philosophical
+	]
+
+	delegate :pub, :pub=,
+					 :pub_year, :pub_year=,
+					 :pub_approx, :pub_approx=,
+					 :work_lang, :work_lang=,
+					 :copyright, :copyright=,
+					 :genre, :genre=,
+					 :obsolete, :obsolete=,
+					 :philrecord, :philrecord=,
+					 :philtopic, :philtopic=,
+					 :britannica, :britannica=,
+					 :image, :image=,
+					 :philosophical, :philosophical=,
+					 to: :attrs_with_autobuild
+
+	# Ensure attrs record is created with the work
+	after_initialize :build_attrs_if_needed
+
+	# Override initialize to handle mass assignment of delegated attributes
+	def initialize(attributes = nil, options = {})
+		# Extract delegated attributes from the hash
+		delegated_attrs = {}
+		if attributes.is_a?(Hash)
+			DELEGATED_ATTRIBUTES.each do |attr|
+				attr_sym = attr.to_sym
+				if attributes.key?(attr_sym)
+					delegated_attrs[attr_sym] = attributes.delete(attr_sym)
+				elsif attributes.key?(attr)
+					delegated_attrs[attr_sym] = attributes.delete(attr)
+				end
+			end
+		end
+
+		# Call parent initialize with remaining attributes
+		super(attributes, options)
+
+		# Now set the delegated attributes through delegation
+		delegated_attrs.each do |key, value|
+			self.send("#{key}=", value)
+		end
+	end
+
 	has_many :metric_snapshots, -> { where(shadow_type: 'Work') }, foreign_key: :shadow_id, dependent: :destroy
 	# `source: :creator' matches with the belongs_to :creator in the Expression join model
 	has_many :creators, through: :route_b, source: :philosopher
@@ -352,5 +479,17 @@ class Work < Shadow
 			phil_label = phils.collect{|phil| phil.show_label(lang, true)[3] }
 			phil_label = phil_label.join(', ')
 		end
+	end
+
+	private
+
+	def attrs_with_autobuild
+		# Always ensure attrs exists before delegating
+		build_attrs if attrs.nil?
+		attrs
+	end
+
+	def build_attrs_if_needed
+		build_attrs if attrs.nil?
 	end
 end

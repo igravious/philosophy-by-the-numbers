@@ -6,7 +6,7 @@ class ShadowTest < ActiveSupport::TestCase
     assert_respond_to philosopher, :measure
     assert_respond_to philosopher, :measure_pos
     assert_respond_to philosopher, :danker
-    assert_respond_to philosopher, :dbpedia_pagerank
+    # dbpedia_pagerank is now obsolete and stored in obsolete_attrs
     assert_respond_to philosopher, :mention
     assert_respond_to philosopher, :linkcount
   end

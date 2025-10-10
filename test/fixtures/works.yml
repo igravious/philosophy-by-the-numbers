@@ -1,5 +1,6 @@
 # Works are stored in the shadows table via STI
 # The 'type' column must be 'Work'
+# Work-specific attributes (obsolete, genre, etc.) are now in work_attrs fixtures
 one:
   id: 10
   type: Work
@@ -9,10 +10,6 @@ one:
   mention: 1
   danker: 0.4
   measure: 0.4
-  obsolete: false
-  genre: false
-  inpho: 0
-  inphobool: false
 
 two:
   id: 11
@@ -23,7 +20,3 @@ two:
   mention: 1
   danker: 0.3
   measure: 0.3
-  obsolete: false
-  genre: false
-  inpho: 0
-  inphobool: false
