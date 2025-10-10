@@ -11,23 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20251010095418) do
-
-  create_table "actual_texts", force: :cascade do |t|
-    t.string   "URL",         limit: 255
-    t.integer  "strip_start"
-    t.integer  "strip_end"
-    t.datetime "created_at"
-    t.datetime "updated_at"
-    t.string   "what",        limit: 255
-  end
-
-  create_table "author_texts", force: :cascade do |t|
-    t.integer  "author_id"
-    t.integer  "text_id"
-    t.datetime "created_at"
-    t.datetime "updated_at"
-  end
+ActiveRecord::Schema.define(version: 20251010144126) do
 
   create_table "authors", force: :cascade do |t|
     t.string   "name",          limit: 255
