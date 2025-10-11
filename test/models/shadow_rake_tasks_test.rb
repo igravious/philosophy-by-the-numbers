@@ -96,14 +96,14 @@ class ShadowRakeTasksTest < ActiveSupport::TestCase
       puts "Low canon phil: id=#{low_canon_phil.id}, entity_id=#{low_canon_phil.entity_id}"
       puts "Snapshots for philosopher IDs #{test_phil_ids.inspect}:"
       snapshots_created.each do |s|
-        puts "  - Philosopher #{s.shadow_id}, created at #{s.created_at}, algorithm: #{s.algorithm_version}"
+        puts "  - Philosopher #{s.shadow_id}, created at #{s.created_at}, algorithm: #{s.canonicity_weight_algorithm_version}"
       end
       puts "ALL snapshots with entity_id > 9000:"
       phils_with_snapshots = Philosopher.where("entity_id > 9000")
       phils_with_snapshots.each do |p|
         puts "  Philosopher: id=#{p.id}, entity_id=#{p.entity_id}"
         MetricSnapshot.where(shadow_id: p.id, shadow_type: 'Philosopher').each do |s|
-          puts "    Snapshot: algorithm=#{s.algorithm_version}, created_at=#{s.created_at}"
+          puts "    Snapshot: algorithm=#{s.canonicity_weight_algorithm_version}, created_at=#{s.created_at}"
         end
       end
     end
@@ -113,9 +113,9 @@ class ShadowRakeTasksTest < ActiveSupport::TestCase
     # Verify the calculations used configurable weights
     latest_snapshots = MetricSnapshot.order(:created_at).last(2)
     latest_snapshots.each do |snapshot|
-      assert_equal '2.0', snapshot.algorithm_version
+      assert_equal '2.0', snapshot.canonicity_weight_algorithm_version
       assert_not_nil snapshot.weights_config
-      weights_config = JSON.parse(snapshot.weights_config)
+      weights_config = snapshot.weights_config
       assert weights_config.key?('stanford')
       assert weights_config.key?('routledge')
     end
@@ -171,11 +171,15 @@ class ShadowRakeTasksTest < ActiveSupport::TestCase
             shadow_id: shade.id,
             shadow_type: 'Philosopher',
             calculated_at: Time.current,
-            measure: shade.measure,
+            measure: shade.measure || 0.0,
             measure_pos: shade.measure_pos,
+            danker_score: s,
+            linkcount: shade.linkcount || 0,
+            mention_count: shade.mention || 0,
+            reference_work_flags: shade.reference_work_flags_json,
             danker_version: danker_version,
             danker_file: '2024-10-04.all.links.c.alphanum.csv',
-            algorithm_version: 'danker_import',
+            canonicity_weight_algorithm_version: 'danker_import',
             notes: "Danker score updated from #{old_danker} to #{s}"
           )
         end
@@ -191,7 +195,7 @@ class ShadowRakeTasksTest < ActiveSupport::TestCase
     assert_equal initial_snapshots + 1, final_snapshots, "Should create 1 new snapshot"
     
     snapshot = MetricSnapshot.order(:created_at).last
-    assert_equal 'danker_import', snapshot.algorithm_version
+    assert_equal 'danker_import', snapshot.canonicity_weight_algorithm_version
     assert_equal '2024-10-04', snapshot.danker_version
     assert_includes snapshot.notes, "updated from #{initial_danker} to 0.75"
     

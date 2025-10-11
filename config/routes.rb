@@ -190,4 +190,6 @@ patch 'questions/specific', to: 'questions#specific', as: ''
 	get 'questions/influences'
 	get 'questions/upload'
 	post 'questions/upload' => 'questions#uploaded'
+
+	get 'dashboard' => 'pages#dashboard'
 end

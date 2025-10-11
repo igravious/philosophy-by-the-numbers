@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20251010144126) do
+ActiveRecord::Schema.define(version: 20251010162714) do
 
   create_table "authors", force: :cascade do |t|
     t.string   "name",          limit: 255
@@ -161,27 +161,25 @@ ActiveRecord::Schema.define(version: 20251010144126) do
   add_index "meta_filters", ["filter"], name: "index_meta_filters_on_filter", unique: true
 
   create_table "metric_snapshots", force: :cascade do |t|
-    t.integer  "shadow_id",                          null: false
-    t.datetime "calculated_at",                      null: false
-    t.float    "measure"
+    t.integer  "shadow_id",                           null: false
+    t.string   "shadow_type",                         null: false
+    t.datetime "calculated_at",                       null: false
+    t.string   "canonicity_weight_algorithm_version", null: false
+    t.string   "danker_version",                      null: false
+    t.string   "danker_file",                         null: false
+    t.float    "danker_score",                        null: false
+    t.integer  "linkcount",                           null: false
+    t.integer  "mention_count",                       null: false
+    t.text     "reference_work_flags",                null: false
+    t.float    "measure",                             null: false
     t.integer  "measure_pos"
-    t.string   "danker_version"
-    t.string   "danker_file"
-    t.string   "algorithm_version",  default: "1.0"
     t.text     "notes"
-    t.datetime "created_at",                         null: false
-    t.datetime "updated_at",                         null: false
-    t.text     "weights_config"
-    t.text     "input_values"
-    t.float    "danker_score"
-    t.text     "encyclopedia_flags"
-    t.integer  "linkcount"
-    t.integer  "mention_count"
-    t.string   "shadow_type",                        null: false
+    t.datetime "created_at",                          null: false
+    t.datetime "updated_at",                          null: false
   end
 
-  add_index "metric_snapshots", ["algorithm_version"], name: "index_metric_snapshots_on_algorithm_version"
   add_index "metric_snapshots", ["calculated_at"], name: "index_metric_snapshots_on_calculated_at"
+  add_index "metric_snapshots", ["canonicity_weight_algorithm_version"], name: "index_metric_snapshots_on_canonicity_weight_algorithm_version"
   add_index "metric_snapshots", ["shadow_type", "shadow_id", "calculated_at"], name: "index_metric_snapshots_on_shadow_and_calculated_at"
   add_index "metric_snapshots", ["shadow_type", "shadow_id"], name: "index_metric_snapshots_on_shadow_type_and_shadow_id"
 

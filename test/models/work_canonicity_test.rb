@@ -113,7 +113,7 @@ class WorkCanonicityTest < ActiveSupport::TestCase
 
     latest_snapshot = work.metric_snapshots.order(:created_at).last
     assert_equal 'Work', latest_snapshot.shadow_type
-    assert_equal '2.0-work', latest_snapshot.algorithm_version
+    assert_equal '2.0-work', latest_snapshot.canonicity_weight_algorithm_version
     assert_not_nil latest_snapshot.measure
   end
 
@@ -227,14 +227,14 @@ class WorkCanonicityTest < ActiveSupport::TestCase
     work.calculate_canonicity_measure
 
     snapshot = work.metric_snapshots.last
-    weights_config = snapshot.parsed_weights_config
+    weights_config = snapshot.weights_config
 
     assert_not_nil weights_config
-    assert_equal 0.25, weights_config['borchert']['value']
-    assert_equal 0.20, weights_config['cambridge']['value']
-    assert_equal 0.25, weights_config['routledge']['value']
-    assert_equal 0.20, weights_config['philpapers']['value']
-    assert_equal 0.10, weights_config['all_bonus']['value']
+    assert_equal 0.25, weights_config['borchert']
+    assert_equal 0.20, weights_config['cambridge']
+    assert_equal 0.25, weights_config['routledge']
+    assert_equal 0.20, weights_config['philpapers']
+    assert_equal 0.10, weights_config['all_bonus']
   end
 
   test "polymorphic association works correctly" do

@@ -124,7 +124,7 @@ class PhilosopherCanonicityTest < ActiveSupport::TestCase
     assert_equal initial_count + 1, philosopher.metric_snapshots.count
     
     latest_snapshot = philosopher.metric_snapshots.order(:created_at).last
-    assert_equal '2.0', latest_snapshot.algorithm_version
+    assert_equal '2.0', latest_snapshot.canonicity_weight_algorithm_version
     assert_not_nil latest_snapshot.measure
   end
   

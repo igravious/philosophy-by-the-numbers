@@ -152,7 +152,7 @@ class Philosopher < Shadow
 
 		has_many :metric_snapshots, -> { where(shadow_type: 'Philosopher') }, foreign_key: :shadow_id, dependent: :destroy
 		# source: :work matches with the belongs_to :work in the Expression join model
-		has_many :works, through: :route_a, source: :work
+		has_many :creations, through: :route_a, source: :work  # Mirrors Work's :creators association
 		# route_a "names" the X join model for accessing through the work association
 		has_many :route_a, foreign_key: :creator_id, class_name: "Expression"
 
@@ -168,6 +168,23 @@ class Philosopher < Shadow
 	#	end
 	#end
 	
+	def reference_work_flags_json
+		{
+			runes: self.runes || false,
+			inphobool: self.inphobool || false,
+			borchert: self.borchert || false,
+			internet: self.internet || false,
+			cambridge: self.cambridge || false,
+			kemerling: self.kemerling || false,
+			populate: self.populate || false,
+			oxford2: self.oxford2 || false,
+			oxford3: self.oxford3 || false,
+			routledge: self.routledge || false,
+			dbpedia: self.dbpedia || false,
+			stanford: self.stanford || false
+		}.to_json
+	end
+
 	def capacities
 		Capacity.where(entity_id: Role.where(shadow_id: self.id).pluck(:entity_id))
 	end
@@ -250,17 +267,16 @@ class Philosopher < Shadow
 		# Calculate total source weight (Linear Weighted Combination)
 		total_source_weight = source_contributions.values.sum
 		
-		# Calculate the raw measure for database storage (scaled for user-friendly display)
-		raw_measure = ((mention/max_mention * rank/max_rank) * total_source_weight * 10_000_000)
-		
-		# Calculate normalized measure for return value (0-1 range)
-		source_sum = total_source_weight
-		
-		# Handle edge case where all values could be zero
-		if max_mention == 0 || max_rank == 0 || source_sum == 0
+		# Handle edge case where all values could be zero (prevents division by zero / NaN)
+		if max_mention == 0 || max_rank == 0 || total_source_weight == 0
+			raw_measure = 0.0
 			normalized_measure = 0.0
 		else
-			normalized_measure = (mention/max_mention * rank/max_rank) * source_sum
+			# Calculate the raw measure for database storage (scaled for user-friendly display)
+			raw_measure = ((mention/max_mention * rank/max_rank) * total_source_weight * 10_000_000)
+
+			# Calculate normalized measure for return value (0-1 range)
+			normalized_measure = (mention/max_mention * rank/max_rank) * total_source_weight
 		end
 		
 		# Create a snapshot with the calculated values (don't override the database record)
@@ -357,6 +373,16 @@ class Work < Shadow
 	has_many :creators, through: :route_b, source: :philosopher
 	# `route_b' "names" the X join model for accessing throught the work association
 	has_many :route_b, foreign_key: :work_id, class_name: "Expression"
+
+	def reference_work_flags_json
+		{
+			borchert: self.borchert || false,
+			cambridge: self.cambridge || false,
+			routledge: self.routledge || false,
+			philrecord: self.philrecord || false,
+			philtopic: self.philtopic || false
+		}.to_json
+	end
 
 	def join_attribute
 		{work_id: self.id}

@@ -6,7 +6,7 @@ class MetricSnapshot < ActiveRecord::Base
   validates :shadow_id, presence: true
   validates :shadow_type, presence: true
   validates :calculated_at, presence: true
-  validates :algorithm_version, presence: true
+  validates :canonicity_weight_algorithm_version, presence: true
 
   scope :for_philosophers, -> { where(shadow_type: 'Philosopher') }
   scope :for_works, -> { where(shadow_type: 'Work') }
@@ -20,7 +20,7 @@ class MetricSnapshot < ActiveRecord::Base
     latest_for_shadow(philosopher_id, 'Philosopher')
   }
 
-  scope :by_algorithm_version, ->(version) { where(algorithm_version: version) }
+  scope :by_algorithm_version, ->(version) { where(canonicity_weight_algorithm_version: version) }
 
   scope :latest_calculation, -> { order(calculated_at: :desc).limit(1) }
 
@@ -49,72 +49,63 @@ class MetricSnapshot < ActiveRecord::Base
   end
   
   def self.create_snapshot_for_philosopher(philosopher, algorithm_version: '2.0', danker_info: {})
-    # Capture the exact weights configuration used for this calculation
-    weights_config = CanonicityWeights.active.for_version(algorithm_version)
-                                     .select(:source_name, :weight_value, :description)
-                                     .map { |w| { w.source_name => { value: w.weight_value.to_f, description: w.description } } }
-                                     .reduce(&:merge)
-
     create!(
       shadow_id: philosopher.id,
       shadow_type: 'Philosopher',
       calculated_at: Time.current,
       measure: philosopher.measure,
       measure_pos: philosopher.measure_pos,
-      danker_version: danker_info[:version],
-      danker_file: danker_info[:file],
-      algorithm_version: algorithm_version,
-      weights_config: JSON.pretty_generate(weights_config),
+      danker_score: philosopher.danker || 0.0,
+      linkcount: philosopher.linkcount || 0,
+      mention_count: philosopher.mention || 0,
+      reference_work_flags: philosopher.reference_work_flags_json,
+      danker_version: danker_info[:version] || 'unknown',
+      danker_file: danker_info[:file] || 'unknown',
+      canonicity_weight_algorithm_version: algorithm_version,
       notes: "Calculated using Linear Weighted Combination algorithm v#{algorithm_version}"
     )
   end
 
   def self.create_snapshot_for_philosopher_with_measure(philosopher, calculated_measure, algorithm_version: '2.0', danker_info: {})
-    # Capture the exact weights configuration used for this calculation
-    weights_config = CanonicityWeights.active.for_version(algorithm_version)
-                                     .select(:source_name, :weight_value, :description)
-                                     .map { |w| { w.source_name => { value: w.weight_value.to_f, description: w.description } } }
-                                     .reduce(&:merge)
-
     create!(
       shadow_id: philosopher.id,
       shadow_type: 'Philosopher',
       calculated_at: Time.current,
       measure: calculated_measure,
       measure_pos: nil, # Will be calculated later based on ranking
-      danker_version: danker_info[:version],
-      danker_file: danker_info[:file],
-      algorithm_version: algorithm_version,
-      weights_config: JSON.pretty_generate(weights_config),
+      danker_score: philosopher.danker || 0.0,
+      linkcount: philosopher.linkcount || 0,
+      mention_count: philosopher.mention || 0,
+      reference_work_flags: philosopher.reference_work_flags_json,
+      danker_version: danker_info[:version] || 'unknown',
+      danker_file: danker_info[:file] || 'unknown',
+      canonicity_weight_algorithm_version: algorithm_version,
       notes: "Calculated using Linear Weighted Combination algorithm v#{algorithm_version} (snapshot only)"
     )
   end
 
   def self.create_snapshot_for_work(work, calculated_measure, algorithm_version: '2.0-work', danker_info: {})
-    # Capture the exact weights configuration used for this calculation
-    weights_config = CanonicityWeights.active.for_version(algorithm_version)
-                                     .select(:source_name, :weight_value, :description)
-                                     .map { |w| { w.source_name => { value: w.weight_value.to_f, description: w.description } } }
-                                     .reduce(&:merge) || {}
-
     create!(
       shadow_id: work.id,
       shadow_type: 'Work',
       calculated_at: Time.current,
       measure: calculated_measure,
       measure_pos: nil, # Will be calculated later based on ranking
-      danker_version: danker_info[:version],
-      danker_file: danker_info[:file],
-      algorithm_version: algorithm_version,
-      weights_config: JSON.pretty_generate(weights_config),
+      danker_score: work.danker || 0.0,
+      linkcount: work.linkcount || 0,
+      mention_count: work.mention || 0,
+      reference_work_flags: work.reference_work_flags_json,
+      danker_version: danker_info[:version] || 'unknown',
+      danker_file: danker_info[:file] || 'unknown',
+      canonicity_weight_algorithm_version: algorithm_version,
       notes: "Calculated using Work-specific canonicity algorithm v#{algorithm_version}"
     )
   end
-  
-  def parsed_weights_config
-    return {} if weights_config.blank?
-    JSON.parse(weights_config)
-  rescue JSON::ParserError
-    {}
+
+  # Get the weights configuration from canonicity_weights table via FK
+  def weights_config
+    CanonicityWeights.active.for_version(canonicity_weight_algorithm_version)
+                     .pluck(:source_name, :weight_value)
+                     .to_h
   end
 end

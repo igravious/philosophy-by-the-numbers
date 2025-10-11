@@ -248,4 +248,19 @@ class PagesController < ApplicationController
 		@delivery = Delivery.new
 	end
 
+	def dashboard
+		@page_title = "Database Dashboard"
+		@table_counts = {}
+
+		ActiveRecord::Base.connection.tables.each do |table|
+			next if table == 'schema_migrations' # Skip schema migrations
+			result = ActiveRecord::Base.connection.execute("SELECT COUNT(*) FROM #{table}")
+			count = result.first['COUNT(*)']  # Access by column name
+			@table_counts[table] = count
+		end
+
+		# Sort by count descending for better display
+		@table_counts = @table_counts.sort_by { |table, count| -count }.to_h
+	end
+
 end
