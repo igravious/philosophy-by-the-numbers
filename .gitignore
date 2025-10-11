@@ -86,3 +86,4 @@ lib/tasks/shadow.rake.monolithic
 
 # Danker data directories
 db/danker_*/
+/coverage

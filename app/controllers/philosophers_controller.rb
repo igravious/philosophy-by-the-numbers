@@ -225,6 +225,12 @@ class PhilosophersController < ApplicationController
 		@hide = params[:hide]
 		@type = params[:type]
 		where_clause = ['type = ?', @type]
+
+		# Determine if we need to join philosopher_attrs for querying attributes
+		needs_attrs_join = params.key?(:gender) || params.key?(:before) || params.key?(:after) ||
+		                   params.key?(:yearage) || params.key?(:living) || params.key?(:toggle) ||
+		                   params.key?(:all_ticked) || params.key?(:only_ticked)
+		@all = @all.joins('LEFT JOIN philosopher_attrs ON philosopher_attrs.shadow_id = shadows.id') if needs_attrs_join
 	
 		begin	
 			@metric = params[:metric].to_i
@@ -232,7 +238,7 @@ class PhilosophersController < ApplicationController
 				#@all = @all.limit(@metric)
 				#where_clause[0] += ' AND metric >= ?'
 				#where_clause.push(@metric)
-				where_clause[0] += ' AND metric_pos <= ?'
+				where_clause[0] += ' AND measure_pos <= ?'
 				where_clause.push(@metric)
 			end
 		rescue ArgumentError => e
@@ -244,11 +250,11 @@ class PhilosophersController < ApplicationController
 		if params.key?(:gender)
 			if 'f' == params[:gender]
 				@gender[:f] = {checked: true}
-				where_clause[0] += " AND gender = ?"
+				where_clause[0] += " AND philosopher_attrs.gender = ?"
 				where_clause.push('Q6581072')
 			elsif 'm' == params[:gender]
 				@gender[:m] = {checked: true}
-				where_clause[0] += " AND gender = ?"
+				where_clause[0] += " AND philosopher_attrs.gender = ?"
 				where_clause.push('Q6581097')
 			end
 		end
@@ -308,12 +314,12 @@ class PhilosophersController < ApplicationController
 		end
 		# FIXME - set more dates !! missing about 1,500 of 13,000
 		if not @before.nil? and @after.nil? # interact with :yearage and :living
-			@shadows = @shadows.where("birth_year < (#{@before})")
+			@shadows = @shadows.where("philosopher_attrs.birth_year < (#{@before})")
 		elsif not @after.nil? and @before.nil?
-			@shadows = @shadows.where("birth_year > (#{@after})")
+			@shadows = @shadows.where("philosopher_attrs.birth_year > (#{@after})")
 		elsif not @before.nil? and not @after.nil?
 			if @after < @before
-				@shadows = @shadows.where("(birth_year > (#{@after})) AND (birth_year < (#{@before}))")
+				@shadows = @shadows.where("(philosopher_attrs.birth_year > (#{@after})) AND (philosopher_attrs.birth_year < (#{@before}))")
 			else
 				@after = nil
 				@before = nil
@@ -324,13 +330,13 @@ class PhilosophersController < ApplicationController
 					params[:living] = 'off'
 				end
 				@yearage[:full] = {checked: true}
-				@shadows = @shadows.where.not(birth_year: nil, death_year: nil)
-			elsif 'empty' == params[:yearage] # 
+				@shadows = @shadows.where.not('philosopher_attrs.birth_year' => nil, 'philosopher_attrs.death_year' => nil)
+			elsif 'empty' == params[:yearage] #
 				if params.key?(:living)
 					params[:living] = 'off'
 				end
 				@yearage[:empty] = {checked: true}
-				@shadows = @shadows.where("(birth_year IS NULL) OR (death_year IS NULL)")  # AND birth_year <= (#{year}-110))")
+				@shadows = @shadows.where("(philosopher_attrs.birth_year IS NULL) OR (philosopher_attrs.death_year IS NULL)")  # AND philosopher_attrs.birth_year <= (#{year}-110))")
 			else
 				@yearage[:normal] = {checked: true}
 			end
@@ -339,7 +345,7 @@ class PhilosophersController < ApplicationController
 		end
 		if params.key?(:living) and params[:living] == 'on' # TODO :dead and :excluding_blank
 			@living = 'checked'
-			@shadows = @shadows.where("(death_year IS NULL) AND (birth_year > (#{year}-110))")
+			@shadows = @shadows.where("(philosopher_attrs.death_year IS NULL) AND (philosopher_attrs.birth_year > (#{year}-110))")
 		else
 			@living = ''
 		end
@@ -349,16 +355,17 @@ class PhilosophersController < ApplicationController
 		# should make sure the toggleable column is boolean
 
 		toggle_h = {
-			:borchert  => ' AND borchert = ?',
-			:internet  => ' AND internet = ?',
-			:cambridge => '	AND cambridge = ?',
-			:kemerling => '	AND kemerling = ?',
-			:populate  => '	AND populate = ?',
-			:oxford    => '	AND oxford = ?',
-			:routledge => '	AND routledge = ?',
-			:dbpedia   => '	AND dbpedia = ?',
-			:inphobool => '	AND inphobool = ?',
-			:stanford  => '	AND stanford = ?'
+			:borchert  => ' AND borchert = ?',  # Still in shadows table
+			:internet  => ' AND philosopher_attrs.internet = ?',
+			:cambridge => '	AND cambridge = ?',  # Still in shadows table
+			:kemerling => '	AND philosopher_attrs.kemerling = ?',
+			:populate  => '	AND philosopher_attrs.populate = ?',
+			:oxford2   => '	AND philosopher_attrs.oxford2 = ?',
+			:oxford3   => '	AND philosopher_attrs.oxford3 = ?',
+			:routledge => '	AND routledge = ?',  # Still in shadows table
+			:dbpedia   => '	AND philosopher_attrs.dbpedia = ?',
+			:inphobool => '	AND philosopher_attrs.inphobool = ?',
+			:stanford  => '	AND philosopher_attrs.stanford = ?'
 		}
 		where_not_clause = []
 		if t_c.present?
@@ -369,19 +376,19 @@ class PhilosophersController < ApplicationController
 					where_clause.push(false)
 				end
 			end
-			where_clause[0] += " AND #{t_c} = ?"
+			# Use the prefixed column name from toggle_h
+			toggle_clause = toggle_h[t_c.to_sym] || " AND #{t_c} = ?"
+			where_clause[0] += toggle_clause
 			where_clause.push(true)
 		else # kinda mutually exclusive
 			if params.key?(:all_ticked) and params[:all_ticked] == 'on'
 				@all_ticked = 'checked'
-				where_not_clause[0] = 'borchert = ? AND internet = ? AND cambridge = ? AND kemerling = ? AND populate = ? AND oxford = ? AND routledge = ? AND dbpedia =? AND stanford = ? AND inphobool = ?'
-				# where_clause[0] += ' AND borchert = ? AND internet = ? AND cambridge = ? AND kemerling = ? AND populate = ? AND oxford = ? AND routledge = ? AND stanford = ? AND inphobool = ?'
-				10.times{where_clause.push(true)}
+				where_not_clause[0] = 'borchert = ? AND philosopher_attrs.internet = ? AND cambridge = ? AND philosopher_attrs.kemerling = ? AND philosopher_attrs.populate = ? AND philosopher_attrs.oxford2 = ? AND routledge = ? AND philosopher_attrs.dbpedia = ? AND philosopher_attrs.stanford = ? AND philosopher_attrs.inphobool = ?'
+				10.times{where_not_clause.push(true)}
 			end
 			if params.key?(:only_ticked) and params[:only_ticked] == 'on'
 				@only_ticked = 'checked'
-				where_not_clause[0] = 'borchert = ? AND internet = ? AND cambridge = ? AND kemerling = ? AND populate = ? AND oxford = ? AND routledge = ? AND dbpedia =? AND stanford = ? AND inphobool = ?'
-				# where_not_clause[0] = 'borchert = ? AND internet = ? AND cambridge = ? AND kemerling = ? AND populate = ? AND oxford = ? AND routledge = ? AND stanford = ? AND inphobool = ?'
+				where_not_clause[0] = 'borchert = ? AND philosopher_attrs.internet = ? AND cambridge = ? AND philosopher_attrs.kemerling = ? AND philosopher_attrs.populate = ? AND philosopher_attrs.oxford2 = ? AND routledge = ? AND philosopher_attrs.dbpedia = ? AND philosopher_attrs.stanford = ? AND philosopher_attrs.inphobool = ?'
 				10.times{where_not_clause.push(false)}
 			end
 		end
@@ -446,7 +453,7 @@ class PhilosophersController < ApplicationController
   def destroy
     @shadow.destroy
     respond_to do |format|
-      format.html { redirect_to shadows_url }
+      format.html { redirect_to philosophers_url }
       format.json { head :no_content }
     end
   end
@@ -486,8 +493,15 @@ class PhilosophersController < ApplicationController
       params.require(:philosopher).permit(:type, :entity_qid, :metric, :page)
     end
 
+    # Alias for compatibility with Shadow-based forms
+    def shadow_params
+      philosopher_params
+    end
+
 		def toggle_column
-				Shadow.column_names.include?(params[:toggle]) ? params[:toggle] : nil
+				# Accept columns from both shadows and philosopher_attrs tables
+				valid_columns = Shadow.column_names + PhilosopherAttrs.column_names
+				valid_columns.include?(params[:toggle]) ? params[:toggle] : nil
 		end
 
 		def toggle_state

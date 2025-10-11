@@ -1,4 +1,4 @@
-<%= form_for(@shadow) do |f| %>
+<%= form_for(@shadow, as: :philosopher, url: @shadow.new_record? ? philosophers_path : philosopher_path(@shadow)) do |f| %>
   <% if @shadow.errors.any? %>
     <div id="error_explanation">
       <h2><%= pluralize(@shadow.errors.count, "error") %> prohibited this shadow from being saved:</h2>

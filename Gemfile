@@ -149,3 +149,8 @@ group :development do
  gem 'rails-erd'
  # gem 'syntax_tree'
 end
+
+group :test do
+  gem 'simplecov', '~> 0.17.0', require: false  # Code coverage analysis
+  gem 'simplecov-console', require: false       # Terminal output for coverage
+end

@@ -1,7 +1,7 @@
 # Philosophers are stored in the shadows table via STI
 # The 'type' column must be 'Philosopher'
 # Philosopher-specific attributes (birth_year, death_year, etc.) are now in philosopher_attrs fixtures
-one:
+plato:
   id: 1
   type: Philosopher
   entity_id: 1
@@ -11,7 +11,7 @@ one:
   danker: 0.6
   measure: 0.6
 
-two:
+leibniz:
   id: 21
   type: Philosopher
   entity_id: 21

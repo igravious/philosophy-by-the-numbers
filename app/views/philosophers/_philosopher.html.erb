@@ -5,7 +5,7 @@
 		# werk stüff
 		ready_works_count = ::Text.where(id: Writing.where(author_id: Author.where(english_name: en_label)).pluck(:text_id)).count
 		link_to_ready_works = link_to ready_works_count, texts_url(author_name: en_label), method: :patch
-		link_to_all_works = link_to philosopher.works.count, philosopher_works_url(philosopher.id, lang: @lang)
+		link_to_all_works = link_to philosopher.creations.count, philosopher_works_url(philosopher.id, lang: @lang)
 	%>
 	<tr>
 		<td><%= link_to philosopher.id, philosophers_url({an_id: philosopher.id}) %><%# link_to philosopher.id, roles_path({filter: 'shadow_id', value: philosopher.id}) %></td>

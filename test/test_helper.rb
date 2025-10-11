@@ -1,3 +1,32 @@
+# SimpleCov must be loaded FIRST before any application code
+if ENV['COVERAGE']
+  require 'simplecov'
+  require 'simplecov-console'
+
+  SimpleCov.start 'rails' do
+    # Formatter for both HTML and console output
+    SimpleCov.formatters = [
+      SimpleCov::Formatter::HTMLFormatter,
+      SimpleCov::Formatter::Console
+    ]
+
+    # Add filters to exclude non-application code
+    add_filter '/test/'
+    add_filter '/config/'
+    add_filter '/vendor/'
+
+    # Group coverage by logical sections
+    add_group 'Models', 'app/models'
+    add_group 'Controllers', 'app/controllers'
+    add_group 'Helpers', 'app/helpers'
+    add_group 'Libraries', 'app/lib'
+    add_group 'Rake Tasks', 'lib/tasks'
+
+    # Set minimum coverage threshold (optional)
+    # minimum_coverage 90
+  end
+end
+
 ENV["RAILS_ENV"] ||= "test"
 require File.expand_path('../../config/environment', __FILE__)
 require 'rails/test_help'

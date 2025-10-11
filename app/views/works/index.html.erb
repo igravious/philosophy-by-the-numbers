@@ -57,8 +57,8 @@ The Encyclopedia of Philosophy, 2nd Edition'           style='padding-right: 0.6
 				case @info
 				when 'url'
 					#phil_label = phils.collect{|phil| link_to phil.names.where(lang: 'en').pluck(:label).first, philosopher_works_url(phil.id, lang: @lang)}
-					#phil_label = phils.collect{|phil|link_to (phil.show_label(@lang, true)[3]+'('+phil.works.size.to_s+')'), philosopher_works_path(phil.id, lang: @lang)}.join(',')
-					phil_label = phils.collect{|phil|link_to (phil.show_label(@lang, true)[3]+'('+phil.works.size.to_s+')'), philosophers_path(entity_id: phil.entity_id, lang: @lang)}.join(',')
+					#phil_label = phils.collect{|phil|link_to (phil.show_label(@lang, true)[3]+'('+phil.creations.size.to_s+')'), philosopher_works_path(phil.id, lang: @lang)}.join(',')
+					phil_label = phils.collect{|phil|link_to (phil.show_label(@lang, true)[3]+'('+phil.creations.size.to_s+')'), philosophers_path(entity_id: phil.entity_id, lang: @lang)}.join(',')
 				else
 					phil_label = work.phil_label(phils, @lang)
 				end
