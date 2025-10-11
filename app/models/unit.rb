@@ -1,4 +1,6 @@
 class Unit < ActiveRecord::Base
+	belongs_to :dictionary
+
 	SYMBOL = []
 	# i really have to figure this shit out
 	SYMBOL[GlobalConstants::Unit::UNKNOWN]		= ''

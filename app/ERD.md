@@ -182,13 +182,13 @@ This Rails application uses a complex schema with 32+ tables centered around phi
 **22. dictionaries**
 - **Purpose**: Source encyclopedias/dictionaries for lexical analysis
 - **Key Columns**: `title`, `long_title`, `URI`, `current_editor`, `contact`, `organisation`, `entity_id`, `dbpedia_pagerank`, `year`, `missing`, `content_uri`, `encyclopedia_flag`, `machine`
-- **Relationships**: `has_many :units` (implied by schema, not declared in model)
+- **Relationships**: `has_many :units, dependent: :destroy`
 - **Data Source**: Manual encyclopedia metadata entry
 
 **23. units**
 - **Purpose**: Lexical entries extracted from dictionaries for term analysis
 - **Key Columns**: `dictionary_id`, `entry`, `normal_form`, `analysis`, `confirmation`, `what_it_is`, `display_name`
-- **Relationships**: `belongs_to :dictionary` (implied by schema, not declared in model)
+- **Relationships**: `belongs_to :dictionary`
 - **Data Source**: Saffron term extraction algorithm output
 
 **24. expressions** (Join table)
@@ -281,8 +281,8 @@ Work → has_many :metric_snapshots
 CanonicityWeights → configuration for canonicity algorithm (no AR relationships)
 
 # Lexical Analysis
-Dictionary → has_many :units (implied, not declared)
-Unit → belongs_to :dictionary (implied, not declared)
+Dictionary → has_many :units, dependent: :destroy
+Unit → belongs_to :dictionary
 ```
 
 ## Visualization Recommendations

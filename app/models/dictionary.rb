@@ -1,4 +1,5 @@
 class Dictionary < ActiveRecord::Base
+	has_many :units, dependent: :destroy
 
 	def domain
 		self.URI.split('/')[2]
