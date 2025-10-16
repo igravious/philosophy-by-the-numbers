@@ -52,6 +52,7 @@ module Wikidata
     ###
 
     def show_work_stuff(res)
+      puts " count  sites Q# work    by Q# philosopher" unless res.empty? 
       res.each_with_index do |val, idx|
         phil       = val.bindings[:item]
         work       = val.bindings[:work]
@@ -69,9 +70,10 @@ module Wikidata
         #if name == title
         #	puts "#{index} #{site_links} #{entity.ljust(9)} #{mentions} #{site.rjust(10)}: #{title}"
         #else
-          puts "#{index} #{site_links} #{w_entity.ljust(9)} by #{p_entity.ljust(9)} "#{name}" #{what}"
+          puts "#{index} #{site_links} #{w_entity.ljust(10)} by #{p_entity.ljust(9)} "#{name}" #{what}"
         #end
       end
+      puts " count  sites Q# work    by Q# philosopher" unless res.empty?
     end
 
     def show_philosophical_stuff(res)

@@ -3,6 +3,7 @@
 require_relative '../utilities'
 require_relative '../../wikidata/client_helpers'
 require_relative '../../wikidata/sparql_queries'
+require_relative '../../wikidata/query_executor'
 require_relative '../../knowledge'
 
 begin
@@ -15,35 +16,108 @@ begin
   namespace :shadow do
     namespace :work do
 
-      # 
-      desc ""
-      task :show, [:cond,:count] => :environment do |task, arg|
+      # == Show Philosophical Works
+      #
+      # Explores and displays philosophical works from Wikidata using targeted SPARQL queries.
+      # Provides exploratory access to work data for analysis and potential import decisions.
+      #
+      # @param cond [String] Query strategy:
+      #   - "authored_by_philosophers" - Works by philosophers (authored/notable works)
+      #   - "of_philosophical_type" - Works classified as philosophical
+      # @param arbitrary [String, nil] If provided, shows count only; if "-1", shows raw SPARQL query
+      # @return [void] Outputs work information, count, or raw query to console
+      #
+      # == What it does:
+      # 1. Validates query condition parameter
+      # 2. If arbitrary parameter is "-1", prints raw SPARQL query and exits
+      # 3. Executes appropriate Wikidata SPARQL query via Wikidata::QueryExecutor
+      # 4. If arbitrary parameter provided: displays result count
+      # 5. If no arbitrary parameter: displays full work information using show_work_stuff()
+      # 6. Handles errors with structured logging via barf() utility
+      #
+      # == Query Strategies:
+      #
+      # === authored_by_philosophers:
+      # - SPARQL: THESE_WORKS_BY_PHILOSOPHERS (finds works by philosophers)
+      # - Includes authored works (P50) and notable works (P800)
+      # - Filters out non-philosophical content (visual arts, TED talks, editions)
+      # - Provides link counts as significance measure
+      #
+      # === of_philosophical_type:
+      # - SPARQL: THESE_PHILOSOPHICAL_WORKS (philosophical genre classification)
+      # - Uses genre hierarchy (Q5891 = philosophy and sub-genres)
+      # - Includes works with philosophical subject classifications
+      #
+      # == Examples:
+      #   bin/rake shadow:work:show[authored_by_philosophers]
+      #   # => Displays detailed listings of works by philosophers
+      #
+      #   bin/rake shadow:work:show[of_philosophical_type,true]
+      #   # => Shows count: Got 1,247 of 'em
+      #
+      #   bin/rake shadow:work:show[authored_by_philosophers,-1]
+      #   # => Prints raw SPARQL query and exits
+      #
+      # == Used by:
+      # - Data exploration before running shadow:work:populate
+      # - Research into available philosophical works in Wikidata
+      # - Debugging work discovery and classification logic
+      # - SPARQL query development and testing
+      #
+      # == Performance Notes:
+      # - SPARQL queries can take 30-90 seconds depending on Wikidata load
+      # - Results cached by Wikidata::QueryExecutor for repeated calls
+      # - Count mode faster than detail mode (no show_work_stuff processing)
+      #
+      # == Error Handling:
+      # - Invalid conditions show usage help
+      # - Wikidata timeouts automatically retried by QueryExecutor
+      # - Exceptions logged with context via barf() utility
+      #
+      # == Related Tasks:
+      # - shadow:work:populate - Imports discovered works into database
+      # - shadow:work:connect - Links works to existing texts
+      # - shadow:work:describe - Shows work metadata and relationships
+      #
+      desc "Query Wikidata for philosophical works ([authored_by_philosophers|of_philosophical_type][,arbitrary])"
+      task :show, [:cond,:arbitrary] => :environment do |task, arg|
         begin
           require 'knowledge'
           include Knowledge
           # w = Knowledge::Wikidata::Client.new
+          show = nil
           case arg.cond
             #
-          when "works1"
+          when "authored_by_philosophers"
             q = THESE_WORKS_BY_PHILOSOPHERS.gsub("\t",'')
-            res = Wikidata::QueryExecutor.execute(q, 'works_by_philosophers', {
+            if arg.arbitrary.to_i < 0
+              puts THESE_WORKS_BY_PHILOSOPHERS
+              exit
+            end
+            puts "About to execute query for works by philosophers..."
+            res = Wikidata::QueryExecutor.execute(q, 'authored_by_philosophers', {
               task_name: 'shadow:work:query'
             })
-          when "works2"
+          when "of_philosophical_type"
             q = THESE_PHILOSOPHICAL_WORKS.gsub("\t",'')
-            res = Wikidata::QueryExecutor.execute(q, 'philosophical_works', {
+            if arg.arbitrary.to_i < 0
+              puts THESE_PHILOSOPHICAL_WORKS
+              exit
+            end
+            puts "About to execute query for works of philosophical type..."
+            res = Wikidata::QueryExecutor.execute(q, 'of_philosophical_type', {
               task_name: 'shadow:work:query'
             })
           else
-            puts "No condition specified. Available conditions: works1, works2"
-            puts "Usage: bin/rake shadow:work:show[works1] or bin/rake shadow:work:show[works2]"
+            puts "No condition specified. Available conditions: authored_by_philosophers, of_philosophical_type"
+            puts "Usage: bin/rake shadow:work:show[authored_by_philosophers] or bin/rake shadow:work:show[of_philosophical_type]"
             res = []
           end
-          if arg.count
-            p arg
-            puts "count: #{arg.count.inspect}"
-            puts "count: #{arg.count.class}"
-            puts "foo: #{arg.foo.inspect}"
+          if arg.arbitrary
+            # p arg
+            # puts "arbitrary#inspect: #{arg.arbitrary.inspect}"
+            # puts "arbitrary#class: #{arg.arbitrary.class}"
+            # puts "non_existent_param#inspect: #{arg.non_existent_param.inspect}"
             puts "Got #{res.size} of 'em"
           else
             show_work_stuff(res)
@@ -53,11 +127,56 @@ begin
         end
       end
 
-      desc "SPARQLy textual investigations       (connect Works and Texts)"
+      # == Connect Works and Texts Task
+      #
+      # This task establishes connections between philosophical works and their corresponding
+      # text files in the database. It performs name-based matching to link Work records
+      # with Text records that contain the actual content.
+      #
+      # == What it does:
+      # 1. Iterates through all philosophers ordered by their canonicity measure (most significant first)
+      # 2. For each philosopher, finds all their associated works through the Expression join table
+      # 3. For each work, attempts to find matching Text records by comparing work names/labels
+      # 4. Also finds texts through the Author -> Writing -> Text relationship chain
+      # 5. Outputs the connections found, showing which works have accessible text files
+      #
+      # == Matching logic:
+      # - Uses work.label or work.name_hack (with SQL escaping for apostrophes)
+      # - Performs exact name matching against Text.name_in_english field
+      # - Also connects through author relationships for additional text discovery
+      #
+      # == Output format:
+      # For each philosopher with connections:
+      # - Lists work-text matches with text names and file IDs
+      # - Shows summary: "==> Q{entity_id} ({works_found}/{texts_found})"
+      # - Uses "===" separator for works with direct matches
+      # - Displays progress bar during execution
+      # - Logs all output to log/task_output.log
+      #
+      # == Purpose:
+      # This task helps identify which philosophical works in the database have corresponding
+      # text files available, supporting the delta analysis and text processing pipeline.
+      #
+      # == Performance note:
+      # Processes all philosophers and their works, which could be time-consuming for large datasets.
+      # Includes progress tracking and comprehensive logging.
+      #
+      # == Invocation:
+      # This task takes no parameters. Run it with:
+      #   bin/rake shadow:work:connect
+      #
+      desc "Link philosophical works to available text files (name matching + author relationships)"
       task connect: :environment do
         Shadow.none
         phils = Philosopher.order(measure: :desc)
         en_phils = phils.select('shadows.*, names.lang, names.label').joins(:names).where('names.lang =?', 'en')
+        
+        # Set up progress bar and logging
+        total = en_phils.length
+        bar = progress_bar(total, FORCE, '', 'connecting works to texts')
+        log_file = File.open('log/task_output.log', 'a')
+        log_file.puts("\n=== Work-Text Connection Task Started: #{Time.now} ===")
+        
         en_phils.each {|phil|
           works = Work.where(id: Expression.where(creator_id: phil.id).pluck(:work_id)).order('linkcount desc')
           en_works = works.select('shadows.*, names.lang, names.label').joins(:names).where('names.lang =?', 'en')
@@ -67,19 +186,30 @@ begin
             the_text = ::Text.where("name_in_english LIKE '"+label.gsub("'", "''")+"'").first
             if the_text.nil?
             else
-              puts "'#{the_text.name_in_english}' #{the_text.fyle_id}" unless the_text.nil?
+              output = "'#{the_text.name_in_english}' #{the_text.fyle_id}"
+              log_file.puts(output)
               found += 1
             end
           end
-          puts "===" if found > 0
+          if found > 0
+            separator = "==="
+            log_file.puts(separator)
+          end
           texts = ::Text.where(id: Writing.where(author_id: Author.where(english_name: phil.label)).pluck(:text_id))
           texts.each do|text|
-            puts "'#{text.name_in_english}' #{text.fyle_id}"
+            output = "'#{text.name_in_english}' #{text.fyle_id}"
+            log_file.puts(output)
           end
           if found > 0 or texts.count > 0
-            puts "==> Q#{phil.entity_id} (#{found}/#{texts.count})"
+            summary = "==> Q#{phil.entity_id} (#{found}/#{texts.count})"
+            log_file.puts(summary)
           end
+          
+          update_progress(bar)
         }
+        
+        log_file.puts("=== Work-Text Connection Task Completed: #{Time.now} ===")
+        log_file.close
       end
 
       # 
@@ -90,6 +220,30 @@ begin
       #     you get the idea
       # (2) philosophical works by non-philosophers
       #     cus we track/anchor with philosophers which is wrong
+      #
+      # == Deez Wurks Method
+      #
+      # Core method for populating the works database from Wikidata SPARQL queries.
+      # Processes philosopher-work relationships and creates Work and Expression records.
+      #
+      # @param q [String] The SPARQL query string to execute
+      # @return [void]
+      #
+      # == What it does:
+      # 1. Executes the provided SPARQL query against Wikidata
+      # 2. For each result, extracts philosopher and work entity IDs
+      # 3. Creates Work records if they don't exist (with linkcount metadata)
+      # 4. Creates Expression records linking philosophers to their works
+      # 5. Handles duplicate records gracefully
+      #
+      # == Used by:
+      # - shadow:work:populate[works1]
+      # - shadow:work:populate[works2]
+      #
+      # == Error handling:
+      # - Skips philosophers that don't exist in the local database
+      # - Handles ActiveRecord::RecordNotUnique exceptions for duplicate works
+      # - Continues processing even if individual expressions fail to save
       #
       def deez_wurks(q)
         Shadow.none
@@ -225,10 +379,44 @@ begin
         end
       end
 
-      desc "describe works"
-      task describe: :environment do
+      # == Describe Works Task
+      #
+      # This task performs exploratory data analysis on Wikidata properties used across all works
+      # in the database. It analyzes what predicates (properties/relationships) are commonly used
+      # in Wikidata for philosophical works.
+      #
+      # == What it does:
+      # 1. Iterates through all Work records in the database (ordered by default, likely by ID)
+      # 2. For each work, executes a SPARQL DESCRIBE query against Wikidata for that work's entity
+      #    (e.g., DESCRIBE wd:Q12345 where 12345 is the work's entity_id)
+      # 3. Collects all predicates (properties/relationships) that appear in the Wikidata descriptions
+      # 4. Counts frequency of each predicate across all works
+      # 5. Outputs a summary showing how many works use each predicate, grouped by frequency
+      #
+      # == Output format:
+      # Prints a hash like {count => [predicate1, predicate2, ...]} sorted by count, showing which
+      # Wikidata properties are most commonly used across your philosophical works dataset.
+      #
+      # == Purpose:
+      # This is an exploratory/data profiling task to understand what types of metadata and
+      # relationships exist in Wikidata for the works in your database, helping identify which
+      # properties might be useful for further processing or analysis.
+      #
+      # == Performance note:
+      # This task makes one SPARQL query per work (potentially thousands of HTTP requests to Wikidata),
+      # so it could take a significant amount of time to run on a large dataset. The code includes
+      # progress bars and error handling.
+      #
+      # == Invocation:
+      # This task optionally takes a count parameter to limit the number of works processed.
+      #   bin/rake shadow:work:describe          # Process all works
+      #   bin/rake shadow:work:describe[100]     # Process first 100 works only
+      #
+      desc "Analyze Wikidata properties used across philosophical works ([count])"
+      task :describe, [:the_count] => :environment do |task, arg|
+        the_count = (arg.count>0) ? arg.the_count&.to_i : nil
         predicates = {}
-        one_by_one(:describe, "DESCRIBE wd:Q%{interpolated_entity}") {|solution_set|
+        one_by_one(:describe, "DESCRIBE wd:Q%{interpolated_entity}", {}, the_count) {|solution_set|
           tmp = {}
           solution_set.each do|solution|
             p = solution.predicate.to_s
@@ -320,7 +508,7 @@ begin
 
         # Also update measure_pos in latest snapshots for each work
         puts "Updating measure_pos in metric snapshots..."
-        snapshot_bar = progress_bar(Work.count, FORCE, 'updating snapshots')
+        snapshot_bar = progress_bar(Work.count, FORCE, '', 'updating snapshots')
         Work.find_each do |work|
           latest_snapshot = work.metric_snapshots.order(calculated_at: :desc).first
           if latest_snapshot && latest_snapshot.measure_pos != work.measure_pos
@@ -433,12 +621,71 @@ begin
         File.unlink('tmp/.work_mention')
       end
 
+      # == VIAF Work Population Task
+      #
+      # Populates the works database by fetching philosopher works from VIAF (Virtual International
+      # Authority File) using Wikidata as an intermediary to obtain VIAF identifiers.
+      #
+      # @param cond [String] Processing scope:
+      #   - Numeric VIAF ID: Process only the philosopher with that VIAF ID
+      #   - Empty/omitted: Process all philosophers ordered by canonicity measure
+      # @return [void] Outputs processing results and statistics to console
+      #
+      # == What it does:
+      # 1. Determines processing scope (single philosopher or all philosophers)
+      # 2. For each philosopher, queries Wikidata to retrieve VIAF identifiers
+      # 3. Updates philosopher records with VIAF ID information
+      # 4. Fetches VIAF XML data for each VIAF identifier
+      # 5. Parses VIAF data to extract work information and create Work records
+      # 6. Creates Expression records linking philosophers to their discovered works
+      # 7. Provides detailed statistics on works found vs existing works
+      #
+      # == Data Flow:
+      # Philosopher (local DB) → Wikidata query → VIAF IDs → VIAF XML → Works → Expressions
+      #
+      # == Processing Logic:
+      # - Single philosopher mode: arg.cond matches /^\d+/ (VIAF ID lookup)
+      # - Bulk mode: Process all philosophers ordered by measure (most significant first)
+      # - VIAF deduplication: @work_once array prevents processing same work multiple times
+      # - Error handling: Continues processing even if individual operations fail
+      #
+      # == Output Format:
+      # - Progress: [PhilosopherName:VIAF_ID] for each VIAF being processed
+      # - Success: "+ Expression" for each work-philosopher link created
+      # - Statistics: "X total - Y unique = Z left over" (existing vs newly found works)
+      # - Missing works: Lists high-measure works not found in VIAF data
+      #
+      # == External Dependencies:
+      # - Wikidata SPARQL endpoint for VIAF ID retrieval
+      # - VIAF XML API for work metadata
+      # - Network connectivity to both services
+      #
+      # == Performance Notes:
+      # - Makes multiple HTTP requests per philosopher (Wikidata + VIAF)
+      # - Processes philosophers sequentially (no parallelization)
+      # - Includes garbage collection between philosophers to manage memory
+      # - Can be time-intensive for large philosopher datasets
+      #
+      # == Examples:
+      #   bin/rake shadow:work:viaf[123456789]    # Process philosopher with VIAF ID 123456789
+      #   bin/rake shadow:work:viaf               # Process all philosophers
+      #
+      # == Used by:
+      # - Work database population and enrichment
+      # - Linking philosophers to their bibliographic works
+      # - Complementing Wikidata-based work discovery with VIAF data
+      #
+      # == Error Handling:
+      # - Continues processing if VIAF queries fail
+      # - Handles missing philosopher records gracefully
+      # - Reports but doesn't fail on work creation conflicts
+      #
       desc "populate Work (works table) using philosopher Viaf data"
-      task :viaf, [:cond] => :environment do |task, arg|
+      task :by_viaf, [:viaf] => :environment do |task, arg|
         Shadow.none
-        case arg.cond
+        case arg.viaf
         when /^\d+/ # either singly
-          phils = [Philosopher.find_by(viaf: arg.cond)]
+          phils = [Philosopher.find_by(viaf: arg.viaf)]
         else
           phils = Philosopher.all.order(measure: :desc)
         end
@@ -496,7 +743,7 @@ begin
             end
           end
           work_qs = work_qs.uniq
-          plucked_qs = phil.works.pluck(:entity_id)
+          plucked_qs = phil.creations.pluck(:entity_id)
           left_overs = plucked_qs-work_qs
           puts "#{plucked_qs.length} total - #{work_qs.length} unique = #{left_overs.length} left over"
           left_overs.each do |e_id|
@@ -515,11 +762,40 @@ begin
         }
       end
 
-      # Helper methods for work tasks
-      def one_by_one(task, query_str, in_order={})
+      # == One By One Method
+      #
+      # Utility method for iterating through all Work records and executing SPARQL queries
+      # against Wikidata for each work. Provides progress tracking and error handling.
+      #
+      # @param task [String] Task name for logging purposes
+      # @param query_str [String] SPARQL query template with %{interpolated_entity} placeholder
+      # @param in_order [Hash] Ordering options for Work records (default: {})
+      # @param limit [Integer, nil] Maximum number of works to process (default: nil = all)
+      # @yield [solution_set, work] Block executed for each work with query results
+      # @yieldparam solution_set [Array] SPARQL query results for this work
+      # @yieldparam work [Work] The current Work record being processed
+      # @return [void]
+      #
+      # == What it does:
+      # 1. Retrieves all Work records (optionally limited and ordered)
+      # 2. For each work, interpolates its entity_id into the query template
+      # 3. Executes the SPARQL query against Wikidata
+      # 4. Yields the results and work record to the provided block
+      # 5. Shows progress bar and handles errors gracefully
+      #
+      # == Used by:
+      # - shadow:work:describe
+      # - shadow:work:expunge
+      #
+      # == Progress tracking:
+      # Displays a progress bar showing completion percentage and estimated time remaining.
+      #
+      def one_by_one(task, query_str, in_order={}, limit=nil)
         begin
           Shadow.none
-          works = Work.order(in_order)
+          works_query = Work.order(in_order)
+          works_query = works_query.limit(limit) if limit
+          works = works_query
           exit if works.nil?
           total = works.length
           bar = progress_bar(total, true)
@@ -538,6 +814,27 @@ begin
         end
       end
 
+      # == Truncate Method
+      #
+      # Utility method for shortening text labels to a specified length while preserving
+      # word boundaries when possible. Used for display purposes in logging and output.
+      #
+      # @param label [String] The text to truncate
+      # @param length [Integer] Maximum length of the truncated string
+      # @param word_break [Boolean] Whether to break at word boundaries (default: true)
+      # @return [String] The truncated string with "…" appended if truncation occurred
+      #
+      # == Behavior:
+      # - If label is shorter than length, returns it unchanged
+      # - If word_break is true, finds the last complete word that fits within length
+      # - If word_break is false, truncates at the exact character position
+      # - Always appends "…" when truncation occurs
+      #
+      # == Examples:
+      #   truncate("The Republic", 10)     # => "The Republic"
+      #   truncate("Critique of Pure Reason", 15, true)  # => "Critique of Pure…"
+      #   truncate("Critique of Pure Reason", 15, false) # => "Critique of Pur…"
+      #
       def truncate(label, length, word_break=true)
         if label.length > length
           parts = label.split
@@ -612,13 +909,16 @@ begin
         require 'knowledge'
         include Knowledge
         endpoint = Knowledge::Wikidata::Client.new
-        works = doc.xpath('//ns1:work')
+        # Use namespace-agnostic XPath or search by local name
+        works = doc.xpath('//work') || doc.xpath('//*[local-name()="work"]')
         puts "#{works.length} work(s)"
-        personal = doc.xpath('//ns1:viafID').first.content
+        personal = doc.xpath('//viafID').first || doc.xpath('//*[local-name()="viafID"]').first
+        personal_content = personal ? personal.content : "unknown"
+        puts "VIAF ID: #{personal_content}"
         works.each {|w|
           full_id = w["id"]
-          node_set = w.xpath('ns1:title')
-          title = node_set.first.content
+          node_set = w.xpath('title') || w.xpath('*[local-name()="title"]')
+          title = node_set.first ? node_set.first.content : "Unknown Title"
           if full_id.nil?
           elsif full_id.empty?
           else
@@ -647,19 +947,20 @@ begin
                 if 0 == len
                   str = viaf_url(viaf_id)
                   node = Nokogiri::XML(str)
-                  expressions = node.xpath('//ns1:expression')
+                  expressions = node.xpath('//expression') || node.xpath('//*[local-name()="expression"]')
                   try_once = []
                   neither = true
                   expressions.each {|expr|
                     lang = ''
                     begin
-                      lang = expr.xpath('ns1:lang').first.content
+                      lang = expr.xpath('lang').first || expr.xpath('*[local-name()="lang"]').first
+                      lang = lang ? lang.content : ""
                     rescue
                       puts "0 #{$!}" 
                     end
                     if "English" == lang
                       begin
-                        el = expr.xpath('ns1:title').first
+                        el = expr.xpath('title').first || expr.xpath('*[local-name()="title"]').first
                         break if el.nil?
                         title = el.content.split('.')[0]
                         next if try_once.include?(title)

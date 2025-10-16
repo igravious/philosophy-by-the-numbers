@@ -135,7 +135,7 @@ class WorkBasedDeltaProcessor < DeltaOfDeltaProcessor
   def select_by_canonicity
     # Use 'measure' field (the actual canonicity measure used in web interface)
     # IMPORTANT: Order from MOST significant to LEAST significant for delta algorithm
-    base_query = Work.where.not(obsolete: true)
+    base_query = Work.joins(:attrs).where.not(work_attrs: {obsolete: true})
     
     # Add canonicity filter if specified (using 'measure' field)
     if @min_canonicity
@@ -151,7 +151,7 @@ class WorkBasedDeltaProcessor < DeltaOfDeltaProcessor
   def select_by_linkcount
     # Order from MOST significant (highest linkcount) to LEAST significant
     # This ensures the delta algorithm processes works in proper significance order
-    Work.where.not(obsolete: true)
+    Work.joins(:attrs).where.not(work_attrs: {obsolete: true})
         .order(linkcount: :desc, id: :asc)
         .limit(@max_works)
   end
@@ -160,20 +160,20 @@ class WorkBasedDeltaProcessor < DeltaOfDeltaProcessor
     # Combine measure (canonicity) and linkcount with weighted scoring
     # CRITICAL: Order from HIGHEST mixed score to LOWEST (most to least significant)
     # Normalize measure and linkcount, then combine
-    Work.where.not(obsolete: true)
+    Work.joins(:attrs).where.not(work_attrs: {obsolete: true})
         .select('works.*, (measure * 0.6 + (linkcount::float / (SELECT MAX(linkcount) FROM shadows WHERE type = \'Work\')) * 0.4) as mixed_score')
         .order('mixed_score DESC, id ASC')
         .limit(@max_works)
   end
   
   def select_randomly
-    Work.where.not(obsolete: true)
+    Work.joins(:attrs).where.not(work_attrs: {obsolete: true})
         .order('RANDOM()')
         .limit(@max_works)
   end
   
   def select_recent_additions
-    Work.where.not(obsolete: true)
+    Work.joins(:attrs).where.not(work_attrs: {obsolete: true})
         .order(created_at: :desc)
         .limit(@max_works)
   end

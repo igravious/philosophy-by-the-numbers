@@ -155,6 +155,7 @@ class Philosopher < Shadow
 		has_many :creations, through: :route_a, source: :work  # Mirrors Work's :creators association
 		# route_a "names" the X join model for accessing through the work association
 		has_many :route_a, foreign_key: :creator_id, class_name: "Expression"
+		has_many :works, through: :route_a, source: :work  # Alias for creations
 
 	def join_attribute
 		{creator_id: self.id}

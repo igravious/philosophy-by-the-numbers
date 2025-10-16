@@ -14,8 +14,9 @@ if ENV['COVERAGE']
     add_filter '/test/'
     add_filter '/config/'
     add_filter '/vendor/'
-
-    # Group coverage by logical sections
+		add_filter '/app/models/p/'
+    
+		# Group coverage by logical sections
     add_group 'Models', 'app/models'
     add_group 'Controllers', 'app/controllers'
     add_group 'Helpers', 'app/helpers'
