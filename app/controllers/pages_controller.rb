@@ -149,8 +149,8 @@ class PagesController < ApplicationController
 
 	def springy_from_wiki # straight from wiki
 		term = params['term']
-		require 'wikidata'
-		w = Wikidata::Client.new
+		require 'knowledge'
+		w = Knowledge::Wikidata::Client.new
 		meros = []
 		labels = []
 		term.split(',').each do|t|
@@ -198,7 +198,7 @@ class PagesController < ApplicationController
 	def do_pome
 		@words = nil
 		if params.key?('q')
-			require 'wordnet'
+			require 'rwordnet'
 			q = params['q']
 			lemmas = WordNet::Lemma.find_all(q)
 			synsets = lemmas.map { |lemma| lemma.synsets }

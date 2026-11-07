@@ -28,8 +28,8 @@ class P::SmartsController < ApplicationController
 
     respond_to do |format|
       if @p_smart.save
-        format.html { redirect_to @p_smart, notice: 'Smart was successfully created.' }
-        format.json { render :show, status: :created, location: @p_smart }
+        format.html { redirect_to p_smart_url(@p_smart), notice: "Smart was successfully created." }
+        format.json { render :show, status: :created, location: p_smart_url(@p_smart) }
       else
         format.html { render :new }
         format.json { render json: @p_smart.errors, status: :unprocessable_entity }
@@ -42,8 +42,8 @@ class P::SmartsController < ApplicationController
   def update
     respond_to do |format|
       if @p_smart.update(p_smart_params)
-        format.html { redirect_to @p_smart, notice: 'Smart was successfully updated.' }
-        format.json { render :show, status: :ok, location: @p_smart }
+        format.html { redirect_to p_smart_url(@p_smart), notice: "Smart was successfully updated." }
+        format.json { render :show, status: :ok, location: p_smart_url(@p_smart) }
       else
         format.html { render :edit }
         format.json { render json: @p_smart.errors, status: :unprocessable_entity }
@@ -56,19 +56,20 @@ class P::SmartsController < ApplicationController
   def destroy
     @p_smart.destroy
     respond_to do |format|
-      format.html { redirect_to p_smarts_url, notice: 'Smart was successfully destroyed.' }
+      format.html { redirect_to p_smarts_url, notice: "Smart was successfully destroyed." }
       format.json { head :no_content }
     end
   end
 
   private
-    # Use callbacks to share common setup or constraints between actions.
-    def set_p_smart
-      @p_smart = P::Smart.find(params[:id])
-    end
 
-    # Never trust parameters from the scary internet, only allow the white list through.
-    def p_smart_params
-      params.require(:p_smart).permit(:entity_id, :redirect_id, :object_id, :type)
-    end
+  # Use callbacks to share common setup or constraints between actions.
+  def set_p_smart
+    @p_smart = P::Smart.find(params[:id])
+  end
+
+  # Never trust parameters from the scary internet, only allow the white list through.
+  def p_smart_params
+    params.require(:p_smart).permit(:entity_id, :redirect_id, :object_id, :type)
+  end
 end

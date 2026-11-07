@@ -44,7 +44,7 @@
             <%= wikidata_property_url(property.property_id) %>
           <% end %>
         </td>
-				<td><%= property.class.english_label %><%# @property_names[property.property_id] %></td>
+				<td><%= @property_names[property.property_id] %></td>
         <td><%= wikidata_entity_url(property.entity_id) %></td>
 				<td><%= property.entity_label %></td>
         <td><%= wikidata_entity_url(property.original_id) %></td>

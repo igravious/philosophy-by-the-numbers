@@ -5,7 +5,7 @@ class DankerUpdateTest < ActiveSupport::TestCase
   test "danker update task exists" do
     # Test that our rake task exists
     require 'rake'
-    Rails.application.load_tasks
+    Rails.application.load_tasks unless Rake::Task.task_defined?('danker:update')
     
     assert Rake::Task.task_defined?('danker:update'), "danker:update task should be defined"
     assert Rake::Task.task_defined?('danker:list'), "danker:list task should be defined"

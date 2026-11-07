@@ -46,6 +46,7 @@ class Unit < ActiveRecord::Base
 	end
 
 	require 'truncate'
+	include Truncatable
 
 	def set_display_name
 		self.display_name = truncate self.entry

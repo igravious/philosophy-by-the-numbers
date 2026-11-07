@@ -95,35 +95,23 @@ end
 
 class QuestionsControllerSecurityTest < ActionController::TestCase
   tests QuestionsController
-  
+
   def test_secure_method_dispatch
-    # Note: There's a pre-existing ThreadError in the Rails application
-    # Our SecurityConfig works correctly (as proven by isolated tests)
-    # This test documents the expected behavior once the ThreadError is resolved
-    
-    skip "ThreadError in Rails application prevents testing controller actions. SecurityConfig works correctly in isolation."
-    
-    # When ThreadError is fixed, this test should work:
-    # assert_raises(SecurityError) do
-    #   get :specific, multiplex: 'system', ids: [1]
-    # end
+    assert_raises(SecurityError) do
+      get :specific, multiplex: 'system', ids: [1]
+    end
   end
 end
 
 class DictionariesControllerSecurityTest < ActionController::TestCase
   tests DictionariesController
-  
+
   def test_secure_file_serving
-    # Note: There's a pre-existing ThreadError in the Rails application
-    # Our SecurityConfig works correctly (as proven by isolated tests)
-    # This test documents the expected behavior once the ThreadError is resolved
-    
-    skip "ThreadError in Rails application prevents testing controller actions. SecurityConfig works correctly in isolation."
-    
-    # When ThreadError is fixed, this test should work:
-    # assert_raises(ArgumentError) do
-    #   get :entry, id: '../../../etc/passwd'
-    # end
+    # before_action :set_dictionary rejects the traversal path before
+    # SecurityConfig.validate_file_id is reached — two layers of defence
+    assert_raises(ActiveRecord::RecordNotFound) do
+      get :entry, id: '../../../etc/passwd'
+    end
   end
 end
 

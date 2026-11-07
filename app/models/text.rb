@@ -61,6 +61,10 @@ class Text < ActiveRecord::Base
 		self.includings.where(filter_id: @filter_id).any?
 	end
 
+	def self.routes
+		@routes ||= Rails.application.routes.url_helpers
+	end
+
 	def author_names
 		authors.map{ |a|
 			a.english_name
@@ -70,7 +74,7 @@ class Text < ActiveRecord::Base
 	def edit_author_names
 		authors.map{ |a|
 			eng = a.english_name
-			url = Rails.application.routes.url_helpers.edit_author_path(a)
+			url = Text.routes.edit_author_path(a)
 			# Rails.logger.info "eng #{eng}: url #{url}"
 			ActionController::Base.helpers.link_to(eng, url)
 		}.join(", ")
@@ -93,19 +97,15 @@ class Text < ActiveRecord::Base
 	def edit_tag_names
 		tags.map{ |t|
 			name = t.name
-			url = Rails.application.routes.url_helpers.edit_tag_path(t)
+			url = Text.routes.edit_tag_path(t)
 			# Rails.logger.info "name #{name}: url #{url}"
 			ActionController::Base.helpers.link_to(name, url)
 		}.join(", ")
 	end
 
 	def jump_tag_names
-		tags.map{ |t|
-			name = t.name
-			l = Labeling.find_by! tag: t, text: self
-			url = Rails.application.routes.url_helpers.labeling_path(l)
-			# Rails.logger.info "name #{name}: url #{url}"
-			ActionController::Base.helpers.link_to(name, url)
+		labelings.select(&:tag).map{ |l|
+			ActionController::Base.helpers.link_to(l.tag.name, Text.routes.labeling_path(l))
 		}.join(", ")
 	end
 

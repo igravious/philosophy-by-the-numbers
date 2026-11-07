@@ -77,10 +77,10 @@ class QuestionsController < ApplicationController
 			@entity_ids = []
 		rescue NoMethodError, ArgumentError
 
-			list = params[:fileText].lines
+			list = params[:fileText].to_s.lines.map { |line| line.gsub(/\s+/m, ' ').strip }.reject(&:empty?)
 
 			# compress all whitespace to one unit
-			@entity_ids = list.collect{|line| line.gsub(/\s+/m, ' ').strip.splat(' ')[0][1..-1]}
+			@entity_ids = list.map { |line| line.split.first.delete_prefix('Q') }
 
 			@box = ':)'
 		end
@@ -169,10 +169,12 @@ class QuestionsController < ApplicationController
 
 	def instances
 		@feature = 'instances'
+		@meta_list = QuestionMetaFilter.all.collect { |filter| [filter.filter] }
 
 		@feature_list    = P::Smart.where(type: 'P::P31').henry # :(
 		@feature_labels  = @feature_list.pluck(:object_id, :object_label).to_h
 		@feature_list    = @feature_list.group(:object_id).count(:object_id).sort_by {|_key, value| value}.reverse
+		@feature_list = Kaminari.paginate_array(@feature_list).page(params[:page]).per(RECORDS_PER_PAGE)
 
 		@page_title = 'Instances'
 		render "table"
@@ -186,7 +188,7 @@ class QuestionsController < ApplicationController
 		@feature_list  = Property.where(property_id: [1412])
 		if params.has_key?(:label)
 			@label = params[:label]
-			@feature_list = @feature_list.where("data_label LIKE '%#{@label}%'")
+			@feature_list = @feature_list.where("data_label LIKE ?", "%#{@label}%")
 		end
 		@feature_list = @feature_list.group(:data_label).count(:data_label).sort_by {|_key, value| value}.reverse
 		@feature_ids  = Property.where(property_id: [1412]).pluck(:data_label, :data_id).to_h
@@ -272,13 +274,8 @@ class QuestionsController < ApplicationController
 
 		Rails.logger.info features
 
-		object = 'object_id = "'+features.first+'"'
-		if features.length > 1
-			features[1..-1].each { |feature| # from the 2nd one until the last one do this
-				object += ' OR object_id = "'+feature+'"'
-			}
-		end
-		@property_list = feature_list.where(object)
+		feature_ids = Array(features).select { |feature| feature.to_s.match?(/\A\d+\z/) }
+		@property_list = feature_list.where(object_id: feature_ids)
 		@property_list = @property_list.page(@page).per(RECORDS_PER_PAGE)
 
 		@entity_ids = @property_list.pluck(:entity_id).uniq
@@ -292,7 +289,7 @@ class QuestionsController < ApplicationController
 
 		if params.has_key?(:label)
 			@label        = params[:label]
-			@feature_list = @feature_list.where("object_label LIKE '%#{@label}%'")
+			@feature_list = @feature_list.where("object_label LIKE ?", "%#{@label}%")
 		end
 		# 2.4.0 :001 > P::J27.group(:object_id).pluck(:object_id, :object_label).size
 		#    (101.2ms)  SELECT "p_smarts"."object_id", "p_smarts"."object_label" FROM "p_smarts" WHERE "p_smarts"."type" IN ('P::J27') GROUP BY "p_smarts"."object_id"

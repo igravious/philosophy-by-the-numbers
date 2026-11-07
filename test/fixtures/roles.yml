@@ -1,0 +1,2 @@
+# Empty fixture file — ensures the roles table is cleared during test setup.
+# Test data is created dynamically in RolesControllerTest#setup.

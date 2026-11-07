@@ -1,31 +1,6 @@
 # SimpleCov must be loaded FIRST before any application code
 if ENV['COVERAGE']
   require 'simplecov'
-  require 'simplecov-console'
-
-  SimpleCov.start 'rails' do
-    # Formatter for both HTML and console output
-    SimpleCov.formatters = [
-      SimpleCov::Formatter::HTMLFormatter,
-      SimpleCov::Formatter::Console
-    ]
-
-    # Add filters to exclude non-application code
-    add_filter '/test/'
-    add_filter '/config/'
-    add_filter '/vendor/'
-		add_filter '/app/models/p/'
-    
-		# Group coverage by logical sections
-    add_group 'Models', 'app/models'
-    add_group 'Controllers', 'app/controllers'
-    add_group 'Helpers', 'app/helpers'
-    add_group 'Libraries', 'app/lib'
-    add_group 'Rake Tasks', 'lib/tasks'
-
-    # Set minimum coverage threshold (optional)
-    # minimum_coverage 90
-  end
 end
 
 ENV["RAILS_ENV"] ||= "test"
@@ -46,22 +21,11 @@ Rails.logger.info ascii_line
 
 Shadow.none
 
-# Ensure danker directory structure exists for tests
-danker_base = Rails.root.join('db', 'danker')
-danker_dated = danker_base.join('2024-10-04')
-danker_latest = danker_base.join('latest')
-
-FileUtils.mkdir_p(danker_dated) unless danker_dated.exist?
-unless danker_latest.exist? && danker_latest.symlink?
-  FileUtils.rm_rf(danker_latest) if danker_latest.exist?
-  FileUtils.ln_s(danker_dated, danker_latest)
-end
-# Create a dummy CSV file if it doesn't exist
-csv_file = danker_dated.join('test.csv')
-File.write(csv_file, "Q1,0.5\n") unless csv_file.exist?
-
 class ActiveSupport::TestCase
   ActiveRecord::Migration.check_pending!
+
+  # Map plural model names to their classes for fixture loading
+  set_fixture_class canonicity_weights: CanonicityWeights
 
   # Setup all fixtures in test/fixtures/*.yml for all tests in alphabetical order.
   #
@@ -70,6 +34,29 @@ class ActiveSupport::TestCase
   fixtures :all
 
   # Add more helper methods to be used by all tests here...
+
+  # Create a test philosopher with sensible defaults.
+  # Use this instead of philosopher fixtures (STI fixture loading is unreliable).
+  def create_test_philosopher(attrs = {})
+    defaults = {
+      entity_id: 900_000 + rand(99_999),
+      mention: 1,
+      danker: 0.5,
+      measure: 0.5
+    }
+    Philosopher.create!(defaults.merge(attrs))
+  end
+
+  # Create a test work with sensible defaults.
+  def create_test_work(attrs = {})
+    defaults = {
+      entity_id: 800_000 + rand(99_999),
+      mention: 1,
+      danker: 0.3,
+      measure: 0.3
+    }
+    Work.create!(defaults.merge(attrs))
+  end
 end
 
 class ActionController::TestCase

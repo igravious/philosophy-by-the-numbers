@@ -397,7 +397,7 @@ class PhilosophersController < ApplicationController
 		else
 			@shadows = @shadows.where(where_clause).where.not(where_not_clause).order('"shadows"."'+s_c+'" '+s_d)
 		end
-		@extent = @shadows.length
+		@extent = @shadows.count(:all)
 		Rails.logger.info "now got #{@extent} of 'em"
 		postamble(@max, @shadows)
 		

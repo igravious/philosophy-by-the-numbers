@@ -1,4 +1,4 @@
-<%= form_for(@p_smart) do |f| %>
+<%= form_for(@p_smart, as: :p_smart, url: (@p_smart.persisted? ? p_smart_path(@p_smart) : p_smarts_path)) do |f| %>
   <% if @p_smart.errors.any? %>
     <div id="error_explanation">
       <h2><%= pluralize(@p_smart.errors.count, "error") %> prohibited this p_smart from being saved:</h2>

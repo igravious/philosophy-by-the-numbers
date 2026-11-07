@@ -11,9 +11,8 @@ end
 module Kernel
   def self.required(list)
     list.
-      select { |feature| feature.include? 'gems' }.
-      map { |feature| File.dirname(feature) }.
-      map { |feature| feature.split('/').last }.
+      select { |feature| feature.include? '/gems/' }.
+      map { |feature| feature.split('/gems/').last.split('/').first }.
       uniq.sort
   end
 end

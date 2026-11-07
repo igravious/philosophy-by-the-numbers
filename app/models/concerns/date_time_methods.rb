@@ -1,6 +1,15 @@
 module DateTimeMethods
   extend ActiveSupport::Concern
 
+  def self.extract_year(value)
+    string = value.to_s.strip
+    return nil if string.empty?
+    return string.to_i if string.match?(/\A[+-]?\d+\z/)
+    Date._parse(string)[:year]
+  rescue ArgumentError, TypeError
+    nil
+  end
+
 	#included do
 	#	scope :disabled, -> { where(disabled: true) }
   #end

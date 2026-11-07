@@ -2,8 +2,8 @@ require 'test_helper'
 
 class RolesControllerTest < ActionController::TestCase
   setup do
-    # Create a test role with valid attributes
-    @shadow = Shadow.create!(entity_id: 9999, type: 'Philosopher')
+    @shadow = create_test_philosopher(entity_id: 990001)
+    Name.create!(shadow_id: @shadow.id, label: "Test Philosopher", lang: "en", langorder: 10)
     @capacity = Capacity.create!(entity_id: 5891, label: 'test_capacity', relevant: true)
     @role = Role.create!(shadow_id: @shadow.id, entity_id: @capacity.entity_id, label: 'test_role')
   end

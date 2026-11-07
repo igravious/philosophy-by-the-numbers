@@ -306,6 +306,7 @@ class Fyle < ActiveRecord::Base
 	# This normalizes paths from old installations to current Rails.root
 	def absolute_local_file_path
 		return nil if local_file.blank?
+		return local_file if Pathname.new(local_file).absolute? && File.file?(local_file)
 		
 		# If it's already an absolute path within current Rails.root, use as-is
 		if local_file.start_with?(Rails.root.to_s)
@@ -397,9 +398,9 @@ class Fyle < ActiveRecord::Base
 					self[:encoding] = bar.upcase.gsub('"','') # yup, strip "
 				end
 				self.save
-				return ''
+				''
 			else
-				return 'cache not fully written'
+				'cache not fully written'
 			end
 		end
 		if what_happened.blank?

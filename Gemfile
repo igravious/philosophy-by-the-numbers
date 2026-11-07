@@ -121,6 +121,14 @@ group :task do
 
 	# profiling
 	gem 'ruby-prof'
+
+	# Workflow TUI
+	gem 'tty-prompt', '~> 0.23.0'
+	gem 'tty-table', '~> 0.12.0'
+	gem 'tty-box', '~> 0.7.0'
+	gem 'tty-spinner', '~> 0.9.0'
+	gem 'tty-tree', '~> 0.4.0'
+	gem 'tty-markdown', '~> 0.7.0'
 end
 
 # Use debugger

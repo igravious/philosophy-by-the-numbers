@@ -19,46 +19,16 @@ class TextsController < ApplicationController
   end
 
 	def process_filters
-		# @texts = Text.filter(params(:tag_id))
-		# all = Text.all
-		# there's a method called all now
-		if @tag_id.blank?
-			texts_set1 = all
-		else
-			texts_set1 = Text.where(id: Labeling.where(tag_id: @tag_id).collect{|l|l.text_id})
+		texts = all.includes(:authors, labelings: :tag)
+		texts = texts.where(id: Labeling.where(tag_id: @tag_id).select(:text_id)) unless @tag_id.blank?
+		if %w[< = >].include?(@inequality) && !@original_year.blank?
+			texts = texts.where("original_year #{@inequality} ?", @original_year)
 		end
-		if '<' == @inequality
-			if !@original_year.blank? # TODO validation?
-				texts_set2 = Text.where("original_year < ?", @original_year)
-			else
-				texts_set2 = all
-			end
-		elsif '=' == @inequality
-			if !@original_year.blank? # TODO validation?
-				texts_set2 = Text.where("original_year = ?", @original_year)
-			else
-				texts_set2 = all
-			end
-		elsif '>' == @inequality
-			if !@original_year.blank? # TODO validation?
-				texts_set2 = Text.where("original_year > ?", @original_year)
-			else
-				texts_set2 = all
-			end
-		else
-			texts_set2 = all
+		texts = texts.where("name_in_english LIKE ?", "%#{@name_in_english}%") unless @name_in_english.blank?
+		unless @author_name.blank?
+			texts = texts.where(id: Writing.where(author_id: Author.where(english_name: @author_name)).select(:text_id))
 		end
-		if @name_in_english.blank?
-			texts_set3 = all
-		else
-			texts_set3 = Text.where("name_in_english LIKE ?", "%#{@name_in_english}%")
-		end
-		if @author_name.blank?
-			texts_set4 = all
-		else
-			texts_set4 = Text.where(id: Writing.where(author_id: Author.where(english_name: @author_name)).pluck(:text_id))
-		end
-		@texts = texts_set1 & texts_set2 & texts_set3 & texts_set4
+		@texts = texts
 	end
 
 	def filtered
@@ -199,8 +169,8 @@ class TextsController < ApplicationController
 						# .
 						# (n-1).mb .. n.mb -1
 						# n.mb .. paper.size
-						n = snarfed.size / chunk
-						rem = snarfed.size % chunk
+						n = (snarfed.size - 1) / chunk
+						rem = snarfed.size - (n * chunk)
 						i = 0
 						# do this outside the loop
 						authors = []
@@ -266,7 +236,7 @@ class TextsController < ApplicationController
 						next
 					end
 
-					paper = OpenStruct.new(content_url: file.plain, paper_url: fyle_url(file), year: text.original_year, title: text.name_in_english)
+					paper = OpenStruct.new(content_url: File.basename(file.plain_path), paper_url: file.plain_path, year: text.original_year, title: text.name_in_english)
 
 					snarfed = file.snarf
 					Rails.logger.info "#{snarfed.size.to_s.rjust(8, " ")} <- #{text.name_in_english}"
@@ -279,15 +249,15 @@ class TextsController < ApplicationController
 						# (n-1).mb .. n.mb -1
 						# n.mb .. paper.size
 						paper.contents = []
-						n = snarfed.size / chunk
-						rem = snarfed.size % chunk
+						n = (snarfed.size - 1) / chunk
+						rem = snarfed.size - (n * chunk)
 						i = 0
 						while i < n
-							content = OpenStruct.new(chunk: i, size: chunk, url: "#{file.plain}?chunk=#{i}")
+							content = OpenStruct.new(chunk: i, size: chunk, url: "#{file.plain_path}?chunk=#{i}")
 							paper.contents.push(content)
 							i = i+1
 						end
-						content = OpenStruct.new(chunk: n, size: rem, url: "#{file.plain}?chunk=#{i}")
+						content = OpenStruct.new(chunk: n, size: rem, url: "#{file.plain_path}?chunk=#{i}")
 						paper.contents.push(content)
 					else
 						paper.size = snarfed.size
@@ -441,22 +411,24 @@ class TextsController < ApplicationController
   # POST /texts
   # POST /texts.json
   def create
+		t = false
 		# behold the mighty error handling
 		# only catch specific excpetions anto, let rails give 404s and 500s
 		begin
-			author_id = params[:text].delete(:author_id)
+			author_id = params.require(:text)[:author_id]
     	@text = Text.new(text_params)
-			t = @text.save # save the text bit and author bit separately of each other
-			if !author_id.blank?
-				@author = Author.find(author_id) # will throw
-				if t
-					Writing.new({author_id: @author.id, text_id: @text.id}).save! # will throw
+			Text.transaction do
+				t = @text.save
+				if !author_id.blank?
+					@author = Author.find(author_id)
+					Writing.new({author_id: @author.id, text_id: @text.id}).save! if t
 				end
+				raise ActiveRecord::Rollback unless t
 			end
 		rescue ActiveRecord::RecordNotFound => not_found # frick
 			@text.errors[:base] << "Could not find specific author with id: #{author_id}"
 			t = false
-		rescue ActiveRecord::RecordError => eek # frick
+		rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique => eek
 			@text.errors[:base] << eek.message
 			t = false
 		end
@@ -475,32 +447,37 @@ class TextsController < ApplicationController
   # PATCH/PUT /texts/1
   # PATCH/PUT /texts/1.json
   def update
+		t = false
 		begin
-			t = true
-			author_id = params[:text].delete(:author_id)
-			if !author_id.blank?
-				@author = Author.find(author_id) # could throw
-				# same Text and new Author so create new Writing (no dupes)
-				# no role set yet
-				Writing.new({author_id: @author.id, text_id: @text.id}).save! # could throw
+			attributes = text_params
+			author_id = params[:text][:author_id]
+			Text.transaction do
+				if !author_id.blank?
+					@author = Author.find(author_id) # could throw
+					# same Text and new Author so create new Writing (no dupes)
+					# no role set yet
+					Writing.new({author_id: @author.id, text_id: @text.id}).save! # could throw
+				end
+				tag_id = params[:text][:tag_id]
+				if !tag_id.blank?
+					@tag = Tag.find(tag_id) # could throw
+					# same Text and new Tag so create new Labeling (no dupes)
+					Labeling.new({tag_id: @tag.id, text_id: @text.id}).save! # could throw
+				end
+				Rails.logger.info(params[:text][:tags_attributes])
+				t = @text.update(attributes)
+				raise ActiveRecord::Rollback unless t
 			end
-			tag_id = params[:text].delete(:tag_id)
-			if !tag_id.blank?
-				@tag = Tag.find(tag_id) # could throw
-				# same Text and new Tag so create new Labeling (no dupes)
-				Labeling.new({tag_id: @tag.id, text_id: @text.id}).save! # could throw
-			end
-			Rails.logger.info(params[:text][:tags_attributes])
 		rescue ActiveRecord::RecordNotFound => not_found # frick
 			@text.errors[:base] << "Could not find specific author with id: #{author_id}"
 			t = false
-		rescue ActiveRecord::RecordError => eek # frick
+		rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique => eek
 			@text.errors[:base] << eek.message
 			t = false
 		end
 
     respond_to do |format|
-			if @text.update(text_params) and t
+			if t
         format.html { redirect_to @text, notice: 'Record was successfully updated.' }
         format.json { head :no_content }
       else
@@ -532,7 +509,7 @@ class TextsController < ApplicationController
 		# TODO: Unpermitted parameter: filter_id ?
     def text_params
 			# when you add an associatio, add the params
-			params.require(:text).permit(:name, :name_in_english, :original_year, :edition_year, :author_id, :fyle_id, :original_language, authors_attributes: [:id, :name, :english_name, :year_of_birth, :date_of_birth, :year_of_death, :when_died, :where, :about, :_destroy], tags_attributes: [:id, :name, :_destroy], writings_attributes: [:id, :role])
+			params.require(:text).except(:author_id, :tag_id).permit(:name, :name_in_english, :original_year, :edition_year, :fyle_id, :original_language, authors_attributes: [:id, :name, :english_name, :year_of_birth, :date_of_birth, :year_of_death, :when_died, :where, :about, :_destroy], tags_attributes: [:id, :name, :_destroy], writings_attributes: [:id, :role])
     end
 
 		def sort_column
