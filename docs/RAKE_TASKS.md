@@ -6,66 +6,94 @@ The CorpusBuilder application provides comprehensive Rake tasks for building and
 
 ## Core Tasks
 
-### `rake shadow:metric`
+### `rake shadow:philosopher:metric`
 
-**Purpose**: Calculate canonicity measures for all philosophers using the Linear Weighted Combination algorithm
+**Purpose**: Calculate Philosopher measures using the V2 calculator and configured weights without creating unlinked snapshots
 
-**Features**:
-- Uses configurable weights from `canonicity_weights` table (no hardcoded constants)
-- Creates `MetricSnapshot` records for each calculation with full audit trail
-- Supports algorithm versioning for comparison and evolution
-- Integrates with danker data versioning
-- Progress tracking with estimated completion times
+This is the legacy direct-calculation path. Controlled run snapshots are implemented through the dataset/run workflow rather than by model methods. Current display publication remains a separate operation.
 
-**Usage**:
 ```bash
-bin/rake shadow:metric
+bin/rake shadow:philosopher:metric
 ```
 
-**Output**:
-- Progress bar showing completion status
-- Algorithm version and danker data information
-- Per-philosopher calculation results (when run without progress bar)
-- Summary of snapshots created
+### `rake shadow:philosopher:danker`
 
-**Audit Trail**:
-- Each calculation creates a `MetricSnapshot` with:
-  - Exact weights configuration used (JSON)
-  - Algorithm version
-  - Danker data version and file
-  - Calculation timestamp
-  - Computed measure value
+**Purpose**: Atomically import the latest processed Danker CSV for the complete Philosopher population
 
-### `rake shadow:danker[condition]`
+- Validates the entire file before opening the import transaction.
+- Updates current `shadows.danker` values, using `nil` when an entity is missing from the file.
+- Records typed old/new values and artifact provenance in `source_events`.
+- Uses the cross-process metric operation lock.
+- Does not create calculation snapshots.
 
-**Purpose**: Import latest danker (PageRank) scores for philosophers
-
-**Features**:
-- Automatically checks for latest danker data
-- Updates philosopher danker scores from CSV files
-- Creates snapshots only when scores change
-- Supports conditional processing with SQL-like conditions
-- Integrates with danker data versioning system
-
-**Usage**:
 ```bash
-# Process all philosophers
-bin/rake shadow:danker
-
-# Process with condition
-bin/rake shadow:danker["entity_id > 1000"]
+bin/rake shadow:philosopher:danker
 ```
 
-**Data Flow**:
-1. Checks for latest danker data in `db/danker/latest/`
-2. Reads CSV file with format: `Q{entity_id},{score}`
-3. Updates philosopher records where scores differ
-4. Creates `MetricSnapshot` for changed records with `algorithm_version: 'danker_import'`
+Conditional selections are ignored so the import remains a complete-population operation.
 
-**Audit Trail**:
-- Snapshots created only for changed danker scores
-- Records old and new values in notes field
-- Links to specific danker data file and version
+### `rake metric:import_danker[file_path,subject_type,source_version]`
+
+Import an explicit Danker CSV or TSV artifact for Philosopher or Work.
+
+```bash
+bin/rake "metric:import_danker[db/danker/latest/scores.csv,Philosopher,2026-11-06]"
+```
+
+### `rake metric:import_work_flags[file_path]`
+
+Atomically import Work Cambridge, Borchert, and Routledge flags from the `works.json` format, with typed source events.
+
+```bash
+bin/rake "metric:import_work_flags[works.json]"
+```
+
+### `rake metric:capture[subject_type,input_run_id,selected_entity_ids,normalization_entity_ids]`
+
+Capture an immutable dataset and its primitive input records. Omit the last three arguments for the complete subject population. Use pipe-separated IDs for small experimental captures; `input_run_id` is optional for Philosopher and defaults to the latest completed Philosopher run for Work.
+
+```bash
+# Complete Philosopher population
+bin/rake "metric:capture[Philosopher]"
+
+# Two entities in both selected and normalization populations
+bin/rake "metric:capture[Philosopher,,5484|5485,5484|5485]"
+
+# Work using an explicit completed Philosopher dependency
+bin/rake "metric:capture[Work,12]"
+```
+
+Failed captures become invalid with a failure reason and do not retain partial input records. Interrupted captures and runs are reconciled when the lock is next acquired. Dataset status, normalization context, provenance, dependencies, failures, and import events are visible at `/canonicity`.
+
+### `rake metric:calculate[dataset_id,configuration_version,parent_run_id]`
+
+Calculate a controlled run over a ready dataset. Configuration defaults to normalized `2.1` for Philosopher and `2.0-work` for Work. Original `2.0` weights are preserved for compatibility. Runs begin at `0.7.0` independently for each subject type.
+
+```bash
+bin/rake "metric:calculate[3]"
+```
+
+### `rake metric:recalculate[subject_type,version,configuration_version]`
+
+Create another run from the same immutable dataset with an explicit configuration and a parent run. No live inputs are refreshed. Unchanged calculator/configuration receives a patch bump; a configuration change receives a minor bump; a calculator identity change receives a major bump. Configurations must belong to the dataset's subject type.
+
+```bash
+bin/rake "metric:recalculate[Philosopher,0.7.0,2.1]"
+```
+
+### `rake metric:replay[subject_type,version]`
+
+Recompute a completed run from its frozen calculator, configuration, dataset payloads, and dependencies. Replay verifies exact measures, selected population, normalization context, and dense ranks without writing anything.
+
+```bash
+bin/rake "metric:replay[Philosopher,0.7.0]"
+```
+
+The command prints `matches: true` only when every check matches and raises on mismatches.
+
+### `rake metric:runs` and `rake metric:show[subject_type,version]`
+
+List run identities or inspect one run and its snapshots. Run details and read-only replay are also available at `/canonicity`.
 
 ### `rake danker:update`
 

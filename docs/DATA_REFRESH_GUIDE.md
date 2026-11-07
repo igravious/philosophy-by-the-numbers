@@ -240,29 +240,25 @@ bin/rake snarf:runes
 
 ### Step 6.1: Import Danker Scores
 ```bash
-# Import latest Wikipedia PageRank scores
+# Process downloaded files if necessary
+bin/rake danker:process_files
+
+# Atomically import the latest processed CSV
 bin/rake shadow:philosopher:danker
+
+# Or import an explicit CSV/TSV artifact
+bin/rake "metric:import_danker[path/to/scores.csv,Philosopher,2026-11-06]"
 ```
 
 **What this does:**
-- Reads latest danker compressed data from `db/danker/` (symlinked to latest version)
-- Format: `Q{entity_id}\t{pagerank_score}` (tab-separated, compressed)
-- **Does NOT overwrite** `shadows.danker` field (preserves historical data)
-- Creates `MetricSnapshot` records with new danker scores stored in snapshot
-- Only creates snapshots where scores have changed from previous snapshot
-- Links snapshots to specific danker data version for full audit trail
+- Streams and checksums the complete artifact in one validation pass before opening the import transaction; only scores needed by the subject population are retained in memory.
+- Updates current `shadows.danker` values for the complete subject population.
+- Writes `nil` for an entity missing from the file rather than coercing it to `0.0`.
+- Records old and new values, artifact identity/checksum, import identity, and timestamps in `source_events`.
+- Commits all current-value changes and source events in one transaction under the metric operation lock.
+- Does not create metric calculation snapshots.
 
-**Self-Contained Snapshots:**
-Each snapshot contains all input values used for that calculation, enabling:
-- Complete recreation of any historical ranking
-- Comparison of how rankings change over time
-- Full audit trail of all input data sources
-
-**Audit Trail Features:**
-- Records old and new danker values
-- Timestamps all changes
-- Links to source data file and version
-- Algorithm version: 'danker_import'
+An explicit Work import uses `metric:import_danker[path,Work,version]`. Work reference flags use `metric:import_work_flags[works.json]`; they are no longer updated implicitly by `shadow:work:measure`.
 
 ### Step 6.2: Update Philosophy/Philosopher Mention Scores
 ```bash
@@ -340,69 +336,67 @@ The system uses configurable weights stored in the `canonicity_weights` table:
 
 | Source | Weight | Description |
 |--------|--------|-------------|
-| stanford | 0.15 | Stanford Encyclopedia presence |
-| oxford2 | 0.00 | Oxford Dictionary of Philosophy, 2nd ed. (legacy, display only) |
-| oxford3 | 0.20 | Oxford Dictionary of Philosophy, 3rd ed. |
-| cambridge | 0.20 | Cambridge Dictionary presence |
-| borchert | 0.25 | Macmillan Encyclopedia (Borchert) |
-| routledge | 0.25 | Routledge Encyclopedia |
-| inphobool | 0.15 | Internet Encyclopedia of Philosophy |
-| internet | 0.05 | Internet sources |
-| kemerling | 0.10 | Kemerling Philosophy Pages |
-| populate | 0.02 | Wikipedia (as philosopher) |
+| stanford | 0.10 | Stanford Encyclopedia presence |
+| oxford2 | NULL | Oxford Dictionary of Philosophy, 2nd ed. (inactive legacy source) |
+| oxford3 | 0.13 | Oxford Dictionary of Philosophy, 3rd ed. |
+| cambridge | 0.13 | Cambridge Dictionary presence |
+| borchert | 0.17 | Macmillan Encyclopedia (Borchert) |
+| routledge | 0.17 | Routledge Encyclopedia |
+| inphobool | 0.10 | Internet Encyclopedia of Philosophy |
+| internet | 0.03 | Internet sources |
+| kemerling | 0.07 | Kemerling Philosophy Pages |
+| populate | 0.01 | Wikipedia (as philosopher) |
 | dbpedia | 0.01 | DBpedia (as philosopher) |
-| all_bonus | 0.13 | Bonus for having any authoritative sources |
-| runes | 0.00 | Runes (excluded as biased) |
+| all_bonus | 0.08 | Bonus for having any authoritative sources |
+| runes | NULL | Philosophy Dictionary (inactive legacy source) |
 
-**Total Base Weights:** 1.38 (sources only)
-**Total with Bonus:** 1.51 (base + all_bonus, when philosopher has at least one source)
+**Total Active Bitset Weight:** 1.000000, including `all_bonus` when it applies
 
 **Weight Determination:** Source weights were determined using Wikipedia PageRank data (danker scores) to measure the relative significance of each encyclopedia source.
 
-**Note:** The `all_bonus` is conditional—it only applies if the philosopher appears in at least one authoritative source. The Oxford Dictionary of Philosophy is tracked separately by edition. The 2nd edition (`oxford2`) is a legacy source (weight = 0.0) displayed for reference only. The 3rd edition (`oxford3`) actively contributes to canonicity calculations.
+**Note:** The `all_bonus` is conditional—it only applies if the philosopher appears in at least one active authoritative source. Oxford2 and Runes are inactive legacy sources with `NULL` weights; Oxford3 actively contributes.
 
 **Algorithm Versioning:**
-- Supports multiple algorithm versions
-- Each calculation records exact weights used
-- Enables A/B testing and historical comparison
-- Default algorithm: "Linear Weighted Combination v1.0"
+- Supports multiple algorithm and configuration versions
+- Run-linked snapshots read frozen configuration
+- Default calculators: `philosopher-v2` and `work-v2`
 
-### Step 8.2: Calculate Updated Canonicity Metrics
+### Step 8.2: Capture Coherent Philosopher Inputs
 ```bash
-# Calculate new canonicity scores using Linear Weighted Combination
-bin/rake shadow:philosopher:metric  
+# Complete population
+bin/rake "metric:capture[Philosopher]"
+
+# Small review population using pipe-separated IDs
+bin/rake "metric:capture[Philosopher,,5484|5485,5484|5485]"
 ```
 
-**What this does:**
-- Uses configurable weights from `canonicity_weights` table
-- Combines multiple signals using Linear Weighted Combination:
-  ```
-  canonicity_score = Σ(weight_i × normalized_signal_i)
-  ```
-- Creates `MetricSnapshot` records with full audit trail
-- Updates `shadows.measure` and `shadows.measure_pos` (ranking position)
-- Records algorithm version, danker version, weights configuration
-- Supports progress tracking with estimated completion times
+Capture freezes the selected and normalization populations, primitive payloads, normalization context, and source provenance. Missing entities invalidate capture without leaving partial records. Review status and evidence at `/canonicity`.
 
-**Audit Trail Includes:**
-- Exact weights configuration (JSON)
-- Algorithm version identifier
-- Danker data version and file path
-- Calculation timestamp
-- Individual component scores
-- Final computed measure value
+Calculate a controlled run after capture:
 
-### Step 8.3: Update Work Rankings
 ```bash
-# Calculate measures for philosophical works
-bin/rake shadow:work:measure
+# Calculate from a ready dataset
+bin/rake "metric:calculate[3]"
+
+# Recalculate from the same dataset, with a parent run and explicit configuration
+bin/rake "metric:recalculate[Philosopher,0.7.0,2.1]"
+
+# Verify measures, population, normalization, and dense ranks without writes
+bin/rake "metric:replay[Philosopher,0.7.0]"
 ```
 
-**What this does:**
-- Calculates canonicity measures for philosophical works
-- Considers: encyclopedia presence, citations, author prominence
-- Updates work rankings and positions
-- Creates audit snapshots for works
+Run versions begin at `0.7.0` independently for Philosopher and Work. Recalculation reuses the dataset and frozen inputs. Current display values are not changed by calculation or replay; publication is separate. `shadow:philosopher:metric` and `shadow:work:measure` now use this same controlled capture/run pipeline.
+
+### Step 8.3: Capture Work Inputs After Philosopher Runs
+```bash
+# Uses the latest completed Philosopher run by default
+bin/rake "metric:capture[Work]"
+
+# Or select an explicit dependency
+bin/rake "metric:capture[Work,12]"
+```
+
+A completed Philosopher run is mandatory. Work capture freezes linked-author snapshot IDs and measures from that run; missing author dependencies fail capture with an actionable error. Work reference flags are imported separately using `metric:import_work_flags[works.json]`.
 
 ## Phase 9: Data Quality & Validation
 
