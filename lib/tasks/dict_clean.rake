@@ -37,10 +37,10 @@ namespace :dictionary do
 			end
 			if conform > 0
 				puts "#{conform} deviating from format"
-				exit
+				exit 1
 			end
 			longest = 0
-			um = File.join(Dir.pwd,file)
+			um = File.expand_path(file, Dir.pwd)
 			File.readlines(um).each do |line|
 				splitsville = line.split(URL_SEP)
 				entry, url = splitsville
@@ -175,7 +175,7 @@ namespace :dictionary do
 				if /(.+\w)\/(\w.+)/.match(line).nil?
 					puts line
 				else
-					puts line
+					puts "#{$~[1]} / #{$~[2]}"
 				end
 			end
 		end

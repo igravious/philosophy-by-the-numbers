@@ -12,7 +12,6 @@ namespace :snarf do
 		require 'open-uri'
 		require 'knowledge'
 		require 'cgi'
-		include Knowledge
 		Shadow.none
 		# their api docs: https://www.inphoproject.org/docs/ don't work
 		added = 0
@@ -34,9 +33,6 @@ namespace :snarf do
 					thinker[:name] = t.child.to_s
 					thinker[:href] = t['href']
 					thinker[:id] = t['href'].split('/').last.to_i
-					phil = Philosopher.find_by(inpho: thinker[:id])
-					p phil
-					exit
 					open("https://www.inphoproject.org/#{thinker[:href]}"){|f1|
 						doc1 = Nokogiri::HTML(f1)
 
@@ -78,7 +74,7 @@ namespace :snarf do
 								if 2 == parts.length
 									# really, i should create a snarf file!
 									wiki = CGI.unescape parts.last
-									ee = Wikipedia::API.wikibase_item({titles: wiki},'')
+									ee = Knowledge::Wikipedia::API.wikibase_item({titles: wiki},'')
 									if ee.nil?
 										puts "#{wiki} ? #{thinker}"
 									elsif !bad_entities.include?(ee)

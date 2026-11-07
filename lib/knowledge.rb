@@ -128,7 +128,7 @@ module Knowledge
 				return res
 			end
 			
-			require_relative 'security_config'
+			require_relative '../app/lib/security_config'
 			api_key = SecurityConfig.load_credential('GOOGLE_API_KEY', '.google_api_key')
 			service_url = 'https://kgsearch.googleapis.com/v1/entities:search'
 			http_params = {
@@ -166,7 +166,7 @@ module Knowledge
 				return res
 			end
 			
-			require_relative 'security_config'
+			require_relative '../app/lib/security_config'
 			api_key = SecurityConfig.load_credential('GOOGLE_API_KEY', '.google_api_key')
 			service_url = 'https://kgsearch.googleapis.com/v1/entities:search'
 			http_params = {
@@ -204,7 +204,7 @@ module Knowledge
 				return res
 			end
 			
-			require_relative 'security_config'
+			require_relative '../app/lib/security_config'
 			api_key = SecurityConfig.load_credential('LANGUAGELAYER_API_KEY', '.languagelayer_api_key')
 			service_url = 'http://apilayer.net/api/detect'
 			http_params = { access_key: api_key, query: phrase, show_query: 1 }

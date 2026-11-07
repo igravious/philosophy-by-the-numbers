@@ -13,6 +13,7 @@ class WRAP_HTTP
 			body = IO.read(uri.path)
 			response = {}
 			request = {request: "NONE"}
+			support = yield uri, request, response, body
 		elsif uri.scheme == 'http' or uri.scheme == 'https'
 			g = HTTParty.get obj.URI
 			body = g.body

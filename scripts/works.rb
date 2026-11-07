@@ -7,17 +7,17 @@ MAX_PHIL = 1300
 CHUNK = 25
 if 1 != ARGV.length
 	fuck_it
-	exit
+	exit 1
 else
 	idx = ARGV[0].to_i
-	if 0 == idx or idx > MAX_PHIL/CHUNK
+	if idx < 1 or idx > MAX_PHIL/CHUNK
 		fuck_it
-		exit
+		exit 1
 	end
 end
 
 Shadow.none
-phils = Philosopher.order('metric desc').limit(CHUNK).offset((idx-1)*CHUNK)
+phils = Philosopher.order(measure: :desc).limit(CHUNK).offset((idx-1)*CHUNK)
 # bin/rake shadow:work:smurf[12431]
 # # Q859 	Plato
 phils.each do |p|

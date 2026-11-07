@@ -124,7 +124,7 @@ WHERE {
 			dc = ::Dalli::Client.new('localhost:11211')
 			res = dc.get(key)
 			if (!res.nil?)
-				Rails.logger.info "Using cached #{entity}"
+				Rails.logger.info "Using cached #{key}"
 				return res
 			end
 			res = is_in_a_specific_subject? 'people', name
@@ -139,7 +139,7 @@ WHERE {
 			dc = ::Dalli::Client.new('localhost:11211')
 			res = dc.get(key)
 			if (!res.nil?)
-				Rails.logger.info "Using cached #{entity}"
+				Rails.logger.info "Using cached #{key}"
 				return res
 			end
 			res = is_in_a_specific_subject? 'philosophers', name
@@ -173,7 +173,6 @@ WHERE {
 			sparql = ::SPARQL::Client.new("http://dbpedia.org/sparql")
 			query = SPARQL::PAGERANK_OF_PHILOSOPHERS 
 			puts query
-			exit
 			result_set = sparql.query(query)
 			#Rails.logger.info "DBpedia result #{result_set.inspect}"
 			result_set

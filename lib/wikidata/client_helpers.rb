@@ -40,7 +40,7 @@ module Wikidata
     
     # Instance method version for backward compatibility
     def log_sparql_query(query, method_name, context = {})
-      self.class.log_sparql_query(query, method_name, context)
+      Wikidata::ClientHelpers.log_sparql_query(query, method_name, context)
     end
     
     include Wikidata::SparqlQueries
@@ -70,7 +70,7 @@ module Wikidata
         #if name == title
         #	puts "#{index} #{site_links} #{entity.ljust(9)} #{mentions} #{site.rjust(10)}: #{title}"
         #else
-          puts "#{index} #{site_links} #{w_entity.ljust(10)} by #{p_entity.ljust(9)} "#{name}" #{what}"
+          puts "#{index} #{site_links} #{w_entity.ljust(10)} by #{p_entity.ljust(9)} \"#{name}\" #{what}"
         #end
       end
       puts " count  sites Q# work    by Q# philosopher" unless res.empty?
@@ -115,8 +115,6 @@ module Wikidata
     # TODO put exception handling here?
     def interpolated_entity(sparql_query, substitution_hash)
       require 'knowledge'
-      include Knowledge
-      w = Knowledge::Wikidata::Client.new
       q = sparql_query % substitution_hash
       
       # SPARQL Query Logging

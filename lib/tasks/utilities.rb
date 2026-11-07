@@ -30,7 +30,7 @@ module TaskUtilities
   def barf(e, ctx)
     # no need to pass in $! ?
     STDERR.puts "#{ctx}: #{e.inspect}"
-    STDERR.puts e.backtrace.select {|l| l.to_s[File.basename(__FILE__)]}
+    STDERR.puts e.backtrace.reject {|l| l.to_s[File.basename(__FILE__)]}
   end
 
   # == Progress Bar Setup

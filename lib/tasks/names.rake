@@ -162,7 +162,4 @@ namespace :names do
 		p h.keys.sort
   end
 
-	task cap_no_dot: :environment do
-		p test
-	end
 end

@@ -296,6 +296,7 @@ module Knowledge
 				require 'sparql/client'
 				@sparql = SPARQL::Client.new('https://query.wikidata.org/sparql', method: :get)
 				@accumulate = accumulate
+				reset
 			end
 
 			def recurse_query(label)

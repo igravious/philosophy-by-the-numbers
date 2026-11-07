@@ -26,10 +26,10 @@ namespace :units do
 
 	def is_common_noun? term
 		down = term.downcase
-		lemma = WordNet::Lemma.find(down, :noun)
+		lemma = ::WordNet::Lemma.find(down, :noun)
 		if lemma.nil?
 			print ". " # no match
-			raise WordNet::LemmaNotFound
+			raise Knowledge::WordNet::LemmaNotFound
 		else
 			if lemma.word == down
 				if lemma.synsets.first.word_counts.keys[0] == down
@@ -41,7 +41,7 @@ namespace :units do
 				end
 			else
 				print "? " # this suggest strange goings on
-				raise WordNet::LemmaMismatch
+				raise Knowledge::WordNet::LemmaPeculiar
 			end
 		end
 	end

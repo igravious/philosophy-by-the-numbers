@@ -5,7 +5,7 @@ module Philosoraptor
 
 	def self.create(top, bottom)
 		# Fixed: Use security configuration for credential loading
-		require_relative 'security_config'
+		require_relative '../app/lib/security_config'
 		username = SecurityConfig.load_credential('MEMEGENERATOR_USERNAME')
 		password = SecurityConfig.load_credential('MEMEGENERATOR_PASSWORD')
 

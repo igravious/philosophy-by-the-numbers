@@ -50,14 +50,6 @@ def wiki_info(entity)
 	# site = resp['entities'][entity][PROPS].first[1]['site']
 end
 
-def schema_desc(entity)
-	w1 = Wikidata::Client.new
-	#q = Object.const_get('HITS') % {interpolated_entity: entity}
-	q = HITS % {interpolated_entity: entity}
-	res = w1.query(q)
-	res.bindings[:hits].first.to_i
-end
-
 begin
 	plot=[]
 	avg=[]
