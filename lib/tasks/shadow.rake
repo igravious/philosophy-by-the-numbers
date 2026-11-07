@@ -303,7 +303,7 @@ begin
 					when 'pagerank_n'
 						p = Philosopher.order(:entity_id).where(danker: nil)
 					when 'metric_n'
-						p = Philosopher.where(metric: nil)
+						p = Philosopher.includes(:obsolete_data).where(obsolete_attrs: {metric: nil})
 					when 'measure_n'
 						p = Philosopher.where(measure: nil)
 					when 'mention_z'
@@ -315,11 +315,11 @@ begin
 					when 'linkcount_n_z'
 						p = Philosopher.where(linkcount: [0, nil])
 					when 'birth_n'
-						p = Philosopher.where(birth: nil)
+						p = Philosopher.joins(:attrs).where(philosopher_attrs: {birth: nil})
 					when 'death_n'
-						p = Philosopher.where(death: nil)
+						p = Philosopher.joins(:attrs).where(philosopher_attrs: {death: nil})
 					when 'extra'
-						p = Philosopher.where(populate: false)
+						p = Philosopher.joins(:attrs).where(philosopher_attrs: {populate: false})
 					when 'c_today'
 						p = Philosopher.created_today
 					when 'u_today'
@@ -337,8 +337,14 @@ begin
 					when /\d+/
 						p = Shadow.where(id: cond.to_i)
 					else
-						if not Philosopher.columns_hash[cond].nil? and Philosopher.columns_hash[cond].type == :boolean
-							p = Philosopher.where(populate: false, :"#{cond}" => true)
+						column = Philosopher.columns_hash[cond] || PhilosopherAttrs.columns_hash[cond]
+						if column && column.type == :boolean
+							p = Philosopher.joins(:attrs).where(philosopher_attrs: {populate: false})
+							p = if PhilosopherAttrs.columns_hash.key?(cond)
+								p.where(philosopher_attrs: {cond => true})
+							else
+								p.where(cond => true)
+							end
 						else
 							p = nil
 						end
@@ -359,18 +365,18 @@ begin
 				explod_birth = [] 
 				explod_birth = attrs[plural].split(';') unless attrs[plural].blank?
 				if 1 == explod_birth.length
-					attrs[date_sym] = attrs[plural].dup # if there's only one i'm pretty sure this is ok
+					attrs[date_sym] = explod_birth.first.dup
 				else
 					explod_birth.delete_if{|e| 0 == (e =~ /^t\d+/) }
 					if 0 == explod_birth.length
 						# um, how to do this?
 					elsif 1 == explod_birth.length
-						attrs[date_sym] = attrs[plural].dup # if there's only one i'm pretty sure this is ok
+						attrs[date_sym] = explod_birth.first.dup
 					elsif 2 == explod_birth.length
 						# check that the years are within X of each other
 						begin
-							b0 = Date._parse(explod_birth[0])[:year]
-							b1 = Date._parse(explod_birth[1])[:year]
+							b0 = DateTimeMethods.extract_year(explod_birth[0])
+							b1 = DateTimeMethods.extract_year(explod_birth[1])
 							b_diff = (b0 - b1).abs
 							if 0 == b_diff
 								attrs[date_sym] = explod_birth[0].dup
@@ -388,7 +394,7 @@ begin
 						end
 					else
 						b_s = []
-						explod_birth.each{|e| b_s.push(Date._parse(e)[:year])}
+						explod_birth.each{|e| b_s.push(DateTimeMethods.extract_year(e))}
 						attrs[date_sym] = b_s.sum / b_s.length
 						attrs[approx] = true
 					end
@@ -531,12 +537,12 @@ begin
 
 			def check_date(p, birth, death)
 				begin
-					new_b = Date._parse(p.birth)[:year]
+					new_b = p.year(:birth)
 				rescue
 					new_b = nil
 				end
 				begin
-					new_d = Date._parse(p.death)[:year]
+					new_d = p.year(:death)
 				rescue
 					new_d = nil
 				end
@@ -560,12 +566,12 @@ begin
 
 			def make_append(p)
 				begin
-					append = " (#{Date._parse(p.birth)[:year]}"
+					append = " (#{p.year(:birth)}"
 				rescue
 					append = " ("
 				end
 				begin
-					append += "/#{Date._parse(p.death)[:year]})"
+					append += "/#{p.year(:death)})"
 				rescue
 					append += "/)"
 				end
@@ -830,143 +836,23 @@ begin
 			# time taken dropped from 2 hours to 1 minute by sorting and doing a binary search
 			# i'm kinda bad-ass at times
 			#
-			desc "Danker ranks - loads latest danker data with snapshot tracking"
+			desc "Danker ranks - atomically loads latest data with source events"
 			task :danker, [:cond] => :environment do |task, arg|
-				begin
-					# Ensure we have the latest danker data
-					puts "Checking for latest danker data..."
-					system("rake danker:update")
-					
-					shadows = select(arg.cond)
-					exit if shadows.nil?
-					total = shadows.length
-					bar = progress_bar(total, FORCE)
-					
-					# Find latest danker directory
-					danker_dirs = Dir.glob(Rails.root.join('db', 'danker_*')).sort
-					if danker_dirs.empty?
-						STDERR.puts "ERROR: No danker data found. Run 'rake danker:update' first."
-						exit 1
-					end
-					
-					latest_dir = danker_dirs.last
-					danker_version = File.basename(latest_dir)
-					
-					# Look for CSV file first (optimized for binary search), then compressed format
-					csv_files = Dir.glob(File.join(latest_dir, '*.c.alphanum.csv'))
-					bz2_files = Dir.glob(File.join(latest_dir, '*.rank.bz2'))
-					
-					fn = nil
-					use_look_command = false
-					
-					if !csv_files.empty?
-						fn = csv_files.first
-						use_look_command = true
-						puts "Found CSV format (optimized): #{File.basename(fn)}"
-					elsif !bz2_files.empty?
-						fn = bz2_files.first
-						use_look_command = false
-						puts "Found compressed format: #{File.basename(fn)}"
-						puts "⚠ Note: For better performance, run 'rake danker:process_files' to generate CSV"
-					else
-						STDERR.puts "ERROR: No danker data file found in #{latest_dir}"
-						STDERR.puts "Looking for: *.c.alphanum.csv or *.rank.bz2"
-						exit 1
-					end
-					
-					puts "Using danker data: #{danker_version}"
-					puts "Data file: #{File.basename(fn)}"
-					puts "Lookup method: #{use_look_command ? 'Binary search (look command)' : 'Memory loading'}"
-					
-					shadows.each do |shade|
-						update_progress(bar)
-						ent = shade.entity_id
-						
-						# Get new danker score using optimized lookup
-						if use_look_command
-							# Use binary search with look command (fast!)
-							urk = `look Q#{ent}, #{fn}`
-							new_danker_score = urk.empty? ? 0.0 : urk.split(",")[1].to_f
-						else
-							# Fall back to memory lookup if no CSV available
-							danker_scores ||= {}
-							if danker_scores.empty?
-								puts "Loading compressed data into memory..."
-								IO.popen("bzcat #{fn}") do |io|
-									io.each_line do |line|
-										entity_id, score = line.strip.split("\t")
-										if entity_id&.start_with?('Q')
-											danker_scores[entity_id[1..-1].to_i] = score.to_f
-										end
-									end
-								end
-								puts "Loaded #{danker_scores.size} danker scores"
-							end
-							new_danker_score = danker_scores[ent] || 0.0
-						end
-						
-						q = "Q#{ent}".ljust(9)
-						old_danker_score = shade.danker || 0.0
-						puts "#{q} #{old_danker_score} → #{new_danker_score}" if bar.nil?
-						
-						# Get current values for snapshot
-						
-						# Only create snapshot if danker score changed
-						if old_danker_score != new_danker_score
-							# Collect all current input values for self-contained snapshot
-							input_values = {
-								stanford: shade.stanford || false,
-								oxford2: shade.oxford2 || false,
-								oxford3: shade.oxford3 || false,
-								cambridge: shade.cambridge || false,
-								internet: shade.internet || false,
-								routledge: shade.routledge || false,
-								britannica: shade.britannica || false,
-								linkcount: shade.linkcount || 0,
-								mention_count: shade.mention || 0,
-								old_danker_score: old_danker_score,
-								new_danker_score: new_danker_score
-							}
+				STDERR.puts "Conditional Danker selection is ignored; the complete Philosopher population is imported" if arg.cond
+				danker_dirs = Dir.glob(Rails.root.join('db', 'danker_*')).sort
+				raise "No Danker data found. Run 'bin/rake danker:update' first" if danker_dirs.empty?
 
-							# Get encyclopedia flags for storage
-							encyclopedia_flags = {
-								stanford: shade.stanford || false,
-								oxford2: shade.oxford2 || false,
-								oxford3: shade.oxford3 || false,
-								cambridge: shade.cambridge || false,
-								internet: shade.internet || false,
-								routledge: shade.routledge || false,
-								britannica: shade.britannica || false
-							}
-							
-							MetricSnapshot.create!(
-								philosopher_id: shade.id,
-								calculated_at: Time.current,
-								measure: shade.measure,
-								measure_pos: shade.measure_pos,
-								danker_version: danker_version,
-								danker_file: File.basename(fn),
-								algorithm_version: 'danker_import_v2_self_contained',
-								notes: "Danker score updated from #{old_danker_score} to #{new_danker_score}",
-								# Store input values in new self-contained fields
-								input_values: input_values.to_json,
-								danker_score: new_danker_score,
-								encyclopedia_flags: encyclopedia_flags.to_json,
-								linkcount: shade.linkcount || 0,
-								mention_count: shade.mention || 0
-							)
-							
-							# DO NOT update shadows.danker - preserve historical data
-							# shade.update(danker: new_danker_score)  # REMOVED FOR SELF-CONTAINED APPROACH
-						end
-					end
-					
-					puts "\n✓ Danker import completed using version #{danker_version}"
-					puts "✓ Self-contained snapshots created - historical data preserved"
-				rescue => e
-					STDERR.puts "ERROR: #{e.message}"
-					STDERR.puts e.backtrace.first(5)
-				end
+				latest_dir = danker_dirs.last
+				danker_version = File.basename(latest_dir)
+				file_path = Dir.glob(File.join(latest_dir, '*.c.alphanum.csv')).first
+				raise "No processed Danker CSV found in #{latest_dir}. Run 'bin/rake danker:process_files' first" unless file_path
+
+				import_identity = Canonicity::DankerImport.new(
+					file_path,
+					subject_type: 'Philosopher',
+					source_version: danker_version
+				).call
+				puts "✓ Danker import completed using #{danker_version} with import identity #{import_identity}"
 			end
 
 			# arg.cond
@@ -1120,7 +1006,7 @@ begin
 			desc "Analyze and report gender distribution of philosophers by time period"
 			task gender: :environment do
 				Shadow.none
-				phils = Philosopher.all.order(:birth_year).reverse
+				phils = Philosopher.all.joins(:attrs).order('philosopher_attrs.birth_year').reverse
 				bar = progress_bar(phils.size, FORCE)
 				m = []
 				f = []
@@ -1167,7 +1053,7 @@ begin
 					end
 					d = m[i].to_f
 					per = n/d*100
-					p[i] = sprintf("%02.2f%", per)
+					p[i] = sprintf("%02.2f%%", per)
 					i += 1
 				end
 				p m[0..max-1]
@@ -1454,52 +1340,11 @@ begin
 				end
 			end
 
-			desc "Calculate canonicity metrics for all philosophers using configurable weights and create audit snapshots"
+			desc "Capture Philosopher inputs and calculate a controlled canonicity run"
 			task metric: :environment do
-				Shadow.none
-				total = Philosopher.all.size
-				bar = progress_bar(total, FORCE)
-				
-				# Determine danker version info
-				danker_latest_dir = Rails.root.join('db', 'danker', 'latest')
-				danker_info = if danker_latest_dir.exist?
-					{
-						version: danker_latest_dir.readlink.to_s,
-						file: Dir.glob(danker_latest_dir.join('*.csv')).first&.then { |f| File.basename(f) }
-					}
-				else
-					{ version: 'unknown', file: 'unknown' }
-				end
-				
-				algorithm_version = '2.0'
-				calculation_time = Time.current
-				
-				puts "Starting canonicity metric calculation:"
-				puts "  Algorithm version: #{algorithm_version}"
-				puts "  Danker version: #{danker_info[:version]}"
-				puts "  Danker file: #{danker_info[:file]}"
-				puts "  Calculation time: #{calculation_time}"
-				puts ""
-
-				Philosopher.order(:entity_id).each do |phil|
-					update_progress(bar)
-					
-					# Calculate using the model method which handles snapshots
-					begin
-						measure = phil.calculate_canonicity_measure(
-							algorithm_version: algorithm_version,
-							danker_info: danker_info
-						)
-						
-						q = "Q#{phil.entity_id}".ljust(9)
-						puts "#{q} #{measure}" if bar.nil?
-					rescue => e
-						STDERR.puts "Error calculating measure for philosopher #{phil.id}: #{e.message}"
-					end
-				end
-				
-				puts "\n✓ Canonicity metric calculation completed"
-				puts "✓ Created #{total} snapshots for algorithm v#{algorithm_version}"
+				dataset = Canonicity::DatasetCapture.new(subject_type: 'Philosopher').call
+				run = Canonicity::MetricRunCalculator.new(dataset: dataset).call
+				puts "✓ Completed Philosopher run #{run.version} (ID #{run.id}) with #{run.metric_snapshots.count} snapshots"
 			end
 
 			def unpack_one(res)
