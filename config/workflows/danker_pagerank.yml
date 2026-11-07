@@ -1,0 +1,47 @@
+workflow:
+  name: danker_pagerank
+  display_name: Danker PageRank Pipeline
+  description: Download, process, and import Wikipedia PageRank data from danker project
+  category: data_population
+  steps:
+  - id: update
+    task: danker:update
+    type: rake
+    display_name: Check & Download Danker Data
+    description: Check latest danker data version and download if newer version available
+    safety: mutating
+    estimated_duration: 5-30 min (download)
+    prerequisites: []
+  - id: process_files
+    task: danker:process_files
+    type: rake
+    display_name: Process Danker Files
+    description: Process compressed danker files into sorted CSV format for faster
+      lookups
+    safety: mutating
+    estimated_duration: 5-15 min
+    prerequisites:
+    - update
+  - id: import
+    task: shadow:philosopher:danker
+    type: rake
+    display_name: Import PageRank to Philosophers
+    description: Load latest danker data into philosopher records with snapshot tracking
+    safety: mutating
+    estimated_duration: 1-5 min
+    prerequisites:
+    - process_files
+    postconditions:
+    - check: Philosopher.where('danker > 0').count > 0
+      description: Philosophers have danker scores
+    params:
+    - name: cond
+      type: string
+      description: Optional cond argument
+  auxiliary_steps:
+  - id: list
+    task: danker:list
+    type: rake
+    display_name: List Danker Versions
+    description: List available danker data versions on disk
+    safety: read_only

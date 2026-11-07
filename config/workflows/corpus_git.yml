@@ -1,0 +1,111 @@
+workflow:
+  name: corpus_git
+  display_name: Corpus Git Version Control
+  description: Git-based version control operations for managing philosophical text
+    corpus files
+  category: corpus_management
+  steps:
+  - id: init
+    task: corpus:GIT_INIT
+    type: rake
+    display_name: Initialise Corpus Repo
+    description: Initialise a new Git repository for tracking corpus files
+    safety: mutating
+    estimated_duration: "< 1 min"
+    prerequisites: []
+  - id: add_untracked
+    task: corpus:GIT_TRACK
+    type: rake
+    display_name: Track Untracked Files
+    description: Add untracked corpus files to Git tracking
+    safety: mutating
+    estimated_duration: "< 1 min"
+    prerequisites:
+    - init
+  auxiliary_steps:
+  - id: status
+    task: corpus:GIT_STATUS
+    type: rake
+    display_name: Corpus Status
+    description: Show Git version control status for corpus files
+    safety: read_only
+  - id: status_summary
+    task: corpus:GIT_STAT1
+    type: rake
+    display_name: Status Summary
+    description: Total files, those missing locally, which are irregular
+    safety: read_only
+  - id: file_details
+    task: corpus:GIT_FILES
+    type: rake
+    display_name: File Details
+    description: Show detailed information about corpus files
+    safety: read_only
+  - id: tracked_info
+    task: corpus:GIT_STAT2
+    type: rake
+    display_name: Tracked File Info
+    description: Info about tracked local corpus files
+    safety: read_only
+  - id: changes
+    task: corpus:GIT_CHANGED
+    type: rake
+    display_name: Show Changes
+    description: Show changed corpus files
+    safety: read_only
+  - id: diff
+    task: corpus:GIT_DIFF
+    type: rake
+    display_name: Show Diff
+    description: Show diff of corpus file changes
+    safety: read_only
+    params:
+    - name: file
+      type: string
+      description: Optional file argument
+  - id: log
+    task: corpus:GIT_LOG
+    type: rake
+    display_name: View Log
+    description: Show Git commit log for corpus repository
+    safety: read_only
+  - id: rev_count
+    task: corpus:GIT_REV
+    type: rake
+    display_name: Revision Count
+    description: Number of revisions, including on-disc changes
+    safety: read_only
+  - id: config
+    task: corpus:GIT_CONFIG
+    type: rake
+    display_name: Show Config
+    description: Show Git configuration for corpus repository
+    safety: read_only
+  - id: help
+    task: corpus:GIT_HELP
+    type: rake
+    display_name: Git Help
+    description: Show help for corpus Git version control commands
+    safety: read_only
+  - id: reset
+    task: corpus:GIT_RESET
+    type: rake
+    display_name: Reset Changes
+    description: Reset uncommitted changes in corpus files
+    safety: destructive
+    params:
+    - name: file
+      type: string
+      description: Optional file argument
+  - id: nuke
+    task: corpus:GIT_NUKE
+    type: rake
+    display_name: Nuke Repository
+    description: Destroy the corpus Git repository entirely
+    safety: destructive
+  - id: init_bare
+    task: corpus:GIT_BARE
+    type: rake
+    display_name: Bare Initialise
+    description: Create a bare Git repository for corpus
+    safety: mutating

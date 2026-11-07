@@ -1,0 +1,6 @@
+#!/usr/bin/env ruby
+require_relative '../config/suppress_warnings'
+ENV['RAILS_ENV'] ||= 'development'
+require_relative '../config/environment'
+require_relative '../lib/corpus_cli/cli'
+CorpusCli::CLI.start(ARGV)

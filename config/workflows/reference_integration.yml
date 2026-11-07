@@ -1,0 +1,148 @@
+workflow:
+  name: reference_integration
+  display_name: Reference Work Integration Pipeline
+  description: Leverage reference work indices and metadata, then import philosopher
+    coverage flags
+  category: data_population
+  steps:
+  - id: snarf_sep
+    task: snarf:sep
+    type: rake
+    display_name: Retrieve Stanford Encyclopedia
+    description: Retrieve index and metadata from Stanford Encyclopedia of Philosophy
+      index entries
+    safety: mutating
+    estimated_duration: 5-10 min
+    prerequisites: []
+  - id: snarf_iep
+    task: snarf:iep
+    type: rake
+    display_name: Retrieve Internet Encyclopedia
+    description: Retrieve index and metadata from Internet Encyclopedia of Philosophy
+      index entries
+    safety: mutating
+    estimated_duration: 5-10 min
+    prerequisites: []
+  - id: snarf_rep
+    task: snarf:rep
+    type: rake
+    display_name: Retrieve Routledge Encyclopedia
+    description: Retrieve index and metadata from Routledge Encyclopedia of Philosophy
+      entries
+    safety: mutating
+    estimated_duration: 10-20 min
+    prerequisites: []
+  - id: snarf_odp_2nd
+    task: snarf:odp_2nd
+    type: rake
+    display_name: Retrieve Oxford Dictionary (2nd ed.)
+    description: Retrieve index and metadata from Oxford Dictionary of Philosophy,
+      2nd edition entries
+    safety: mutating
+    estimated_duration: 10-20 min
+    prerequisites: []
+  - id: snarf_odp_3rd
+    task: snarf:odp_3rd
+    type: rake
+    display_name: Retrieve Oxford Dictionary (3rd ed.)
+    description: Retrieve index and metadata from Oxford Dictionary of Philosophy,
+      3rd edition entries
+    safety: mutating
+    estimated_duration: 10-20 min
+    prerequisites: []
+  - id: snarf_runes
+    task: snarf:runes
+    type: rake
+    display_name: Retrieve Runes Dictionary
+    description: Retrieve index and metadata from Philosophy Dictionary, ed. Runes
+      entries
+    safety: mutating
+    estimated_duration: 5-10 min
+    prerequisites: []
+  - id: snarf_borchert
+    task: snarf:borchert
+    type: rake
+    display_name: Retrieve Macmillan Reference
+    description: Retrieve index and metadata from Macmillan Reference (Borchert) via
+      encyclopedia.com
+    safety: mutating
+    estimated_duration: 30-60 min
+    prerequisites: []
+  - id: snarf_dic_phil
+    task: snarf:dic_phil
+    type: rake
+    display_name: Retrieve Philosophy Pages
+    description: Retrieve index and metadata from Dictionary of Philosophical Terms
+      and Names from philosophypages.com
+    safety: mutating
+    estimated_duration: 5-10 min
+    prerequisites: []
+  - id: snarf_inpho
+    task: snarf:inpho
+    type: rake
+    display_name: Retrieve InPhO Ontology
+    description: Retrieve index and metadata from Indiana Philosophy Ontology (InPhO)
+      entries and match to Wikidata
+    safety: mutating
+    estimated_duration: 5-15 min
+    prerequisites: []
+  - id: import_flags
+    task: import/sauce.rb
+    type: rails_runner
+    display_name: Import Reference Flags
+    description: Run import/sauce.rb for each encyclopedia source to set boolean flags
+      on philosopher records. Requires scraped *_tweak.txt files in import/
+    safety: mutating
+    estimated_duration: 2-10 min per source
+    prerequisites:
+    - snarf_sep
+    - snarf_iep
+    - snarf_rep
+    - snarf_odp_2nd
+    - snarf_odp_3rd
+    - snarf_runes
+    - snarf_borchert
+    - snarf_dic_phil
+    params:
+    - name: source
+      type: enum
+      default: stanford
+      description: Which reference source to process
+      options:
+      - stanford
+      - cambridge
+      - internet
+      - routledge
+      - ox_2nd
+      - ox_3rd
+      - borchert
+      - runes
+      - kemerling
+  - id: recalculate
+    task: shadow:philosopher:metric
+    type: rake
+    display_name: Recalculate Canonicity
+    description: Recalculate canonicity metrics incorporating new reference work data
+    safety: mutating
+    estimated_duration: 2-5 min
+    prerequisites:
+    - import_flags
+  auxiliary_steps:
+  - id: snarf_dic_phil_too
+    task: snarf:dic_phil_too
+    type: rake
+    display_name: Additional Philosophy Pages Processing
+    description: Additional processing for Dictionary of Philosophical Terms entries
+    safety: mutating
+  - id: ref_load
+    task: reference:load
+    type: rake
+    display_name: Load Reference Data
+    safety: mutating
+    params:
+    - name: file
+      type: string
+      description: Optional file argument
+    - name: work
+      type: string
+      description: Optional work argument

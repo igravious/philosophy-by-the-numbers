@@ -1,0 +1,87 @@
+workflow:
+  name: dictionary_cleanup
+  display_name: Dictionary Cleanup Pipeline
+  description: Clean and normalise dictionary entries through a series of text transformations
+  category: text_analysis
+  steps:
+  - id: grok
+    task: dictionary:clean:grok
+    type: rake
+    display_name: Parse Validation
+    description: Verify ability to accurately parse every line of the input file
+    safety: read_only
+    estimated_duration: "< 1 min"
+    prerequisites: []
+  - id: proper
+    task: dictionary:clean:proper
+    type: rake
+    display_name: Name Normalisation
+    description: 'Normalise proper names: ''John Smith'' -> ''Smith, John | John Smith'''
+    safety: mutating
+    estimated_duration: "< 1 min"
+    prerequisites:
+    - grok
+  - id: brackets
+    task: dictionary:clean:brackets
+    type: rake
+    display_name: Bracket Extraction
+    description: 'Extract bracketed terms: ''adiaphora [adiaphora]'' -> ''adiaphora
+      | adiaphora [adiaphora]'''
+    safety: mutating
+    estimated_duration: "< 1 min"
+    prerequisites:
+    - grok
+  - id: strip
+    task: dictionary:clean:strip
+    type: rake
+    display_name: Strip Extras
+    description: 'Strip bracketed content: ''adiaphora | adiaphora [adiaphora]'' ->
+      ''adiaphora'''
+    safety: mutating
+    estimated_duration: "< 1 min"
+    prerequisites:
+    - brackets
+  - id: parens
+    task: dictionary:clean:parens
+    type: rake
+    display_name: Remove Parenthetical
+    description: 'Remove parenthetical abbreviations: ''Absorption (Abs.)'' -> ''Absorption'''
+    safety: mutating
+    estimated_duration: "< 1 min"
+    prerequisites:
+    - grok
+  - id: align_slash
+    task: dictionary:clean:align_slash
+    type: rake
+    display_name: Align Slashes
+    description: 'Normalise slash spacing: ''continence/incontinence'' -> ''continence
+      / incontinence'''
+    safety: mutating
+    estimated_duration: "< 1 min"
+    prerequisites:
+    - grok
+  - id: remove_slash
+    task: dictionary:clean:remove_slash
+    type: rake
+    display_name: Remove Slash Pairs
+    description: 'Keep first of slash pairs: ''continence / incontinence'' -> ''continence'''
+    safety: mutating
+    estimated_duration: "< 1 min"
+    prerequisites:
+    - align_slash
+  - id: normalise
+    task: units:normalise
+    type: rake
+    display_name: Normalise Units
+    description: Normalise a single, multiple, or all dictionary units
+    safety: mutating
+    estimated_duration: 1-5 min
+    prerequisites:
+    - proper
+    - strip
+    - parens
+    - remove_slash
+    params:
+    - name: ids
+      type: string
+      description: Optional ids argument

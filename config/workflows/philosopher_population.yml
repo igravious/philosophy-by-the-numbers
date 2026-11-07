@@ -1,0 +1,180 @@
+workflow:
+  name: philosopher_population
+  display_name: Philosopher Population Pipeline
+  description: Full enrichment pipeline from Wikidata SPARQL discovery through metric
+    calculation and ordering
+  category: data_population
+  steps:
+  - id: populate
+    task: shadow:philosopher:populate
+    type: rake
+    display_name: Populate Philosophers
+    description: Discover philosophers via Wikidata SPARQL query and create Shadow
+      records
+    safety: mutating
+    params:
+    - name: force
+      type: boolean
+      default: false
+      description: Actually create records (false = dry run)
+    estimated_duration: 5-15 min
+    prerequisites: []
+    postconditions:
+    - check: Philosopher.count > 0
+      description: Philosopher records exist
+  - id: additional
+    task: shadow:philosopher:additional
+    type: rake
+    display_name: Find Additional Philosophers
+    description: Identify philosophers in Wikidata results not yet in local database
+    safety: read_only
+    estimated_duration: 2-5 min
+    prerequisites:
+    - populate
+  - id: flesh
+    task: shadow:philosopher:flesh
+    type: rake
+    display_name: Enrich Philosopher Data
+    description: Fetch additional Wikidata properties (birth, death, gender, etc.)
+      for each philosopher
+    safety: mutating
+    estimated_duration: 10-30 min
+    prerequisites:
+    - populate
+    params:
+    - name: cond
+      type: string
+      description: Optional cond argument
+  - id: phil_labels
+    task: shadow:philosopher:phil_labels
+    type: rake
+    display_name: Populate Name Labels
+    description: Fetch multi-language name labels from Wikidata for all philosophers
+    safety: mutating
+    estimated_duration: 5-15 min
+    prerequisites:
+    - populate
+    params:
+    - name: cond
+      type: string
+      description: Optional cond argument
+  - id: ref_flags
+    task: import/sauce.rb
+    type: rails_runner
+    display_name: Set Reference Work Flags
+    description: Run import/sauce.rb for each encyclopedia source to set boolean flags
+      on philosopher records
+    safety: mutating
+    estimated_duration: 2-10 min per source
+    prerequisites:
+    - phil_labels
+    params:
+    - name: source
+      type: enum
+      default: stanford
+      description: Which reference source to process
+      options:
+      - stanford
+      - cambridge
+      - internet
+      - routledge
+      - ox_2nd
+      - ox_3rd
+      - borchert
+      - runes
+      - kemerling
+  - id: danker
+    task: shadow:philosopher:danker
+    type: rake
+    display_name: Import Danker PageRank
+    description: Load latest danker PageRank scores with snapshot tracking
+    safety: mutating
+    estimated_duration: 1-5 min
+    prerequisites:
+    - populate
+    params:
+    - name: cond
+      type: string
+      description: Optional cond argument
+  - id: mentions
+    task: shadow:philosopher:mentions
+    type: rake
+    display_name: Count Text Mentions
+    description: Count mentions of philosophers in philosophical texts, update philosophy/philosopher
+      scores
+    safety: mutating
+    estimated_duration: 5-15 min
+    prerequisites:
+    - populate
+    params:
+    - name: cond
+      type: string
+      description: Optional cond argument
+  - id: metric
+    task: shadow:philosopher:metric
+    type: rake
+    display_name: Calculate Canonicity Metrics
+    description: Calculate canonicity metrics using configurable weights and create
+      audit snapshots
+    safety: mutating
+    estimated_duration: 2-5 min
+    prerequisites:
+    - flesh
+    - danker
+    - mentions
+    - ref_flags
+    postconditions:
+    - check: MetricSnapshot.count > 0
+      description: Metric snapshots recorded
+  - id: order
+    task: shadow:philosopher:new_order
+    type: rake
+    display_name: Order Philosophers
+    description: Set ordering positions based on calculated metrics
+    safety: mutating
+    estimated_duration: 1-2 min
+    prerequisites:
+    - metric
+  auxiliary_steps:
+  - id: count
+    task: shadow:philosopher:count
+    type: rake
+    display_name: Count Philosophers
+    description: Count philosophers matching optional SQL-like condition
+    safety: read_only
+    params:
+    - name: cond
+      type: string
+      description: Optional cond argument
+  - id: capacities
+    task: shadow:philosopher:capacities
+    type: rake
+    display_name: Show Capacities
+    description: Show philosophers grouped by philosophical capacity/role
+    safety: read_only
+    params:
+    - name: ent
+      type: string
+      description: Optional ent argument
+  - id: gender_analysis
+    task: shadow:philosopher:gender
+    type: rake
+    display_name: Gender Analysis
+    description: Analyse and report gender distribution by time period
+    safety: read_only
+  - id: help
+    task: shadow:philosopher:help
+    type: rake
+    display_name: Print Help
+    description: Show help for philosopher tasks
+    safety: read_only
+  - id: explore1
+    task: shadow:philosopher:explore1
+    type: rake
+    display_name: SPARQL Exploration (length)
+    safety: read_only
+  - id: explore2
+    task: shadow:philosopher:explore2
+    type: rake
+    display_name: SPARQL Exploration (show)
+    safety: read_only

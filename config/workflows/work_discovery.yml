@@ -1,0 +1,143 @@
+workflow:
+  name: work_discovery
+  display_name: Work Discovery & Import Pipeline
+  description: Discover philosophical works from Wikidata and connect them to local
+    text files
+  category: data_population
+  steps:
+  - id: show
+    task: shadow:work:show
+    type: rake
+    display_name: Query Wikidata for Works
+    description: Query Wikidata for philosophical works (authored_by_philosophers
+      or of_philosophical_type)
+    safety: read_only
+    estimated_duration: 2-5 min
+    prerequisites: []
+    params:
+    - name: cond
+      type: enum
+      default: authored_by_philosophers
+      description: Type of Wikidata query
+      options:
+      - authored_by_philosophers
+      - of_philosophical_type
+    - name: arbitrary
+      type: string
+      description: Optional arbitrary argument
+  - id: populate
+    task: shadow:work:populate
+    type: rake
+    display_name: Populate Works
+    description: Create Work records using the selected Wikidata discovery strategy
+    safety: mutating
+    estimated_duration: 5-15 min
+    prerequisites:
+    - show
+    params:
+    - name: cond
+      type: enum
+      default: works1
+      description: Work discovery strategy
+      options:
+      - works1
+      - works2
+  - id: work_labels
+    task: shadow:work:work_labels
+    type: rake
+    display_name: Fetch Work Labels
+    description: Fetch multi-language labels from Wikidata for work records
+    safety: mutating
+    estimated_duration: 5-10 min
+    prerequisites:
+    - populate
+    params:
+    - name: cond
+      type: string
+      description: Optional cond argument
+    - name: execute
+      type: string
+      description: Optional execute argument
+  - id: connect
+    task: shadow:work:connect
+    type: rake
+    display_name: Connect Works to Texts
+    description: Link philosophical works to available text files via name matching
+      and author relationships
+    safety: mutating
+    estimated_duration: 2-5 min
+    prerequisites:
+    - populate
+  - id: describe
+    task: shadow:work:describe
+    type: rake
+    display_name: Analyse Work Properties
+    description: Analyse Wikidata properties used across philosophical works
+    safety: read_only
+    estimated_duration: 1-3 min
+    prerequisites:
+    - populate
+    params:
+    - name: the_count
+      type: string
+      description: Optional the count argument
+  - id: signal1
+    task: shadow:work:signal1
+    type: rake
+    display_name: Fetch Britannica/PhilPapers Signal
+    description: Get Britannica and PhilPapers signal data for works
+    safety: mutating
+    estimated_duration: 5-10 min
+    prerequisites:
+    - populate
+  - id: signal3
+    task: shadow:work:signal3
+    type: rake
+    display_name: Set Genre Flags
+    description: Set genre classification on work records
+    safety: mutating
+    estimated_duration: 1-3 min
+    prerequisites:
+    - populate
+  - id: measure
+    task: shadow:work:measure
+    type: rake
+    display_name: Calculate Work Measures
+    description: Calculate importance measures for works
+    safety: mutating
+    estimated_duration: 2-5 min
+    prerequisites:
+    - signal1
+    - signal3
+  - id: order
+    task: shadow:work:order2
+    type: rake
+    display_name: Order Works
+    description: Set ordering positions based on calculated measures
+    safety: mutating
+    estimated_duration: 1-2 min
+    prerequisites:
+    - measure
+  auxiliary_steps:
+  - id: by_viaf
+    task: shadow:work:by_viaf
+    type: rake
+    display_name: Populate Works via VIAF
+    description: Populate Work records using philosopher VIAF data
+    safety: mutating
+    params:
+    - name: viaf
+      type: string
+      description: Optional viaf argument
+  - id: expunge
+    task: shadow:work:expunge
+    type: rake
+    display_name: Expunge Unwanted Works
+    description: Remove works definitively not wanted
+    safety: destructive
+  - id: mentions
+    task: shadow:work:signal2
+    type: rake
+    display_name: Count Work Mentions
+    description: Count mentions of works in philosophical texts
+    safety: mutating

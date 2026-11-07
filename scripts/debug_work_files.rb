@@ -10,7 +10,7 @@ puts "=" * 60
 Shadow.none
 
 # Get top 3 canonical works
-works = Work.where.not(obsolete: true)
+works = Work.joins(:attrs).where.not(work_attrs: {obsolete: true})
             .order(measure: :desc, linkcount: :desc)
             .limit(3)
 
@@ -60,7 +60,7 @@ end
 puts "\n" + "=" * 60
 puts "📊 SUMMARY STATISTICS"
 puts "Total Works: #{Work.count}"
-puts "Non-obsolete Works: #{Work.where.not(obsolete: true).count}"
+puts "Non-obsolete Works: #{Work.joins(:attrs).where.not(work_attrs: {obsolete: true}).count}"
 puts "Total Philosophers: #{Philosopher.count}"
 puts "Total Authors: #{Author.count}"
 puts "Total Texts: #{Text.count}"

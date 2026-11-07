@@ -1,0 +1,117 @@
+workflow:
+  name: utilities
+  display_name: Utilities & Reports
+  description: Miscellaneous utility tasks for names, knowledge, sources, wikidata,
+    and asset management
+  category: utilities
+  steps: []
+  auxiliary_steps:
+  - id: names_demo
+    task: names:demo
+    type: rake
+    display_name: Names Demo
+    description: Demonstrate name matching with one argument
+    safety: read_only
+    params:
+    - name: type
+      type: string
+      description: Optional type argument
+  - id: names_languages
+    task: names:languages
+    type: rake
+    display_name: Language Report
+    description: Report how many languages are represented in the names table
+    safety: read_only
+  - id: knowledge_google
+    task: knowledge:google
+    type: rake
+    display_name: Google Knowledge Graph
+    description: Count how many philosophers the Google Knowledge Graph has
+    safety: read_only
+  - id: sources_report
+    task: sources:report
+    type: rake
+    display_name: Sources Report
+    description: Report on different text sources in the corpus
+    safety: read_only
+  - id: sources_clear
+    task: sources:clear
+    type: rake
+    display_name: Clear Source Cache
+    description: Clear cached files by type (pdf, text, xml, html) for Fyle records
+    safety: destructive
+    params:
+    - name: type
+      type: string
+      description: Optional type argument
+  - id: downloaded_report
+    task: downloaded:report
+    type: rake
+    display_name: Downloaded Texts Report
+    description: Report how many downloaded philosophical texts have cached content
+      vs. uncached
+    safety: read_only
+  - id: downloaded_uncached
+    task: downloaded:uncached
+    type: rake
+    display_name: List Uncached Downloads
+    description: List downloaded philosophical texts that have no cached content
+    safety: read_only
+  - id: downloaded_clear
+    task: downloaded:clear
+    type: rake
+    display_name: Clear Download Cache
+    description: Clear cached content for downloaded philosophical texts by type
+    safety: destructive
+    params:
+    - name: type
+      type: string
+      description: Optional type argument
+  - id: wikidata_recurse
+    task: wikidata:recurse
+    type: rake
+    display_name: Wikidata Recursive Grep
+    description: Recursively grep a term in Wikidata data files
+    safety: read_only
+    params:
+    - name: term
+      type: string
+      description: Optional term argument
+  - id: wikidata_grepify
+    task: wikidata:grepify
+    type: rake
+    display_name: Wikidata Multi-Grep
+    description: Recursively grep multiple terms in Wikidata data files
+    safety: read_only
+  - id: wikidata_wobble
+    task: wikidata:wobble
+    type: rake
+    display_name: Wikidata File Processing
+    description: Utility task for Wikidata file processing
+    safety: read_only
+  - id: resolve_paths
+    task: resolve:paths
+    type: rake
+    display_name: Resolve Asset Paths
+    description: Fix relative path issues in bower component CSS files
+    safety: mutating
+    params:
+    - name: relative_directory
+      type: string
+      description: Optional relative directory argument
+  - id: property_roles
+    task: shadow:property:roles
+    type: rake
+    display_name: SPARQL Property Roles
+    description: SPARQL property investigations — check philosopher roles
+    safety: read_only
+    params:
+    - name: cond
+      type: string
+      description: Optional cond argument
+  - id: reference_pagerank
+    task: shadow:reference:pagerank
+    type: rake
+    display_name: Reference Work PageRank
+    description: SPARQL investigations for reference work pageranking
+    safety: read_only

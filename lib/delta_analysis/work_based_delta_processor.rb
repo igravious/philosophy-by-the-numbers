@@ -96,7 +96,6 @@ class WorkBasedDeltaProcessor < DeltaOfDeltaProcessor
     puts "\n📊 WORK SELECTION SUMMARY:"
     puts "Strategy: #{@work_selection_strategy}"
     puts "Total works in corpus: #{Work.count}"
-    puts "Works with texts: #{Work.joins(:text).count}"
     puts "Works selected: #{@work_metadata.length}"
     puts "Files processed: #{@works.length}"
     
@@ -161,7 +160,7 @@ class WorkBasedDeltaProcessor < DeltaOfDeltaProcessor
     # CRITICAL: Order from HIGHEST mixed score to LOWEST (most to least significant)
     # Normalize measure and linkcount, then combine
     Work.joins(:attrs).where.not(work_attrs: {obsolete: true})
-        .select('works.*, (measure * 0.6 + (linkcount::float / (SELECT MAX(linkcount) FROM shadows WHERE type = \'Work\')) * 0.4) as mixed_score')
+        .select('shadows.*, (measure * 0.6 + (CAST(linkcount AS FLOAT) / NULLIF((SELECT MAX(linkcount) FROM shadows WHERE type = \'Work\'), 0)) * 0.4) as mixed_score')
         .order('mixed_score DESC, id ASC')
         .limit(@max_works)
   end
@@ -176,29 +175,6 @@ class WorkBasedDeltaProcessor < DeltaOfDeltaProcessor
     Work.joins(:attrs).where.not(work_attrs: {obsolete: true})
         .order(created_at: :desc)
         .limit(@max_works)
-  end
-  
-  def extract_file_paths(works)
-    works.map do |work|
-      file_path = work.text&.fyle&.local_file
-      if file_path && !file_path.start_with?('/')
-        # Convert relative path to absolute path
-        File.join(Rails.root, file_path)
-      else
-        file_path
-      end
-    end
-  end
-  
-  def work_philosophers(work)
-    if work.respond_to?(:creators)
-      work.creators.joins(:names)
-          .where(names: { lang: 'en' })
-          .pluck('names.label')
-          .uniq
-    else
-      []
-    end
   end
   
   # Class methods for easy access to common configurations

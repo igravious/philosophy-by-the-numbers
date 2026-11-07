@@ -37,6 +37,8 @@ class DeltaOfDeltaProcessor
   # Main processing method - runs the complete delta of delta algorithm
   # CRITICAL: Works must be ordered from MOST significant to LEAST significant
   def process
+    raise ArgumentError, "At least one work is required" if works.empty?
+
     puts "Starting Delta of Delta processing with #{works.length} works"
     puts "Threshold: #{threshold}"
     puts "Output directory: #{output_dir}"
@@ -46,7 +48,7 @@ class DeltaOfDeltaProcessor
     result_a = process_cumulative_works([works[0]], 'A')
     @results_history << result_a
     
-    return if works.length < 2
+    return generate_final_report if works.length < 2
     
     # Process remaining works iteratively
     (1...works.length).each do |i|
@@ -58,6 +60,7 @@ class DeltaOfDeltaProcessor
       # Run Saffron on cumulative set
       result_current = process_cumulative_works(cumulative_works, iteration_letter)
       @results_history << result_current
+      @current_iteration = i
       
       # Calculate delta between previous and current results
       delta = calculate_delta(@results_history[-2], result_current)
@@ -77,7 +80,6 @@ class DeltaOfDeltaProcessor
         end
       end
       
-      @current_iteration = i
     end
     
     generate_final_report

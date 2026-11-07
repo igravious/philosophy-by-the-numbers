@@ -3,7 +3,7 @@
 namespace :delta_analysis do
   desc "Run Delta of Delta analysis on philosophical works"
   task :process, [:works_pattern, :output_dir, :threshold, :diff_strategy] => :environment do |task, args|
-    require_relative '../lib/delta_analysis/delta_of_delta_processor'
+    require_relative '../delta_analysis/delta_of_delta_processor'
     
     # Default arguments
     works_pattern = args[:works_pattern] || '_txt/**/*.txt'
@@ -63,7 +63,7 @@ namespace :delta_analysis do
   
   desc "Test Saffron installation"
   task :test_saffron do
-    require_relative '../lib/delta_analysis/delta_of_delta_processor'
+    require_relative '../delta_analysis/delta_of_delta_processor'
     
     puts "Testing Saffron installation..."
     puts "Saffron path: #{DeltaOfDeltaProcessor::SAFFRON_PATH}"
@@ -243,12 +243,12 @@ namespace :delta_analysis do
     case strategy
     when :canonicity
       # Get all non-obsolete works ordered by significance
-      works = Work.where.not(obsolete: true)
+      works = Work.joins(:attrs).where.not(work_attrs: {obsolete: true})
                  .order(measure: :desc, linkcount: :desc)
                  .limit(limit)
     when :linkcount
       # Get all non-obsolete works ordered by linkcount
-      works = Work.where.not(obsolete: true)
+      works = Work.joins(:attrs).where.not(work_attrs: {obsolete: true})
                  .order(linkcount: :desc)
                  .limit(limit)
     else
@@ -292,7 +292,7 @@ namespace :delta_analysis do
     end
     
     puts "=" * 80
-    puts "Total works: #{Work.where.not(obsolete: true).count}"
+    puts "Total works: #{Work.joins(:attrs).where.not(work_attrs: {obsolete: true}).count}"
     puts "Note: File availability is determined through Work → Philosopher → Author → Text → Fyle relationships"
   end
 end

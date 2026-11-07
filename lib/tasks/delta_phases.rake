@@ -338,7 +338,7 @@ Diff strategy: #{diff_strategy}
     when :term_weight
       CustomDiffStrategies::TermWeightStrategy
     when :jaccard
-      CustomDiffStrategies::JaccardSimilarityStrategy  
+      CustomDiffStrategies::SemanticSimilarityStrategy
     when :semantic
       CustomDiffStrategies::SemanticSimilarityStrategy
     when :composite
@@ -426,6 +426,11 @@ Next: rake delta_phases:delta_of_deltas[#{base_dir}]
   task :delta_of_deltas, [:base_dir, :convergence_threshold] => :environment do |t, args|
     base_dir = args[:base_dir] || Dir.glob("delta_of_deltas/delta_phases_*").sort.last
     threshold = (args[:convergence_threshold] || 0.01).to_f
+
+    unless base_dir && Dir.exist?(base_dir)
+      puts "❌ Base directory not found: #{base_dir}"
+      exit 1
+    end
     
     deltas_dir = File.join(base_dir, "deltas")
     summary_file = File.join(deltas_dir, "delta_summary.json")
@@ -490,7 +495,7 @@ Convergence threshold: #{threshold}
     
     puts
     if converged_at
-      corpus_at_convergence = converged_at + 1  # +1 because delta_of_deltas is 0-indexed but corpus is 1-indexed
+      corpus_at_convergence = converged_at + 2
       puts "🎯 CONVERGENCE DETECTED at ΔΔ#{sprintf('%04d', converged_at)} (corpus #{sprintf('%04d', corpus_at_convergence)})"
       puts "   Delta of delta: #{delta_of_deltas[converged_at-1].round(6)} < threshold #{threshold}"
       puts "   This suggests term extraction stabilized after processing #{corpus_at_convergence} works"
@@ -509,7 +514,7 @@ Convergence threshold: #{threshold}
       delta_of_deltas: delta_of_deltas,
       converged: !converged_at.nil?,
       converged_at_index: converged_at,
-      converged_at_corpus: converged_at ? converged_at + 1 : nil,
+      converged_at_corpus: converged_at ? converged_at + 2 : nil,
       analysis: {
         total_works_processed: deltas.count + 1,
         total_delta_comparisons: deltas.count,

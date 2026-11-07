@@ -23,7 +23,7 @@ def main
   puts "✅ Saffron found at: #{saffron_path}"
   
   # Create test works directory
-  test_dir = File.join(__dir__, '..', '..', 'tmp', 'delta_test')
+  test_dir = File.join(__dir__, '..', 'tmp', 'delta_test')
   works_dir = File.join(test_dir, 'test_works')
   output_dir = File.join(test_dir, 'output')
   

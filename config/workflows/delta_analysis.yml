@@ -1,0 +1,144 @@
+workflow:
+  name: delta_analysis
+  display_name: Delta Convergence Analysis
+  description: Three-phase pipeline to detect convergence patterns in philosophical
+    texts via delta-of-deltas analysis
+  category: text_analysis
+  steps:
+  - id: show_works
+    task: delta_analysis:show_available_works
+    type: rake
+    display_name: Show Available Works
+    description: Show available works for delta analysis with statistics and canonicity
+      scores
+    safety: read_only
+    estimated_duration: "< 1 min"
+    prerequisites: []
+    params:
+    - name: strategy
+      type: string
+      description: Optional strategy argument
+    - name: limit
+      type: string
+      description: Optional limit argument
+  - id: saffron_runs
+    task: delta_phases:saffron_runs
+    type: rake
+    display_name: 'Phase 1: Saffron Corpus Runs'
+    description: Generate progressively larger corpus snapshots for Saffron-OS analysis
+    safety: mutating
+    estimated_duration: 10-60 min
+    prerequisites:
+    - show_works
+    params:
+    - name: max_works
+      type: string
+      default: '10'
+      description: Maximum number of works to process
+    - name: min_canonicity
+      type: string
+      default: '0.5'
+      description: Minimum canonicity score threshold
+    - name: base_dir
+      type: string
+      description: Base directory for output (auto-generated if omitted)
+  - id: calculate_deltas
+    task: delta_phases:calculate_deltas
+    type: rake
+    display_name: 'Phase 2: Calculate Deltas'
+    description: Compare adjacent Saffron results to compute deltas using configurable
+      diff strategy
+    safety: mutating
+    estimated_duration: 2-10 min
+    prerequisites:
+    - saffron_runs
+    params:
+    - name: base_dir
+      type: string
+      description: Base directory from Phase 1
+    - name: diff_strategy
+      type: enum
+      default: euclidean
+      description: Diff calculation strategy
+      options:
+      - euclidean
+      - cosine
+      - manhattan
+  - id: delta_of_deltas
+    task: delta_phases:delta_of_deltas
+    type: rake
+    display_name: 'Phase 3: Delta of Deltas'
+    description: Analyse how deltas change over corpus size to detect convergence
+    safety: mutating
+    estimated_duration: 1-5 min
+    prerequisites:
+    - calculate_deltas
+    params:
+    - name: base_dir
+      type: string
+      description: Base directory from Phase 1
+    - name: convergence_threshold
+      type: string
+      default: '0.1'
+      description: Convergence detection threshold
+  auxiliary_steps:
+  - id: process_works
+    task: delta_analysis:process_works
+    type: rake
+    display_name: Quick Work-Based Analysis
+    description: Run all-in-one delta analysis using works from Shadow table
+    safety: mutating
+    params:
+    - name: strategy
+      type: string
+      description: Optional strategy argument
+    - name: output_dir
+      type: string
+      description: Optional output dir argument
+    - name: threshold
+      type: string
+      description: Optional threshold argument
+    - name: diff_strategy
+      type: string
+      description: Optional diff strategy argument
+    - name: max_works
+      type: string
+      description: Optional max works argument
+    - name: min_canonicity
+      type: string
+      description: Optional min canonicity argument
+  - id: process_canonical
+    task: delta_analysis:process_canonical_works
+    type: rake
+    display_name: Quick Canonical Analysis
+    description: Quick work-based delta analysis limited to high canonicity works
+    safety: mutating
+    params:
+    - name: max_works
+      type: string
+      description: Optional max works argument
+    - name: min_canonicity
+      type: string
+      description: Optional min canonicity argument
+  - id: list_works
+    task: delta_analysis:list_works
+    type: rake
+    display_name: List Works for Analysis
+    description: List available works that can be used for delta analysis
+    safety: read_only
+    params:
+    - name: pattern
+      type: string
+      description: Optional pattern argument
+  - id: test_saffron
+    task: delta_analysis:test_saffron
+    type: rake
+    display_name: Test Saffron Installation
+    description: Verify that Saffron-OS is properly installed and accessible
+    safety: read_only
+  - id: count_works
+    task: delta_phases:count_works
+    type: rake
+    display_name: Count Works with Files
+    description: Count total works with accessible text files
+    safety: read_only

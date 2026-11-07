@@ -1,0 +1,85 @@
+workflow:
+  name: corpus_elasticsearch
+  display_name: Corpus Elasticsearch Pipeline
+  description: Index philosophical texts in Elasticsearch for full-text search and
+    analysis
+  category: corpus_management
+  steps:
+  - id: make_snapshot
+    task: corpus:ES_MAKE_SNAPSHOT
+    type: rake
+    display_name: Create Corpus Snapshot
+    description: Create new complete corpus snapshot from all files and index in Elasticsearch
+    safety: mutating
+    estimated_duration: 5-30 min
+    prerequisites: []
+    params:
+    - name: url
+      type: string
+      description: Source URL for the snapshot
+    - name: year
+      type: string
+      description: Year identifier for the snapshot
+  auxiliary_steps:
+  - id: list
+    task: corpus:ES_LIST
+    type: rake
+    display_name: List Snapshots
+    description: Show a list of existing Elasticsearch corpus snapshots
+    safety: read_only
+    params:
+    - name: type
+      type: string
+      description: Optional type argument
+  - id: count_snapshots
+    task: corpus:ES_TOTAL
+    type: rake
+    display_name: Count Snapshots
+    description: Display total count of corpus snapshots in Elasticsearch
+    safety: read_only
+  - id: look_for
+    task: corpus:ES_LOOK_FOR
+    type: rake
+    display_name: Search Corpus
+    description: Search for text phrase within a specific corpus snapshot with highlighting
+    safety: read_only
+    params:
+    - name: snap
+      type: string
+      description: Corpus snapshot identifier
+    - name: term
+      type: string
+      description: Search phrase
+  - id: show_mapping
+    task: corpus:ES_SCHEMA_INFO
+    type: rake
+    display_name: Show ES Mapping
+    description: Show Elasticsearch schema/mapping information
+    safety: read_only
+  - id: add_doc
+    task: corpus:ES_ADD_DOC
+    type: rake
+    display_name: Add Single Document
+    description: Add single text document to existing corpus snapshot
+    safety: mutating
+    params:
+    - name: snap
+      type: string
+      description: Optional snap argument
+    - name: text
+      type: string
+      description: Optional text argument
+  - id: store_as_one
+    task: corpus:ES_STORE_AS_ONE_DOC
+    type: rake
+    display_name: Store as Single Document
+    description: Create new text corpus snapshot from URL as single Elasticsearch
+      document
+    safety: mutating
+    params:
+    - name: url
+      type: string
+      description: Source URL
+    - name: year
+      type: string
+      description: Year identifier

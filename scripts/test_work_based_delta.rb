@@ -15,10 +15,11 @@ def main
   # Check database connectivity
   begin
     work_count = Work.count
-    work_with_files_count = Work.joins(text: :fyle)
-                               .where.not(obsolete: true)
-                               .where.not(fyles: { local_file: nil })
-                               .count
+    author_names = Author.joins(texts: :fyle).where.not(fyles: {local_file: nil}).select(:english_name)
+    creator_ids = Name.where(shadow_id: Philosopher.select(:id), lang: 'en', label: author_names).select(:shadow_id)
+    work_with_files_count = Work.joins(:attrs, :route_b)
+                               .where.not(work_attrs: {obsolete: true})
+                               .where(expressions: {creator_id: creator_ids}).distinct.count
                                
     puts "✅ Database connected"
     puts "📊 Total works in database: #{work_count}"
