@@ -94,7 +94,7 @@ class WorkCanonicityTest < ActiveSupport::TestCase
     assert high_result > low_result, "Work with more sources should have higher canonicity. High: #{high_result}, Low: #{low_result}"
   end
 
-  test "calculate_canonicity_measure creates metric snapshot" do
+  test "calculate_canonicity_measure does not create an unlinked metric snapshot" do
     work = Work.create!(
       entity_id: 9992,
       mention: 150,
@@ -106,15 +106,10 @@ class WorkCanonicityTest < ActiveSupport::TestCase
     )
 
     initial_count = work.metric_snapshots.count
+    result = work.calculate_canonicity_measure
 
-    work.calculate_canonicity_measure
-
-    assert_equal initial_count + 1, work.metric_snapshots.count
-
-    latest_snapshot = work.metric_snapshots.order(:created_at).last
-    assert_equal 'Work', latest_snapshot.shadow_type
-    assert_equal '2.0-work', latest_snapshot.canonicity_weight_algorithm_version
-    assert_not_nil latest_snapshot.measure
+    assert_kind_of Float, result
+    assert_equal initial_count, work.metric_snapshots.count
   end
 
   test "work with zero mention gets minimum measure" do
@@ -213,7 +208,7 @@ class WorkCanonicityTest < ActiveSupport::TestCase
     assert_kind_of Float, result_without
   end
 
-  test "snapshot stores weights configuration" do
+  test "calculation uses configured weights without snapshot persistence" do
     work = Work.create!(
       entity_id: 10004,
       mention: 100,
@@ -224,35 +219,15 @@ class WorkCanonicityTest < ActiveSupport::TestCase
       genre: true
     )
 
-    work.calculate_canonicity_measure
+    result = work.calculate_canonicity_measure
+    weights_config = CanonicityWeights.weights_for_version("2.0-work")
 
-    snapshot = work.metric_snapshots.last
-    weights_config = snapshot.weights_config
-
-    assert_not_nil weights_config
+    assert_kind_of Float, result
     assert_equal 0.25, weights_config['borchert']
     assert_equal 0.20, weights_config['cambridge']
     assert_equal 0.25, weights_config['routledge']
     assert_equal 0.20, weights_config['philpapers']
     assert_equal 0.10, weights_config['all_bonus']
-  end
-
-  test "polymorphic association works correctly" do
-    work = Work.create!(
-      entity_id: 10005,
-      mention: 100,
-      danker: 0.5,
-      borchert: true,
-      cambridge: false,
-      routledge: false,
-      genre: true
-    )
-
-    work.calculate_canonicity_measure
-
-    snapshot = work.metric_snapshots.last
-    assert_equal work.id, snapshot.shadow_id
-    assert_equal 'Work', snapshot.shadow_type
-    assert_equal work, snapshot.shadow
+    assert_empty work.metric_snapshots
   end
 end

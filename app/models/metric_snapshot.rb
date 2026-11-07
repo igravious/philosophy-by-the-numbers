@@ -1,7 +1,15 @@
 class MetricSnapshot < ActiveRecord::Base
+  serialize :calculation_context, JSON
+
   # Polymorphic-style association but without using Rails polymorphic feature
   # due to STI conflicts. shadow_type stores 'Philosopher' or 'Work'
   belongs_to :shadow, foreign_key: :shadow_id, class_name: 'Shadow'
+  belongs_to :metric_run
+  belongs_to :metric_input_record
+
+  before_create :prevent_completed_run_snapshot
+  before_update :prevent_snapshot_mutation
+  before_destroy :prevent_snapshot_mutation
 
   validates :shadow_id, presence: true
   validates :shadow_type, presence: true
@@ -102,10 +110,24 @@ class MetricSnapshot < ActiveRecord::Base
     )
   end
 
-  # Get the weights configuration from canonicity_weights table via FK
+  # Run-linked snapshots use frozen configuration; legacy snapshots use live weights.
   def weights_config
+    return metric_run.weights_config if metric_run
+
     CanonicityWeights.active.for_version(canonicity_weight_algorithm_version)
                      .pluck(:source_name, :weight_value)
                      .to_h
+  end
+
+  private
+
+  def prevent_completed_run_snapshot
+    raise ActiveRecord::ReadOnlyRecord if metric_run&.completed?
+  end
+
+  def prevent_snapshot_mutation
+    if metric_run_id_changed? || metric_input_record_id_changed? || metric_run&.completed?
+      raise ActiveRecord::ReadOnlyRecord
+    end
   end
 end

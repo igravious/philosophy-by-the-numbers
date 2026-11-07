@@ -301,7 +301,7 @@ begin
             # (used as you're moving on down the list)
           when /^Q\d+/
             Shadow.none
-            works = Philosopher.find_by(entity_id: arg.cond[1..-1]).works.where.not(obsolete: true)
+            works = Philosopher.find_by(entity_id: arg.cond[1..-1]).works.joins(:attrs).where.not(work_attrs: {obsolete: true})
             works.each do |w|
               update_labels(w)
             end
@@ -311,7 +311,7 @@ begin
             #works = Work.where(id: Expression.where(creator_id: arg.cond.to_i).pluck(:work_id))
             #pp works
             Shadow.none
-            works = Philosopher.find(arg.cond).works.where.not(obsolete: true)
+            works = Philosopher.find(arg.cond).works.joins(:attrs).where.not(work_attrs: {obsolete: true})
             works.each do |w|
               update_labels(w)
             end
@@ -350,7 +350,7 @@ begin
               if entity == name
                 puts "FIXME: Work w/ entity id #{entity_id} is not in the db, prolly no author."
               else
-                puts "FIXME: Work "#{name}" w/ entity id #{entity_id} is not in the db, prolly no author."
+                puts "FIXME: Work \"#{name}\" w/ entity id #{entity_id} is not in the db, prolly no author."
               end
             end
             # update_progress(bar)
@@ -463,7 +463,7 @@ begin
       task signal1: :environment do |task, arg|
         begin
           Shadow.none
-          works = Work.where.not(obsolete: true).order(measure: :desc).limit(500)
+          works = Work.joins(:attrs).where.not(work_attrs: {obsolete: true}).order(measure: :desc).limit(500)
           exit if works.nil?
           total = works.length
           bar = progress_bar(total, FORCE)
@@ -479,11 +479,11 @@ begin
             # these are not handled yet, remove 'em
             attrs.delete(:title)
             q="Q#{work.entity_id}".ljust(9)
-            do_date(q, attrs, :pub_date)
-            work.pub = attrs[:pub_date]
+            attrs[:pubs] = attrs.delete(:pub_dates)
+            do_date(q, attrs, :pub)
+            work.pub = attrs[:pub]
             pub_year = work.year(:pub)
             attrs[:pub_year] = pub_year
-            attrs[:pub_approx] = work.pub_approx
             work.update_attributes(attrs)
             update_progress(bar)
           }
@@ -510,7 +510,7 @@ begin
         puts "Updating measure_pos in metric snapshots..."
         snapshot_bar = progress_bar(Work.count, FORCE, '', 'updating snapshots')
         Work.find_each do |work|
-          latest_snapshot = work.metric_snapshots.order(calculated_at: :desc).first
+          latest_snapshot = work.metric_snapshots.where(metric_run_id: nil).order(calculated_at: :desc).first
           if latest_snapshot && latest_snapshot.measure_pos != work.measure_pos
             latest_snapshot.update(measure_pos: work.measure_pos)
           end
@@ -518,58 +518,11 @@ begin
         end
       end
 
-      desc "SPARQLy textual investigations (of the measureful variety)"
+      desc "Capture Work inputs and calculate a controlled canonicity run"
       task measure: :environment do
-        Shadow.none
-
-        # Phase 1: Update encyclopedia flags from works.json
-        if File.exist?('works.json')
-          File.open('works.json'){|f|
-            json_works = f.read
-            works = JSON.parse(json_works)
-            total = works.length
-            bar = progress_bar(total, FORCE, 'updating encyclopedia flags')
-            works.each do |work|
-              w = Work.find_by(entity_id: work[0])
-              w.cambridge = ('y' == work[2])
-              w.borchert = ('y' == work[3])
-              w.routledge = ('y' == work[4])
-              w.save!
-              update_progress(bar)
-            end
-          }
-        else
-          puts "Warning: works.json not found, skipping encyclopedia flag updates"
-        end
-
-        # Phase 2: Calculate canonicity measures using new method
-        total = Work.all.size
-        bar = progress_bar(total, FORCE, 'calculating measures')
-
-        danker_info = {
-          version: 'current',
-          file: 'calculated_from_shadow_work_measure_task'
-        }
-
-        Work.order(:entity_id).each do |work|
-          # Use the new calculate_canonicity_measure method
-          normalized_measure = work.calculate_canonicity_measure(
-            algorithm_version: '2.0-work',
-            danker_info: danker_info
-          )
-
-          # Also update the shadow record for backward compatibility
-          # The method already creates a snapshot, so we just update the measure field
-          raw_measure = normalized_measure * (work.genre ? 1.0 : 0.5) * 1_000_000
-          work.update(measure: raw_measure)
-
-          q = "Q#{work.entity_id}".ljust(9)
-          update_progress(bar, "#{q} #{raw_measure.round(2)}")
-        end
-
-        null_point = Work.where(measure: 0.0).size
-        puts "Null point is #{null_point}, usable works is #{total-null_point}"
-        puts "Created #{MetricSnapshot.for_works.count} work snapshots"
+        dataset = Canonicity::DatasetCapture.new(subject_type: 'Work').call
+        run = Canonicity::MetricRunCalculator.new(dataset: dataset).call
+        puts "Completed Work run #{run.version} (ID #{run.id}) with #{run.metric_snapshots.count} snapshots"
       end
 
       desc "SPARQLy textual investigations (of the mentioning variety)"

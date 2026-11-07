@@ -7,7 +7,7 @@ class CanonicityCalculationTest < ActiveSupport::TestCase
     Philosopher.where("entity_id > 9000").delete_all
 
     # Ensure we have the algorithm weights for testing
-    unless CanonicityWeights.exists?(algorithm_version: '2.0')
+    unless CanonicityWeights.exists?(algorithm_version: '2.1')
       seed_canonicity_weights
     end
 
@@ -58,28 +58,28 @@ class CanonicityCalculationTest < ActiveSupport::TestCase
 
   def seed_canonicity_weights
     weights_v2 = [
-      { source_name: 'runes', weight_value: 0.0, description: 'Runes (biased, excluded)' },
-      { source_name: 'inphobool', weight_value: 0.15, description: 'Internet Encyclopedia of Philosophy' },
-      { source_name: 'borchert', weight_value: 0.25, description: 'Macmillan Encyclopedia (Borchert)' },
-      { source_name: 'internet', weight_value: 0.05, description: 'Internet sources' },
-      { source_name: 'cambridge', weight_value: 0.2, description: 'Cambridge Dictionary of Philosophy' },
-      { source_name: 'kemerling', weight_value: 0.1, description: 'Kemerling Philosophy Pages' },
-      { source_name: 'populate', weight_value: 0.02, description: 'Wikipedia (as philosopher)' },
-      { source_name: 'oxford2', weight_value: 0.1, description: 'Oxford Dictionary of Philosophy, 2nd ed.' },
-      { source_name: 'oxford3', weight_value: 0.1, description: 'Oxford Dictionary of Philosophy, 3rd ed.' },
-      { source_name: 'routledge', weight_value: 0.25, description: 'Routledge Encyclopedia of Philosophy' },
+      {source_name: "runes", weight_value: nil, description: "Runes (inactive legacy source)", active: false},
+      { source_name: 'inphobool', weight_value: 0.10, description: 'Internet Encyclopedia of Philosophy' },
+      { source_name: 'borchert', weight_value: 0.17, description: 'Macmillan Encyclopedia (Borchert)' },
+      { source_name: 'internet', weight_value: 0.03, description: 'Internet sources' },
+      { source_name: 'cambridge', weight_value: 0.13, description: 'Cambridge Dictionary of Philosophy' },
+      { source_name: 'kemerling', weight_value: 0.07, description: 'Kemerling Philosophy Pages' },
+      { source_name: 'populate', weight_value: 0.01, description: 'Wikipedia (as philosopher)' },
+      {source_name: "oxford2", weight_value: nil, description: "Oxford Dictionary of Philosophy, 2nd ed. (inactive legacy source)", active: false},
+      { source_name: 'oxford3', weight_value: 0.13, description: 'Oxford Dictionary of Philosophy, 3rd ed.' },
+      { source_name: 'routledge', weight_value: 0.17, description: 'Routledge Encyclopedia of Philosophy' },
       { source_name: 'dbpedia', weight_value: 0.01, description: 'DBpedia (as philosopher)' },
-      { source_name: 'stanford', weight_value: 0.15, description: 'Stanford Encyclopedia of Philosophy' },
-      { source_name: 'all_bonus', weight_value: 0.13, description: 'Bonus for having any authoritative sources' }
+      { source_name: 'stanford', weight_value: 0.10, description: 'Stanford Encyclopedia of Philosophy' },
+      { source_name: 'all_bonus', weight_value: 0.08, description: 'Bonus for having any authoritative sources' }
     ]
 
     weights_v2.each do |weight|
       CanonicityWeights.create!(
-        algorithm_version: '2.0',
+        algorithm_version: '2.1',
         source_name: weight[:source_name],
         weight_value: weight[:weight_value],
         description: weight[:description],
-        active: true
+        active: weight.fetch(:active, true)
       )
     end
   end

@@ -44,6 +44,17 @@ def self.fixtures(*args)
 end
 ```
 
+#### Pure V2 Calculator Tests (`test/lib/canonicity_philosopher_v2_test.rb` and `test/lib/canonicity_work_v2_test.rb`)
+**Purpose**: Verify exact calculator outputs independently of ActiveRecord, including normalized and display-scaled measures.
+
+**Key Tests**:
+- Source weights, all-bonus, PhilPapers, and genre behaviour
+- Role suppression and maxima that include suppressed philosophers
+- Null versus zero Danker and mention handling
+- Work author adjustment and missing-author validation
+- Zero-denominator guards and finite outputs
+- Genre applied exactly once
+
 #### Philosopher Canonicity Tests (`test/models/philosopher_canonicity_test.rb`)
 **Purpose**: Verify the Linear Weighted Combination algorithm accuracy
 

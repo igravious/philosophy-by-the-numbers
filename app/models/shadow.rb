@@ -5,11 +5,7 @@ class Shadow < ActiveRecord::Base
   include DateTimeMethods
 
   def get_year(date_sym)
-    y = nil
-    unless self[date_sym].blank?
-      y = Date._parse(self[date_sym])[:year].to_i
-    end
-    y
+    year(date_sym)
   end
 
 	def do_q(the_sym)
@@ -18,13 +14,14 @@ class Shadow < ActiveRecord::Base
 	def year(date_sym)
 		begin
 			approx = (date_sym.to_s+'_approx').to_sym
-			if self[date_sym].blank?
+			value = date_attribute(date_sym)
+			if value.blank?
 				nil
-			elsif self[approx]
-				self[date_sym].to_i
+			elsif date_attribute(approx)
+				value.to_i
 			else
-				boom = self[date_sym].split(';')
-				Date._parse(boom[0])[:year]
+				boom = value.split(';')
+				DateTimeMethods.extract_year(boom[0])
 			end
 		rescue ArgumentError, TypeError, NoMethodError
 			nil
@@ -79,6 +76,14 @@ class Shadow < ActiveRecord::Base
 
 	def self.column_direction(col)
 		%w[entity_id label].include?(col) ? 'asc' : 'desc'
+	end
+
+	private
+
+	def date_attribute(name)
+		return self[name] if has_attribute?(name)
+		metadata = attrs if respond_to?(:attrs)
+		metadata[name] if metadata && metadata.has_attribute?(name)
 	end
 end
 
@@ -150,7 +155,7 @@ class Philosopher < Shadow
 			end
 		end
 
-		has_many :metric_snapshots, -> { where(shadow_type: 'Philosopher') }, foreign_key: :shadow_id, dependent: :destroy
+		has_many :metric_snapshots, -> { where(shadow_type: 'Philosopher') }, foreign_key: :shadow_id
 		# source: :work matches with the belongs_to :work in the Expression join model
 		has_many :creations, through: :route_a, source: :work  # Mirrors Work's :creators association
 		# route_a "names" the X join model for accessing through the work association
@@ -229,66 +234,28 @@ class Philosopher < Shadow
 		end
 	end
 	
-	def calculate_canonicity_measure(algorithm_version: '2.0', danker_info: {})
-		# Get global max/min values for normalization
+	def calculate_canonicity_measure(algorithm_version: '2.1', danker_info: {})
 		max_mention = (Philosopher.order('mention desc').first&.mention || 1.0) * 1.0
-		min_mention = 0.0 # if no mention, reduce to zero!
-		
-		unranked = Philosopher.where(danker: nil)
 		ranked = Philosopher.where.not(danker: nil)
-		max_rank = Philosopher.order('danker desc').first&.danker || 1.0 # desc (first)
-		min_rank = (ranked.order('danker asc').first&.danker || 0.1) / 2.0  # asc (first) / 2.0
-		
-		# Load configurable source weights
+		max_rank = Philosopher.order('danker desc').first&.danker || 1.0
+		min_rank = (ranked.order('danker asc').first&.danker || 0.1) / 2.0
 		weights = CanonicityWeights.weights_for_version(algorithm_version)
-		
-		# Calculate individual source contributions using Linear Weighted Combination
-		source_contributions = {}
-		%w[runes inphobool borchert internet cambridge kemerling populate oxford2 oxford3 routledge dbpedia stanford].each do |source|
-			source_contributions[source] = self.send(source.to_sym) ? weights[source].to_f : 0.0
+		sources = Canonicity::Philosopher::V2::SOURCES.each_with_object({}) do |source, result|
+			result[source.to_sym] = self.send(source.to_sym)
 		end
-		
-		# All bonus only applies if philosopher has at least one authoritative source
-		has_sources = source_contributions.values.sum > 0
-		source_contributions['all_bonus'] = has_sources ? weights['all_bonus'].to_f : 0.0
-
-		# Handle edge cases for mention and danker
-		mention = if self.mention.nil? || self.mention == 0 || ((self.capacities.pluck(:entity_id) & [413, 41217, 269323]).length > 1) # hacky!
-			min_mention
-		else
-			self.mention
-		end
-		
-		rank = if self.danker.nil?
-			min_rank
-		else
-			self.danker
-		end
-		
-		# Calculate total source weight (Linear Weighted Combination)
-		total_source_weight = source_contributions.values.sum
-		
-		# Handle edge case where all values could be zero (prevents division by zero / NaN)
-		if max_mention == 0 || max_rank == 0 || total_source_weight == 0
-			raw_measure = 0.0
-			normalized_measure = 0.0
-		else
-			# Calculate the raw measure for database storage (scaled for user-friendly display)
-			raw_measure = ((mention/max_mention * rank/max_rank) * total_source_weight * 10_000_000)
-
-			# Calculate normalized measure for return value (0-1 range)
-			normalized_measure = (mention/max_mention * rank/max_rank) * total_source_weight
-		end
-		
-		# Create a snapshot with the calculated values (don't override the database record)
-		MetricSnapshot.create_snapshot_for_philosopher_with_measure(
-			self, 
-			raw_measure,
-			algorithm_version: algorithm_version, 
-			danker_info: danker_info
+		inputs = {
+			mention: self.mention,
+			danker: self.danker,
+			capacities: self.capacities.pluck(:entity_id),
+			sources: sources
+		}
+		result = Canonicity::Philosopher::V2.call(
+			inputs: inputs,
+			weights: weights,
+			normalization_context: {max_mention: max_mention, max_rank: max_rank, min_rank: min_rank}
 		)
-		
-		normalized_measure
+
+		result[:normalized_measure]
 	end
 
 	def self.phil_null
@@ -312,8 +279,9 @@ class Philosopher < Shadow
 	end
 
 	def build_attrs_if_needed
-		build_attrs if attrs.nil?
+		build_attrs if new_record? && attrs.nil?
 	end
+
 end
 
 class Work < Shadow
@@ -369,7 +337,7 @@ class Work < Shadow
 		end
 	end
 
-	has_many :metric_snapshots, -> { where(shadow_type: 'Work') }, foreign_key: :shadow_id, dependent: :destroy
+	has_many :metric_snapshots, -> { where(shadow_type: 'Work') }, foreign_key: :shadow_id
 	# `source: :creator' matches with the belongs_to :creator in the Expression join model
 	has_many :creators, through: :route_b, source: :philosopher
 	# `route_b' "names" the X join model for accessing throught the work association
@@ -390,84 +358,30 @@ class Work < Shadow
 	end
 
 	def calculate_canonicity_measure(algorithm_version: '2.0-work', danker_info: {})
-		# Get global max/min values for normalization
 		max_mention = (Work.order('mention desc').first&.mention || 1.0) * 1.0
-		min_mention = 0.5 # if no mention, reduce to 0.5 (different from Philosopher's 0.0)
-
-		unranked = Work.where(danker: nil)
-		ranked = Work.where.not(danker: 0.0) # exclude 0.0 values
+		ranked = Work.where.not(danker: 0.0)
 		max_rank = Work.order('danker desc').first&.danker || 1.0
 		min_rank = (ranked.order('danker asc').first&.danker || 0.1) / 2.0
-
-		# Load configurable source weights
 		weights = CanonicityWeights.weights_for_version(algorithm_version)
-
-		# Calculate individual source contributions
-		source_contributions = {}
-
-		# Encyclopedia sources
-		encyclopedia_sum = 0.0
-		%w[borchert cambridge routledge].each do |source|
-			value = self.send(source.to_sym) ? weights[source].to_f : 0.0
-			source_contributions[source] = value
-			encyclopedia_sum += value
-		end
-
-		# All bonus only applies if work has at least one encyclopedia source (not PhilPapers)
-		has_encyclopedia_sources = encyclopedia_sum > 0
-		source_contributions['all_bonus'] = has_encyclopedia_sources ? weights['all_bonus'].to_f : 0.0
-
-		# PhilPapers signal (philrecord OR philtopic) - counted separately from encyclopedias
-		source_contributions['philpapers'] = (self.philrecord || self.philtopic) ? weights['philpapers'].to_f : 0.0
-
-		# Genre multiplier
-		genre = self.genre ? weights['genre_philosophical'].to_f : weights['genre_other'].to_f
-
-		# Author existence penalty/bonus
 		phils = Philosopher.where(id: Expression.where(work_id: self.id).pluck(:creator_id))
-		sourcey = source_contributions.values.sum
-		exists = if phils.length > 0
-			phils.collect{|phil| phil.measure }.sum == 0 ? -sourcey : 0.0 # counterbalance if all authors have measure 0
-		else
-			0.0
-		end
-
-		# Ensure sourcey is never zero
-		sourcey = 0.1 if sourcey == 0.0
-
-		# Handle edge cases for mention and danker
-		mention = if self.mention.nil? || self.mention == 0
-			min_mention
-		else
-			self.mention
-		end
-
-		rank = if self.danker.nil?
-			min_rank
-		else
-			self.danker
-		end
-
-		# Calculate the raw measure for database storage (scaled for user-friendly display)
-		# Formula: (mention/max * rank/max) * genre * (sourcey + exists) * 1M
-		raw_measure = ((mention/max_mention * rank/max_rank) * genre * (sourcey + exists) * 1_000_000)
-
-		# Calculate normalized measure for return value (0-1 range)
-		if max_mention == 0 || max_rank == 0
-			normalized_measure = 0.0
-		else
-			normalized_measure = (mention/max_mention * rank/max_rank) * genre * (sourcey + exists)
-		end
-
-		# Create a snapshot with the calculated values (don't override the database record)
-		MetricSnapshot.create_snapshot_for_work(
-			self,
-			raw_measure,
-			algorithm_version: algorithm_version,
-			danker_info: danker_info
+		inputs = {
+			mention: self.mention,
+			danker: self.danker,
+			borchert: self.borchert,
+			cambridge: self.cambridge,
+			routledge: self.routledge,
+			philrecord: self.philrecord,
+			philtopic: self.philtopic,
+			genre: self.genre
+		}
+		result = Canonicity::Work::V2.call(
+			inputs: inputs,
+			weights: weights,
+			normalization_context: {max_mention: max_mention, max_rank: max_rank, min_rank: min_rank},
+			dependency_inputs: {author_measures: phils.collect { |phil| phil.measure }}
 		)
 
-		normalized_measure
+		result[:normalized_measure]
 	end
 
 	def obsolete_phil_label(phils, lang)
@@ -517,6 +431,6 @@ class Work < Shadow
 	end
 
 	def build_attrs_if_needed
-		build_attrs if attrs.nil?
+		build_attrs if new_record? && attrs.nil?
 	end
 end

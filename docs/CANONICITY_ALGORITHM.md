@@ -22,31 +22,32 @@ The algorithm combines three primary components using normalized importance weig
 
 ### 3. Source Coverage Component (Linear Weighted Combination)
 - **Sources**: Multiple authoritative philosophical reference works
-- **Weight Normalization**: Individual weights sum to approximately 1.0
-- **Range**: 0.0 to ~1.3 (includes all_bonus)
+- **Weight Normalization**: Philosopher bitset weights, including the conditional bonus, sum to exactly 1.0 at stored precision
+- **Range**: 0.0 to 1.0
 - **Purpose**: Measures coverage across authoritative philosophical sources
 
-## Source Weights (Algorithm v2.0)
+## Source Weights (Algorithm v2.1)
 
 The algorithm uses configurable weights stored in the `canonicity_weights` table. Weights were determined by analyzing the relative significance of each encyclopedia source using Wikipedia PageRank data (danker scores).
 
 | Source | Weight | Description |
 |--------|--------|-------------|
-| `inphobool` | 0.15 | Internet Encyclopedia of Philosophy |
-| `borchert` | 0.25 | Macmillan Encyclopedia (Borchert) |
-| `internet` | 0.05 | Internet sources |
-| `cambridge` | 0.20 | Cambridge Dictionary of Philosophy |
-| `kemerling` | 0.10 | Kemerling Philosophy Pages |
-| `populate` | 0.02 | Wikipedia (as philosopher) |
-| `oxford2` | 0.00 | Oxford Dictionary of Philosophy, 2nd ed. (legacy, display only) |
-| `oxford3` | 0.20 | Oxford Dictionary of Philosophy, 3rd ed. |
-| `routledge` | 0.25 | Routledge Encyclopedia of Philosophy |
+| `inphobool` | 0.10 | Internet Encyclopedia of Philosophy |
+| `borchert` | 0.17 | Macmillan Encyclopedia (Borchert) |
+| `internet` | 0.03 | Internet sources |
+| `cambridge` | 0.13 | Cambridge Dictionary of Philosophy |
+| `kemerling` | 0.07 | Kemerling Philosophy Pages |
+| `populate` | 0.01 | Wikipedia (as philosopher) |
+| `oxford` | NULL | Oxford Reference (inactive legacy source) |
+| `oxford2` | NULL | Oxford Dictionary of Philosophy, 2nd ed. (inactive legacy source) |
+| `oxford3` | 0.13 | Oxford Dictionary of Philosophy, 3rd ed. |
+| `routledge` | 0.17 | Routledge Encyclopedia of Philosophy |
 | `dbpedia` | 0.01 | DBpedia (as philosopher) |
-| `stanford` | 0.15 | Stanford Encyclopedia of Philosophy |
-| `all_bonus` | 0.13 | Bonus for having any authoritative sources |
-| `runes` | 0.00 | Runes (excluded as biased) |
+| `stanford` | 0.10 | Stanford Encyclopedia of Philosophy |
+| `all_bonus` | 0.08 | Bonus for having any authoritative sources |
+| `runes` | NULL | Philosophy Dictionary (inactive legacy source) |
 
-**Total Weight Sum**: 1.51 (intentionally slightly over 1.0 as no philosopher achieves perfect scores)
+**Total Active Bitset Weight**: 1.000000, including `all_bonus`. All active weights are stored directly at two decimal places. Original `2.0` weights are preserved separately for compatibility; normalized `2.1` is the Philosopher default.
 
 ### Weight Determination Methodology
 
@@ -58,14 +59,17 @@ Source weights were determined empirically using Wikipedia PageRank data (danker
 
 ### Legacy Sources
 
-- **`oxford2`** (0.00): Oxford Dictionary of Philosophy, 2nd edition - tracked for display and historical comparison but does not contribute to canonicity scores
-- **`runes`** (0.00): Philosophy Dictionary (Runes) - excluded as potentially biased
+- **`oxford`**: pre-edition-split Oxford Reference row, retained only for historical reference
+- **`oxford2`**: Oxford Dictionary of Philosophy, 2nd edition, tracked for display and historical comparison
+- **`runes`**: Philosophy Dictionary (Runes), excluded because it contains no female thinkers and retained only as historical metadata
+
+All three rows are inactive and have a `NULL` weight. They do not contribute to current canonicity calculations. Active sources must have numeric weights; `NULL` distinguishes an inactive legacy source from a numeric zero. Historical flags and snapshots remain unchanged.
 
 ### Edition-Specific Tracking
 
 The Oxford Dictionary of Philosophy is tracked separately by edition:
-- **`oxford2`**: 2nd edition (legacy source, weight = 0.0, displayed in UI for reference)
-- **`oxford3`**: 3rd edition (active source, weight = 0.20, contributes to canonicity)
+- **`oxford2`**: 2nd edition (inactive legacy source, weight = `NULL`, displayed in UI for reference)
+- **`oxford3`**: 3rd edition (active source, weight = 0.13, contributes to canonicity)
 
 ## Mathematical Formula
 
@@ -97,6 +101,10 @@ Where:
 ### Mathematical Safety
 - Division by zero protection for `max_mention = 0` or `max_rank = 0`
 - Returns 0.0 for edge cases rather than NaN or infinity
+- `Canonicity::Normalization.product` enforces the normalized formula shape `S₀ × S₁ × S₂ × … × Sₙ`
+- Every scalar, bitset-coverage, genre, and derived factor must be finite and within `[0, 1]`; violations raise `Canonicity::NormalizationError` naming the offending component rather than returning an invalid measure
+
+Scalar signals use extrema fixed for the run. Bitset signals sum weighted on/off flags, including any bonus, and their total factor cannot exceed 1. Genre, role suppression, missing-value fallbacks, and author adjustments are derived rules rather than additional raw signal types.
 
 ## Configuration Management
 
@@ -114,6 +122,46 @@ Where:
 - Algorithm versions (e.g., '2.0', '2.1') allow experimentation
 - Active weights determined by `algorithm_version` parameter
 - Backward compatibility maintained for historical calculations
+
+## Pure V2 Calculators
+
+The V2 implementations live in:
+
+- `app/lib/canonicity/philosopher/v2.rb`
+- `app/lib/canonicity/work/v2.rb`
+
+Each calculator is a pure function: it receives primitive inputs, weights, normalisation context, and dependency inputs, then returns normalized and display-scaled measures plus explanatory calculation context. Calculators perform no database queries or writes. Existing model methods delegate to these implementations while preserving their snapshot and return contracts.
+
+`metric_snapshots.measure` stores the display-scaled measure. The normalized measure is returned separately in the calculation context.
+
+Two numerical defects are corrected:
+
+- Work's rake task no longer applies the genre multiplier twice.
+- Work's zero-denominator guard runs before either normalized or display-scaled output is derived, preventing non-finite measures.
+
+## Metric Run Infrastructure (Phases 1–3)
+
+The controlled canonicity architecture now includes:
+
+- `metric_input_datasets` and `metric_input_records` for immutable populations, normalization contexts, primitive payloads, provenance, and dependencies.
+- `metric_runs` for subject-scoped versions, calculator/configuration identities, frozen weights, executable signal configuration, and run status.
+- `canonicity_signals` for descriptive input-signal metadata, including time-varying and unused inputs.
+- `source_events` for typed old/new source values and atomic import provenance.
+- `publications` for append-only publication history, with the latest ID per subject type identifying the current publication.
+
+Run-linked snapshots preserve nullable primitive inputs and explanatory `calculation_context`, and read weights from their frozen run configuration. Legacy snapshots retain live-weight compatibility. Entity deletion no longer destroys snapshot evidence; ready datasets, completed runs, and publications are protected from mutation.
+
+Phase 2 adds atomic Danker and reference-flag imports using the re-entrant cross-process metric operation lock. Danker validation streams and checksums the artifact in one pass, retaining only scores for the subject population instead of loading the full Wikidata file. Every import records typed old/new values with source provenance. Danker entities missing from an artifact receive `nil`, never a coerced zero. Model calculations no longer create unlinked snapshots.
+
+Dataset capture reads its IDs and provenance in the same transaction as its primitive records. It freezes selected and normalization populations, their union of inputs, normalization context, provenance, and any completed Philosopher dependency. Captured values must agree with the latest relevant source events. Missing entities or author dependencies invalidate capture without leaving partial input records, early dependency failures leave visible invalid evidence, and missing authors are reported across all Works. Interrupted captures become invalid and interrupted runs become failed when the lock is next acquired.
+
+`Canonicity::CalculatorInput` adapts database-round-tripped JSON payloads to the symbol-keyed V2 contracts using required-key fetches. This prevents missing keys from silently becoming fallback values during calculation or replay.
+
+Phase 3 adds controlled calculation and recalculation over ready datasets. Each run records a subject-scoped semantic version, calculator and configuration identities, a configuration fingerprint, frozen weights and signals, and provenance. Runs complete only after selected-population coverage, finite measures, and dense ranks are verified; failures retain evidence without partial snapshots. Philosopher and Work versions begin independently at 0.7.0. Recalculation reuses the dataset and applies patch, minor, or major bumps according to input/configuration/calculator changes.
+
+Read-only replay uses only the frozen run and dataset to recompute exact measures, population, normalization context, and dense ranks. It reports added/missing entities and measure, rank, or normalization mismatches without repairing them or writing anything.
+
+The `/canonicity` dashboard exposes calculator identities, configuration, signal definitions, dataset status/populations/provenance/dependencies/failures, source events, run identities, snapshots, and replay results for UAT as later phases add comparison and publication.
 
 ## Usage Examples
 
