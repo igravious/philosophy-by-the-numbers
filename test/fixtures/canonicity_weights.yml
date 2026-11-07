@@ -1,0 +1,49 @@
+danker_v2:
+  id: 1
+  algorithm_version: "2.0"
+  source_name: "danker"
+  weight_value: 0.25
+  description: "Wikipedia PageRank score"
+  active: true
+  created_at: 2023-01-01 00:00:00
+  updated_at: 2023-01-01 00:00:00
+
+mention_v2:
+  id: 2
+  algorithm_version: "2.0"
+  source_name: "mention"
+  weight_value: 0.15
+  description: "Cross-reference mention count"
+  active: true
+  created_at: 2023-01-01 00:00:00
+  updated_at: 2023-01-01 00:00:00
+
+stanford_v2:
+  id: 3
+  algorithm_version: "2.0"
+  source_name: "stanford"
+  weight_value: 0.10
+  description: "Stanford Encyclopedia presence"
+  active: true
+  created_at: 2023-01-01 00:00:00
+  updated_at: 2023-01-01 00:00:00
+
+routledge_v2:
+  id: 4
+  algorithm_version: "2.0"
+  source_name: "routledge"
+  weight_value: 0.10
+  description: "Routledge Encyclopedia presence"
+  active: true
+  created_at: 2023-01-01 00:00:00
+  updated_at: 2023-01-01 00:00:00
+
+inactive_v1:
+  id: 5
+  algorithm_version: "1.0"
+  source_name: "danker"
+  weight_value: 0.50
+  description: "Old PageRank weight"
+  active: false
+  created_at: 2023-01-01 00:00:00
+  updated_at: 2023-01-01 00:00:00

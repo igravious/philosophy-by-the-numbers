@@ -9,6 +9,32 @@ class DictionariesControllerTest < ActionController::TestCase
     get :index
     assert_response :success
     assert_not_nil assigns(:dictionaries)
+    assert_select "a[href=?]", canonicity_path, text: "Canonicity dashboard"
+  end
+
+  test "index counts flags from philosopher attrs and shadows" do
+    @dictionary.update!(encyclopedia_flag: "kemerling")
+    dictionaries(:two).update!(encyclopedia_flag: "routledge")
+    create_test_philosopher(kemerling: true, routledge: true)
+    create_test_philosopher(kemerling: true, routledge: false)
+    create_test_philosopher(kemerling: false, routledge: true)
+
+    get :index
+
+    assert_response :success
+    assert_equal 2, assigns(:philosopher_counts)["kemerling"]
+    assert_equal 2, assigns(:philosopher_counts)["routledge"]
+  end
+
+  test "index labels inactive legacy sources by status" do
+    @dictionary.update!(encyclopedia_flag: "oxford2")
+    CanonicityWeights.create!(algorithm_version: "2.0", source_name: "oxford2",
+      weight_value: 0.2, active: false)
+
+    get :index
+
+    assert_response :success
+    assert_select "span", text: "Inactive legacy source", count: 1
   end
 
   test "should get new" do

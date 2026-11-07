@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20251010162714) do
+ActiveRecord::Schema.define(version: 20261106213047) do
 
   create_table "authors", force: :cascade do |t|
     t.string   "name",          limit: 255
@@ -26,10 +26,25 @@ ActiveRecord::Schema.define(version: 20251010162714) do
     t.string   "when_died",     limit: 255
   end
 
+  create_table "canonicity_signals", force: :cascade do |t|
+    t.string   "algorithm_version",                 null: false
+    t.string   "name",                              null: false
+    t.text     "description"
+    t.string   "source",                            null: false
+    t.boolean  "subject_to_change", default: false, null: false
+    t.boolean  "used_in_formula",   default: false, null: false
+    t.boolean  "active",            default: true,  null: false
+    t.datetime "created_at",                        null: false
+    t.datetime "updated_at",                        null: false
+  end
+
+  add_index "canonicity_signals", ["active"], name: "index_canonicity_signals_on_active"
+  add_index "canonicity_signals", ["algorithm_version", "name"], name: "index_canonicity_signals_on_algorithm_version_and_name", unique: true
+
   create_table "canonicity_weights", force: :cascade do |t|
     t.string   "algorithm_version",                                        null: false
     t.string   "source_name",                                              null: false
-    t.decimal  "weight_value",      precision: 8, scale: 6,                null: false
+    t.decimal  "weight_value",      precision: 8, scale: 6
     t.string   "description"
     t.boolean  "active",                                    default: true
     t.datetime "created_at",                                               null: false
@@ -160,6 +175,74 @@ ActiveRecord::Schema.define(version: 20251010162714) do
 
   add_index "meta_filters", ["filter"], name: "index_meta_filters_on_filter", unique: true
 
+  create_table "metric_input_datasets", force: :cascade do |t|
+    t.string   "subject_type",             null: false
+    t.string   "status",                   null: false
+    t.string   "schema_version",           null: false
+    t.text     "selected_entity_ids",      null: false
+    t.text     "normalization_entity_ids", null: false
+    t.text     "normalization_context",    null: false
+    t.text     "source_provenance",        null: false
+    t.integer  "input_run_id"
+    t.string   "population_checksum",      null: false
+    t.datetime "capture_completed_at"
+    t.text     "failure_reason"
+    t.datetime "created_at",               null: false
+    t.datetime "updated_at",               null: false
+  end
+
+  add_index "metric_input_datasets", ["input_run_id"], name: "index_metric_input_datasets_on_input_run_id"
+  add_index "metric_input_datasets", ["status"], name: "index_metric_input_datasets_on_status"
+  add_index "metric_input_datasets", ["subject_type"], name: "index_metric_input_datasets_on_subject_type"
+
+  create_table "metric_input_records", force: :cascade do |t|
+    t.integer  "metric_input_dataset_id",                 null: false
+    t.integer  "shadow_id",                               null: false
+    t.string   "shadow_type",                             null: false
+    t.integer  "entity_id",                               null: false
+    t.string   "entity_label",                            null: false
+    t.boolean  "selected",                default: false, null: false
+    t.boolean  "normalization",           default: false, null: false
+    t.text     "input_payload",                           null: false
+    t.datetime "created_at",                              null: false
+    t.datetime "updated_at",                              null: false
+  end
+
+  add_index "metric_input_records", ["metric_input_dataset_id", "shadow_id"], name: "index_metric_input_records_on_dataset_and_shadow", unique: true
+  add_index "metric_input_records", ["shadow_id"], name: "index_metric_input_records_on_shadow_id"
+
+  create_table "metric_runs", force: :cascade do |t|
+    t.string   "version",                   null: false
+    t.integer  "major",                     null: false
+    t.integer  "minor",                     null: false
+    t.integer  "patch",                     null: false
+    t.string   "subject_type",              null: false
+    t.integer  "metric_input_dataset_id",   null: false
+    t.integer  "parent_run_id"
+    t.string   "calculator_identity",       null: false
+    t.string   "configuration_version",     null: false
+    t.string   "configuration_fingerprint", null: false
+    t.string   "status",                    null: false
+    t.datetime "started_at",                null: false
+    t.datetime "completed_at"
+    t.text     "weights_config",            null: false
+    t.text     "signal_config",             null: false
+    t.text     "source_provenance",         null: false
+    t.text     "failure_reason"
+    t.datetime "created_at",                null: false
+    t.datetime "updated_at",                null: false
+  end
+
+  add_index "metric_runs", ["calculator_identity"], name: "index_metric_runs_on_calculator_identity"
+  add_index "metric_runs", ["completed_at"], name: "index_metric_runs_on_completed_at"
+  add_index "metric_runs", ["configuration_fingerprint"], name: "index_metric_runs_on_configuration_fingerprint"
+  add_index "metric_runs", ["metric_input_dataset_id"], name: "index_metric_runs_on_metric_input_dataset_id"
+  add_index "metric_runs", ["parent_run_id"], name: "index_metric_runs_on_parent_run_id"
+  add_index "metric_runs", ["started_at"], name: "index_metric_runs_on_started_at"
+  add_index "metric_runs", ["status"], name: "index_metric_runs_on_status"
+  add_index "metric_runs", ["subject_type", "major", "minor", "patch"], name: "index_metric_runs_on_subject_and_version_components", unique: true
+  add_index "metric_runs", ["subject_type", "version"], name: "index_metric_runs_on_subject_type_and_version", unique: true
+
   create_table "metric_snapshots", force: :cascade do |t|
     t.integer  "shadow_id",                           null: false
     t.string   "shadow_type",                         null: false
@@ -167,19 +250,24 @@ ActiveRecord::Schema.define(version: 20251010162714) do
     t.string   "canonicity_weight_algorithm_version", null: false
     t.string   "danker_version",                      null: false
     t.string   "danker_file",                         null: false
-    t.float    "danker_score",                        null: false
-    t.integer  "linkcount",                           null: false
-    t.integer  "mention_count",                       null: false
+    t.float    "danker_score"
+    t.integer  "linkcount"
+    t.integer  "mention_count"
     t.text     "reference_work_flags",                null: false
     t.float    "measure",                             null: false
     t.integer  "measure_pos"
     t.text     "notes"
     t.datetime "created_at",                          null: false
     t.datetime "updated_at",                          null: false
+    t.integer  "metric_run_id"
+    t.integer  "metric_input_record_id"
+    t.text     "calculation_context"
   end
 
   add_index "metric_snapshots", ["calculated_at"], name: "index_metric_snapshots_on_calculated_at"
   add_index "metric_snapshots", ["canonicity_weight_algorithm_version"], name: "index_metric_snapshots_on_canonicity_weight_algorithm_version"
+  add_index "metric_snapshots", ["metric_input_record_id"], name: "index_metric_snapshots_on_metric_input_record_id"
+  add_index "metric_snapshots", ["metric_run_id", "shadow_id"], name: "index_metric_snapshots_on_metric_run_id_and_shadow_id", unique: true
   add_index "metric_snapshots", ["shadow_type", "shadow_id", "calculated_at"], name: "index_metric_snapshots_on_shadow_and_calculated_at"
   add_index "metric_snapshots", ["shadow_type", "shadow_id"], name: "index_metric_snapshots_on_shadow_type_and_shadow_id"
 
@@ -264,6 +352,16 @@ ActiveRecord::Schema.define(version: 20251010162714) do
 
   add_index "properties", ["property_id", "entity_id", "data_id"], name: "index_properties_on_property_id_and_entity_id_and_data_id", unique: true
 
+  create_table "publications", force: :cascade do |t|
+    t.integer  "metric_run_id", null: false
+    t.string   "subject_type",  null: false
+    t.datetime "created_at",    null: false
+  end
+
+  add_index "publications", ["created_at"], name: "index_publications_on_created_at"
+  add_index "publications", ["metric_run_id"], name: "index_publications_on_metric_run_id"
+  add_index "publications", ["subject_type"], name: "index_publications_on_subject_type"
+
   create_table "resources", force: :cascade do |t|
     t.string   "URI",        limit: 255
     t.datetime "created_at"
@@ -302,6 +400,29 @@ ActiveRecord::Schema.define(version: 20251010162714) do
   end
 
   add_index "shadows", ["entity_id"], name: "index_shadows_on_entity_id", unique: true
+
+  create_table "source_events", force: :cascade do |t|
+    t.string   "source_name",       null: false
+    t.string   "source_version"
+    t.string   "import_identity",   null: false
+    t.string   "artifact_identity", null: false
+    t.string   "artifact_checksum", null: false
+    t.integer  "shadow_id",         null: false
+    t.string   "shadow_type",       null: false
+    t.integer  "entity_id",         null: false
+    t.string   "attribute_name",    null: false
+    t.text     "old_value"
+    t.text     "new_value"
+    t.text     "provenance",        null: false
+    t.datetime "imported_at",       null: false
+    t.datetime "created_at",        null: false
+    t.datetime "updated_at",        null: false
+  end
+
+  add_index "source_events", ["artifact_checksum"], name: "index_source_events_on_artifact_checksum"
+  add_index "source_events", ["import_identity"], name: "index_source_events_on_import_identity"
+  add_index "source_events", ["shadow_id", "shadow_type"], name: "index_source_events_on_shadow_id_and_shadow_type"
+  add_index "source_events", ["source_name"], name: "index_source_events_on_source_name"
 
   create_table "tags", force: :cascade do |t|
     t.string   "name"

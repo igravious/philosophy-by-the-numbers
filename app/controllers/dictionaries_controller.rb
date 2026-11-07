@@ -14,7 +14,7 @@ class DictionariesController < ApplicationController
     @algorithm_version = params[:algorithm_version] || '2.0'
 
     # Fetch canonicity weights for display
-    @weights = CanonicityWeights.where(algorithm_version: @algorithm_version, active: true)
+    @weights = CanonicityWeights.where(algorithm_version: @algorithm_version)
                                  .index_by(&:source_name)
 
     # Get list of available algorithm versions for dropdown
@@ -26,7 +26,12 @@ class DictionariesController < ApplicationController
     # Count philosophers for each encyclopedia flag
     @philosopher_counts = {}
     Dictionary.where.not(encyclopedia_flag: nil).pluck(:encyclopedia_flag).uniq.each do |flag|
-      @philosopher_counts[flag] = ::Philosopher.where(flag => true).count
+      philosophers = if ::Philosopher::DELEGATED_ATTRIBUTES.include?(flag)
+        ::Philosopher.joins(:attrs).where(philosopher_attrs: {flag => true})
+      else
+        ::Philosopher.where(flag => true)
+      end
+      @philosopher_counts[flag] = philosophers.count
     end
   end
 

@@ -1,3 +1,5 @@
+<p><%= link_to "Canonicity dashboard", canonicity_path %></p>
+
 <% if @algorithm_versions.present? %>
 <div style="margin-bottom: 1em;">
   <strong>Algorithm Version:</strong>
@@ -40,10 +42,12 @@
 				<td><%= dictionary.organisation %></td>
 				<td><%= dictionary.encyclopedia_flag %></td>
 				<td>
-					<% if dictionary.encyclopedia_flag && @weights[dictionary.encyclopedia_flag] %>
-						<%= @weights[dictionary.encyclopedia_flag].weight_value %>
-						<% if @weights[dictionary.encyclopedia_flag].weight_value == 0.0 %>
-							<span style="color: #999; font-size: 0.9em;">(legacy)</span>
+					<% weight = @weights[dictionary.encyclopedia_flag] %>
+					<% if dictionary.encyclopedia_flag && weight %>
+						<% if weight.active? %>
+							<%= number_with_precision(weight.weight_value, precision: 2) %>
+						<% else %>
+							<span style="color: #999; font-size: 0.9em;">Inactive legacy source</span>
 						<% end %>
 					<% else %>
 						<span style="color: #ccc;">—</span>

@@ -1,0 +1,63 @@
+<h1><%= @run.subject_type %> run <%= @run.version %></h1>
+
+<p><%= link_to "Canonicity dashboard", canonicity_path %></p>
+
+<section>
+  <h2>Run identity</h2>
+  <p class="section-description">This run used one immutable dataset and one frozen configuration. Recalculation creates another run rather than changing this evidence.</p>
+  <table class="table table-striped">
+    <tbody>
+      <tr><th>Status</th><td><%= @run.status %></td></tr>
+      <tr><th>Version</th><td><%= @run.version %></td></tr>
+      <tr><th>Dataset</th><td><%= @run.metric_input_dataset_id %></td></tr>
+      <tr><th>Parent run</th><td><%= @run.parent_run_id || "—" %></td></tr>
+      <tr><th>Calculator</th><td><code><%= @run.calculator_identity %></code></td></tr>
+      <tr><th>Configuration</th><td><%= @run.configuration_version %></td></tr>
+      <tr><th>Configuration fingerprint</th><td><code><%= @run.configuration_fingerprint %></code></td></tr>
+      <tr><th>Started</th><td><%= @run.started_at %></td></tr>
+      <tr><th>Completed</th><td><%= @run.completed_at || "—" %></td></tr>
+      <tr><th>Failure</th><td><%= @run.failure_reason.presence || "—" %></td></tr>
+    </tbody>
+  </table>
+  <details>
+    <summary>Frozen weights and signal configuration</summary>
+    <pre><%= JSON.pretty_generate("weights" => @run.weights_config, "signals" => @run.signal_config, "source_provenance" => @run.source_provenance) %></pre>
+  </details>
+</section>
+
+<% if @run.completed? %>
+  <section>
+    <h2>Replay</h2>
+    <p class="section-description">Replay recomputes this run from its frozen inputs and compares measures, population, normalization, and dense ranks. It performs no writes.</p>
+    <%= button_to "Replay this run", replay_canonicity_run_path(@run), method: :post %>
+    <% if @report %>
+      <% if @report.matches? %>
+        <p><strong>REPLAY_MATCH</strong></p>
+      <% else %>
+        <p><strong>REPLAY_MISMATCH</strong></p>
+        <pre><%= JSON.pretty_generate(@report.to_h) %></pre>
+      <% end %>
+    <% end %>
+  </section>
+<% end %>
+
+<section>
+  <h2>Snapshots</h2>
+  <p class="section-description">These are the measures and dense ranks produced by the run. Equal measures share a rank, and the next distinct measure receives the next consecutive rank.</p>
+  <table class="table table-striped table-hover">
+    <thead>
+      <tr><th>Shadow</th><th>Measure</th><th>Dense rank</th><th>Normalized measure</th><th>Calculation context</th></tr>
+    </thead>
+    <tbody>
+      <% @snapshots.each do |snapshot| %>
+        <tr>
+          <td><%= snapshot.shadow_type %> <%= snapshot.shadow_id %></td>
+          <td><%= snapshot.measure %></td>
+          <td><%= snapshot.measure_pos %></td>
+          <td><%= snapshot.calculation_context["normalized_measure"] %></td>
+          <td><details><summary>View</summary><pre><%= JSON.pretty_generate(snapshot.calculation_context) %></pre></details></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</section>

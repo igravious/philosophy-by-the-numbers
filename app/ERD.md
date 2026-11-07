@@ -71,13 +71,44 @@ This Rails application uses a complex schema with 32+ tables centered around phi
 - **Key Columns**:
   - Polymorphic: `shadow_id`, `shadow_type` ('Philosopher' or 'Work')
   - Calculation metadata: `calculated_at`, `canonicity_weight_algorithm_version` (FK to canonicity_weights.algorithm_version)
-  - Input signals (captured at calc time): `danker_score`, `linkcount`, `mention_count`, `reference_work_flags` (JSON)
+  - Nullable input signals: `danker_score`, `linkcount`, `mention_count`, `reference_work_flags` (JSON)
+  - Run evidence: `metric_run_id`, `metric_input_record_id`, `calculation_context` (JSON)
   - Danker provenance: `danker_version`, `danker_file`
   - Output: `measure` (calculated score), `measure_pos` (ranking position)
   - Optional: `notes`
-- **Relationships**: `belongs_to :shadow` (Philosopher or Work via shadow_type)
-- **Foreign Key**: `canonicity_weight_algorithm_version` → `canonicity_weights.algorithm_version`
+- **Relationships**: `belongs_to :shadow` (Philosopher or Work via shadow_type); optionally `belongs_to :metric_run` and `belongs_to :metric_input_record`
+- **Retention**: entity deletion does not cascade into snapshots; completed-run snapshots cannot be mutated, deleted, added, or reassigned
+- **Configuration**: run-linked snapshots read frozen weights from their run; legacy snapshots read live weights
 - **Data Source**: Automated calculations via `Philosopher#calculate_canonicity_measure` and `Work#calculate_canonicity_measure`
+
+**8.1. metric_input_datasets**
+- **Purpose**: Immutable populations, normalization contexts, primitive-input provenance, and Philosopher dependencies for controlled calculations
+- **Key Columns**: `subject_type`, `status`, `schema_version`, selected/normalization entity IDs (JSON), `normalization_context`, `source_provenance`, `input_run_id`, `population_checksum`, `capture_completed_at`, `failure_reason`
+- **Retention**: ready datasets cannot be updated or destroyed
+
+**8.2. metric_input_records**
+- **Purpose**: One frozen primitive-input payload per entity in a dataset's selected/normalization union
+- **Key Columns**: `metric_input_dataset_id`, `shadow_id`, `shadow_type`, `entity_id`, `entity_label`, `selected`, `normalization`, `input_payload` (JSON)
+- **Constraints**: unique dataset/shadow pairs; records cannot move between datasets or mutate after their dataset becomes ready
+
+**8.3. canonicity_signals**
+- **Purpose**: Descriptive registry of available input signals and their semantics
+- **Key Columns**: `algorithm_version`, `name`, `description`, `source`, `subject_to_change`, `used_in_formula`, `active`
+
+**8.4. source_events**
+- **Purpose**: Evidence for atomic source imports, distinct from calculation snapshots
+- **Key Columns**: source/import/artifact identities and checksum, entity identity, `attribute_name`, typed `old_value`/`new_value` (JSON), `provenance`, `imported_at`
+
+**8.5. metric_runs**
+- **Purpose**: Controlled calculations over immutable datasets with subject-scoped semantic versions
+- **Key Columns**: version components, `subject_type`, dataset and parent-run IDs, calculator/configuration identities, status/timestamps, frozen `weights_config`, `signal_config`, and `source_provenance`
+- **Relationships**: `belongs_to :metric_input_dataset`; optional parent run; has many snapshots and publications
+- **Retention**: completed runs cannot be updated or destroyed
+
+**8.6. publications**
+- **Purpose**: Append-only history promoting completed runs to current display values
+- **Key Columns**: `metric_run_id`, `subject_type`, `created_at`
+- **Retention**: records cannot be updated or destroyed; latest ID per subject type identifies the current publication
 
 **9. philosopher_attrs**
 - **Purpose**: Extended attributes for philosophers (split from main shadows table via Shadow STI refactor)

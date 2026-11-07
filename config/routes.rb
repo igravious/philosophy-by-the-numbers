@@ -80,6 +80,10 @@ CorpusBuilder::Application.routes.draw do
 		end
 	end
 
+	get 'canonicity/runs/:id' => 'canonicity#show', as: :canonicity_run
+	post 'canonicity/runs/:id/replay' => 'canonicity#replay', as: :replay_canonicity_run
+	get 'canonicity' => 'canonicity#index', as: :canonicity
+
 	resources :resources
 
 	# get 'files/uncached' => 'files#index', as: :uncached
