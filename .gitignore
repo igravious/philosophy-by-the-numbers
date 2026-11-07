@@ -30,6 +30,7 @@ saffron-os-config.json
 # Ignore API keys
 .google_api_key
 .languagelayer_api_key
+/.env
 
 # Ignore notes to self
 .notes
@@ -42,6 +43,7 @@ saffron-os-config.json
 /moneta
 /_txt
 /_misc
+/sources/
 
 # Slurp & Compare/Contrast
 /slurp/1st_try_without_utf8_on_conn
@@ -87,3 +89,4 @@ lib/tasks/shadow.rake.monolithic
 # Danker data directories
 db/danker_*/
 /coverage
+.aider*
