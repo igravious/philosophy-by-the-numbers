@@ -20,6 +20,10 @@ module Canonicity
         selected_ids = canonical_ids(@selected_entity_ids || subject_class.pluck(:id))
         normalization_ids = canonical_ids(@normalization_entity_ids || subject_class.pluck(:id))
         raise CaptureError, "#{@subject_type} population is empty" if selected_ids.empty? || normalization_ids.empty?
+        outside_normalization = selected_ids - normalization_ids
+        if outside_normalization.any?
+          raise CaptureError, "Selected IDs must be contained in normalization IDs: #{outside_normalization.join(", ")}"
+        end
 
         dependency = resolve_dependency if @subject_type == "Work"
         dataset = MetricInputDataset.create!(
@@ -97,7 +101,10 @@ module Canonicity
       dependency = if @input_run_id
         MetricRun.find_by(id: @input_run_id)
       else
-        MetricRun.where(subject_type: "Philosopher", status: "completed").order(id: :desc).first
+        current_ids = ::Philosopher.order(:id).pluck(:id)
+        MetricRun.where(subject_type: "Philosopher", status: "completed").includes(:metric_input_dataset).order(id: :desc).detect do |run|
+          run.metric_input_dataset.selected_entity_ids.map(&:to_i).sort == current_ids
+        end
       end
       unless dependency&.completed? && dependency.subject_type == "Philosopher"
         raise CaptureError, "A completed Philosopher run is required before capturing a Work dataset"

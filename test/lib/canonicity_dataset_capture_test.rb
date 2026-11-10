@@ -1,6 +1,8 @@
 require "test_helper"
+require_relative "../support/canonicity_run_helpers"
 
 class CanonicityDatasetCaptureTest < ActiveSupport::TestCase
+  include CanonicityRunHelpers
   test "captures the selected normalization union with coherent payloads and extrema" do
     selected = create_test_philosopher(entity_id: 42, mention: 100, danker: nil, stanford: true)
     normalization = create_test_philosopher(entity_id: 43, mention: 50, danker: 0.2, stanford: false)
@@ -8,24 +10,42 @@ class CanonicityDatasetCaptureTest < ActiveSupport::TestCase
     dataset = Canonicity::DatasetCapture.new(
       subject_type: "Philosopher",
       selected_entity_ids: [selected.id],
-      normalization_entity_ids: [normalization.id]
+      normalization_entity_ids: [selected.id, normalization.id]
     ).call
 
     assert dataset.ready?
     assert_equal [selected.id], dataset.selected_entity_ids
-    assert_equal [normalization.id], dataset.normalization_entity_ids
+    assert_equal [selected.id, normalization.id].sort, dataset.normalization_entity_ids
     assert_equal 2, dataset.metric_input_records.count
     selected_record = dataset.metric_input_records.find_by!(shadow_id: selected.id)
     normalization_record = dataset.metric_input_records.find_by!(shadow_id: normalization.id)
     assert selected_record.selected?
-    assert_not selected_record.normalization?
+    assert selected_record.normalization?
     assert_not normalization_record.selected?
     assert normalization_record.normalization?
     assert_nil selected_record.input_payload["danker"]
     assert selected_record.input_payload["sources"]["stanford"]
-    assert_equal 50.0, dataset.normalization_context["max_mention"]
+    assert_equal 100.0, dataset.normalization_context["max_mention"]
     assert_equal 0.2, dataset.normalization_context["max_rank"]
     assert_equal 0.1, dataset.normalization_context["min_rank"]
+  end
+
+  test "capture rejects selected entities outside the normalization population" do
+    selected = create_test_philosopher(entity_id: 42, mention: 100)
+    normalization = create_test_philosopher(entity_id: 43, mention: 50)
+
+    error = assert_raises(Canonicity::CaptureError) do
+      Canonicity::DatasetCapture.new(
+        subject_type: "Philosopher",
+        selected_entity_ids: [selected.id],
+        normalization_entity_ids: [normalization.id]
+      ).call
+    end
+
+    assert_match(/Selected IDs must be contained in normalization IDs: #{selected.id}/, error.message)
+    dataset = MetricInputDataset.order(:id).last
+    assert_equal "invalid", dataset.status
+    assert_equal 0, dataset.metric_input_records.count
   end
 
   test "missing entities invalidate capture without retaining partial input records" do
@@ -35,7 +55,7 @@ class CanonicityDatasetCaptureTest < ActiveSupport::TestCase
       Canonicity::DatasetCapture.new(
         subject_type: "Philosopher",
         selected_entity_ids: [selected.id, -1],
-        normalization_entity_ids: [selected.id]
+        normalization_entity_ids: [selected.id, -1]
       ).call
     end
 
@@ -113,6 +133,35 @@ class CanonicityDatasetCaptureTest < ActiveSupport::TestCase
     assert_equal [123.0], payload["author_measures"]
   end
 
+  test "Work capture defaults to the latest completed full-population Philosopher run" do
+    first = create_test_philosopher(entity_id: 42)
+    second = create_test_philosopher(entity_id: 43)
+    philosophers = Philosopher.order(:id).to_a
+    full_run = create_completed_metric_run(
+      subject_type: "Philosopher",
+      shadows: philosophers,
+      measures: {first.id => 100.0, second.id => 50.0},
+      version: "0.8.1"
+    )
+    partial_run = create_completed_metric_run(
+      subject_type: "Philosopher",
+      shadows: [first],
+      measures: {first.id => 999.0},
+      version: "0.9.0"
+    )
+    work = create_test_work(entity_id: 44)
+    Expression.create!(creator_id: first.id, work_id: work.id)
+
+    dataset = Canonicity::DatasetCapture.new(
+      subject_type: "Work", selected_entity_ids: [work.id], normalization_entity_ids: [work.id]
+    ).call
+
+    assert_equal full_run.id, dataset.input_run_id
+    assert_not_equal partial_run.id, dataset.input_run_id
+    payload = dataset.metric_input_records.find_by!(shadow_id: work.id).input_payload
+    assert_equal [100.0], payload["author_measures"]
+  end
+
   test "Work capture reports missing author dependencies across all Works" do
     author = create_test_philosopher(entity_id: 42)
     first_work = create_test_work(entity_id: 43)
@@ -136,7 +185,7 @@ class CanonicityDatasetCaptureTest < ActiveSupport::TestCase
     error = assert_raises(Canonicity::CaptureError) do
       Canonicity::DatasetCapture.new(
         subject_type: "Work", selected_entity_ids: [first_work.id, second_work.id],
-        normalization_entity_ids: [first_work.id]
+        normalization_entity_ids: [first_work.id, second_work.id]
       ).call
     end
 

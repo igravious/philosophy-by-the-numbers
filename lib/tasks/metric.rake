@@ -73,4 +73,22 @@ namespace :metric do
     puts report.to_json
     raise "Replay mismatches detected" unless report.matches?
   end
+
+  desc "Compare measures, ranks, populations, and configuration between two runs"
+  task :compare, [:subject_type, :from_version, :to_version] => :environment do |_task, args|
+    from_run = MetricRun.find_by!(subject_type: args[:subject_type], version: args[:from_version])
+    to_run = MetricRun.find_by!(subject_type: args[:subject_type], version: args[:to_version])
+    report = Canonicity::RunComparison.new(from_run: from_run, to_run: to_run).call
+    puts JSON.pretty_generate(report.to_h)
+  end
+
+  desc "Publish an eligible completed run to current display values"
+  task :publish, [:subject_type, :version] => :environment do |_task, args|
+    run = MetricRun.find_by!(subject_type: args[:subject_type], version: args[:version])
+    service = Canonicity::Publication.new(run: run)
+    warning = service.eligibility.dependency_warning
+    puts "WARNING: #{warning}" if warning
+    publication = service.call
+    puts "Published #{run.subject_type} run #{run.version} (ID #{run.id}) as publication #{publication.id}"
+  end
 end

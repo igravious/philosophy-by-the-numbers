@@ -79,7 +79,7 @@ This Rails application uses a complex schema with 32+ tables centered around phi
 - **Relationships**: `belongs_to :shadow` (Philosopher or Work via shadow_type); optionally `belongs_to :metric_run` and `belongs_to :metric_input_record`
 - **Retention**: entity deletion does not cascade into snapshots; completed-run snapshots cannot be mutated, deleted, added, or reassigned
 - **Configuration**: run-linked snapshots read frozen weights from their run; legacy snapshots read live weights
-- **Data Source**: Automated calculations via `Philosopher#calculate_canonicity_measure` and `Work#calculate_canonicity_measure`
+- **Data Source**: Controlled run snapshots created by `Canonicity::MetricRunCalculator`; historical unlinked snapshots remain valid
 
 **8.1. metric_input_datasets**
 - **Purpose**: Immutable populations, normalization contexts, primitive-input provenance, and Philosopher dependencies for controlled calculations
@@ -108,7 +108,10 @@ This Rails application uses a complex schema with 32+ tables centered around phi
 **8.6. publications**
 - **Purpose**: Append-only history promoting completed runs to current display values
 - **Key Columns**: `metric_run_id`, `subject_type`, `created_at`
-- **Retention**: records cannot be updated or destroyed; latest ID per subject type identifies the current publication
+- **Eligibility**: selected, normalisation, snapshot, and current subject populations must be identical, with finite measures and verified dense ranks
+- **Publication**: bound ActiveRecord updates to `shadows.measure` and `measure_pos` commit in the same transaction as the history record; interruption rolls both back and republishing appends another row
+- **Relationships**: `belongs_to :metric_run`; the latest ID per subject type identifies the current publication
+- **Retention**: records cannot be updated or destroyed
 
 **9. philosopher_attrs**
 - **Purpose**: Extended attributes for philosophers (split from main shadows table via Shadow STI refactor)

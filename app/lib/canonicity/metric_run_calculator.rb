@@ -19,6 +19,7 @@ module Canonicity
       validate_configuration_subject!
       weights = CanonicityWeights.weights_for_version(@configuration_version)
       raise ArgumentError, "No active weights for configuration #{@configuration_version}" if weights.empty?
+      validate_configuration_weights!(weights)
 
       signal_config = default_signal_config
       fingerprint = configuration_fingerprint(weights, signal_config)
@@ -63,6 +64,16 @@ module Canonicity
       work_configuration = @configuration_version.end_with?("-work")
       if (@dataset.subject_type == "Philosopher" && work_configuration) || (@dataset.subject_type == "Work" && !work_configuration)
         raise ArgumentError, "Configuration #{@configuration_version} is not valid for #{@dataset.subject_type}"
+      end
+    end
+
+    def validate_configuration_weights!(weights)
+      philosopher = @dataset.subject_type == "Philosopher"
+      source_names = philosopher ? weights.keys : Canonicity::Work::V2::ENCYCLOPEDIA_SOURCES + %w[philpapers all_bonus]
+      total = weights.values_at(*source_names).compact.sum
+      if total > 1.0
+        classification = philosopher ? "historical-only" : "invalid"
+        raise ArgumentError, "Configuration #{@configuration_version} is #{classification}: #{@dataset.subject_type} source weights total #{format("%.2f", total)}, which can exceed 1.0"
       end
     end
 

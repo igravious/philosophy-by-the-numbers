@@ -1,6 +1,6 @@
 <h1>Canonicity</h1>
 
-<p class="intro-description">Use this page to inspect how canonicity is configured and to review evidence as metric processing progresses. It is read-only: viewing this page does not recalculate scores, change weights, or publish rankings.</p>
+<p class="intro-description">Use this page to inspect how canonicity is configured, compare runs, replay calculations, and explicitly publish eligible rankings. Viewing and comparing do not change scores; only the publish action changes current display values.</p>
 
 <section>
   <h2>Calculator identities</h2>
@@ -236,14 +236,16 @@
         <th>Started</th>
         <th>Completed</th>
         <th>Failure</th>
+        <th>Publication</th>
         <th></th>
       </tr>
     </thead>
     <tbody>
       <% if @runs.empty? %>
-        <tr><td colspan="11">No metric runs have been calculated yet.</td></tr>
+        <tr><td colspan="12">No metric runs have been calculated yet.</td></tr>
       <% end %>
       <% @runs.each do |run| %>
+        <% eligibility = @publication_eligibilities.fetch(run.id) %>
         <tr>
           <td><%= run.id %></td>
           <td><%= run.subject_type %></td>
@@ -255,11 +257,104 @@
           <td><%= run.started_at %></td>
           <td><%= run.completed_at || "—" %></td>
           <td><%= run.failure_reason.presence || "—" %></td>
+          <td>
+            <% if eligibility.eligible? %>
+              <span>Eligible</span>
+            <% else %>
+              <details>
+                <summary>Not eligible</summary>
+                <ul><% eligibility.reasons.each do |reason| %><li><%= reason %></li><% end %></ul>
+              </details>
+            <% end %>
+          </td>
           <td><%= link_to "Show", canonicity_run_path(run) %></td>
         </tr>
       <% end %>
     </tbody>
   </table>
+</section>
+
+<section>
+  <h2>Publication history</h2>
+  <p class="section-description">Publication explicitly promotes an eligible full-population run to the measures and dense ranks shown elsewhere on the site. History is append-only: republishing an older run creates a new record, and the highest publication ID for each subject is current.</p>
+  <table class="table table-striped table-hover">
+    <thead>
+      <tr><th>ID</th><th>Subject</th><th>Run</th><th>Published</th><th>Status</th></tr>
+    </thead>
+    <tbody>
+      <% if @publications.empty? %>
+        <tr><td colspan="5">No runs have been published yet.</td></tr>
+      <% end %>
+      <% @publications.each do |publication| %>
+        <tr>
+          <td><%= publication.id %></td>
+          <td><%= publication.subject_type %></td>
+          <td><%= link_to publication.metric_run.version, canonicity_run_path(publication.metric_run) %></td>
+          <td><%= publication.created_at %></td>
+          <td><%= @current_publications[publication.subject_type] == publication ? "Current" : "Historical" %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2>Run comparison</h2>
+  <p class="section-description">Compare two runs of the same subject to see measure and dense-rank movement, added and missing entities, population and normalization changes, and calculator or configuration differences. Comparison is read-only.</p>
+  <%= form_tag(canonicity_path, method: :get, class: "form-inline") do %>
+    <% options = @runs.map { |run| ["#{run.subject_type} #{run.version} (ID #{run.id})", run.id] } %>
+    <%= label_tag :from_run_id, "From run" %>
+    <%= select_tag :from_run_id, options_for_select(options, params[:from_run_id]), include_blank: true %>
+    <%= label_tag :to_run_id, "To run" %>
+    <%= select_tag :to_run_id, options_for_select(options, params[:to_run_id]), include_blank: true %>
+    <%= submit_tag "Compare", class: "slim" %>
+  <% end %>
+  <% if @comparison_error %>
+    <p><strong><%= @comparison_error %></strong></p>
+  <% elsif @comparison %>
+    <% report = @comparison.to_h %>
+    <p>
+      <%= link_to "#{report[:from_run][:subject_type]} #{report[:from_run][:version]}", canonicity_run_path(report[:from_run][:id]) %>
+      →
+      <%= link_to "#{report[:to_run][:subject_type]} #{report[:to_run][:version]}", canonicity_run_path(report[:to_run][:id]) %>
+    </p>
+    <ul>
+      <li>Added entities: <%= @comparison.added_entities.length %> (<%= @comparison.added_entities.join(", ").presence || "none" %>)</li>
+      <li>Missing entities: <%= @comparison.missing_entities.length %> (<%= @comparison.missing_entities.join(", ").presence || "none" %>)</li>
+      <li>Changed entities: <%= @comparison.changes.length %>; unchanged entities: <%= @comparison.unchanged_entity_count %></li>
+      <li>Calculator: <code><%= report[:calculator][:from] %></code> → <code><%= report[:calculator][:to] %></code></li>
+      <li>Configuration: <%= report[:configuration][:from_version] %> → <%= report[:configuration][:to_version] %>; fingerprint changed: <%= report[:configuration][:changed] %></li>
+    </ul>
+    <details>
+      <summary>Population and normalization differences</summary>
+      <pre><%= JSON.pretty_generate(report[:population]) %></pre>
+    </details>
+    <table class="table table-striped table-hover">
+      <thead>
+        <tr><th>Shadow</th><th>Entity</th><th>From measure</th><th>To measure</th><th>Change</th><th>From rank</th><th>To rank</th><th>Rank change</th></tr>
+      </thead>
+      <tbody>
+        <% if @comparison.changes.empty? %>
+          <tr><td colspan="8">No measure or rank changes.</td></tr>
+        <% end %>
+        <% @comparison.changes.first(100).each do |change| %>
+          <tr>
+            <td><%= change[:shadow_id] %></td>
+            <td><%= change[:label] || "Q#{change[:entity_id]}" %></td>
+            <td><%= change[:from_measure] %></td>
+            <td><%= change[:to_measure] %></td>
+            <td><%= change[:measure_change] %></td>
+            <td><%= change[:from_rank] %></td>
+            <td><%= change[:to_rank] %></td>
+            <td><%= change[:rank_change] %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+    <% if @comparison.changes.length > 100 %>
+      <p>Showing the first 100 changed entities. Use <code>metric:compare</code> for the complete report.</p>
+    <% end %>
+  <% end %>
 </section>
 
 <section>

@@ -10,7 +10,7 @@ The CorpusBuilder application provides comprehensive Rake tasks for building and
 
 **Purpose**: Calculate Philosopher measures using the V2 calculator and configured weights without creating unlinked snapshots
 
-This is the legacy direct-calculation path. Controlled run snapshots are implemented through the dataset/run workflow rather than by model methods. Current display publication remains a separate operation.
+This task now uses the controlled dataset capture and run pipeline. It does not create unlinked snapshots or change current display values; publication remains a separate operation.
 
 ```bash
 bin/rake shadow:philosopher:metric
@@ -30,11 +30,11 @@ bin/rake shadow:philosopher:metric
 bin/rake shadow:philosopher:danker
 ```
 
-Conditional selections are ignored so the import remains a complete-population operation.
+Conditional selections are ignored so the import remains a complete-population operation. Use a complete artifact: every omitted entity is deliberately assigned `nil`, and every subject row receives a source event, even when its numeric value is unchanged. A partial file is not an incremental overlay.
 
 ### `rake metric:import_danker[file_path,subject_type,source_version]`
 
-Import an explicit Danker CSV or TSV artifact for Philosopher or Work.
+Import an explicit Danker CSV or TSV artifact for Philosopher or Work. The artifact must be sorted and duplicate-free; all rows are validated before any write. Omitted entities become `nil`, never `0.0`, and the complete set of current values and source events commits atomically.
 
 ```bash
 bin/rake "metric:import_danker[db/danker/latest/scores.csv,Philosopher,2026-11-06]"
@@ -50,7 +50,7 @@ bin/rake "metric:import_work_flags[works.json]"
 
 ### `rake metric:capture[subject_type,input_run_id,selected_entity_ids,normalization_entity_ids]`
 
-Capture an immutable dataset and its primitive input records. Omit the last three arguments for the complete subject population. Use pipe-separated IDs for small experimental captures; `input_run_id` is optional for Philosopher and defaults to the latest completed Philosopher run for Work.
+Capture an immutable dataset and its primitive input records. Omit the last three arguments for the complete subject population. Use pipe-separated IDs for small experimental captures; `input_run_id` is optional for Philosopher and defaults to the latest completed Philosopher run whose selected IDs equal the current full population. An explicit dependency may be supplied for controlled experiments. Selected IDs must be contained in normalisation IDs, although normalisation may include additional entities.
 
 ```bash
 # Complete Philosopher population
@@ -67,7 +67,7 @@ Failed captures become invalid with a failure reason and do not retain partial i
 
 ### `rake metric:calculate[dataset_id,configuration_version,parent_run_id]`
 
-Calculate a controlled run over a ready dataset. Configuration defaults to normalized `2.1` for Philosopher and `2.0-work` for Work. Original `2.0` weights are preserved for compatibility. Runs begin at `0.7.0` independently for each subject type.
+Calculate a controlled run over a ready dataset. Configuration defaults to normalized `2.1` for Philosopher and `2.0-work` for Work. Original `2.0` is historical-only. Cross-subject configurations and source weights above 1 are rejected before run allocation; Work's check excludes genre multipliers. Runs begin at `0.7.0` independently for each subject type.
 
 ```bash
 bin/rake "metric:calculate[3]"
@@ -91,9 +91,27 @@ bin/rake "metric:replay[Philosopher,0.7.0]"
 
 The command prints `matches: true` only when every check matches and raises on mismatches.
 
+### `rake metric:compare[subject_type,from_version,to_version]`
+
+Compare two runs of one subject. The JSON report includes measure and dense-rank movement, added and missing entities, selected and normalisation population differences, normalization-context changes, and calculator/configuration differences.
+
+```bash
+bin/rake "metric:compare[Philosopher,0.8.0,0.9.0]"
+```
+
+### `rake metric:publish[subject_type,version]`
+
+Publish a completed run only when selected, normalisation, snapshot, and current subject populations are identical and all measures and dense ranks verify. One transaction updates current `shadows.measure` and `measure_pos` values with bound ActiveRecord writes and appends the publication record. Republishing appends another record; interruption rolls back everything.
+
+```bash
+bin/rake "metric:publish[Philosopher,0.8.1]"
+```
+
+Work dependency mismatches print a warning without blocking publication. `shadow:work:order2[version]` and `shadow:philosopher:new_order[version]` are compatibility wrappers over the same service and require an explicit version; they no longer rank live values or modify snapshots.
+
 ### `rake metric:runs` and `rake metric:show[subject_type,version]`
 
-List run identities or inspect one run and its snapshots. Run details and read-only replay are also available at `/canonicity`.
+List run identities or inspect one run and its snapshots. Run details, comparison, publication history/actions, and read-only replay are also available at `/canonicity`; dashboard snapshots are paginated 100 at a time.
 
 ### `rake danker:update`
 

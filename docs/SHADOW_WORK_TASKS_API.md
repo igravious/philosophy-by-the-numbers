@@ -137,9 +137,9 @@ bin/rake shadow:work:viaf[condition]
 
 **Purpose**: Calculate and analyze measures/metrics for philosophical works.
 
-#### `shadow:work:order2`
+#### `shadow:work:order2[version]`
 
-**Purpose**: Perform ordering analysis on works.
+**Purpose**: Publish an explicitly selected completed Work run through `Canonicity::Publication`. The run must cover the full current Work population. This compatibility wrapper uses the same eligibility checks and atomic publication service as `metric:publish`; it does not independently reorder live values or modify snapshots.
 
 #### `shadow:work:describe`
 
@@ -179,13 +179,14 @@ bin/rake shadow:work:viaf[condition]
 
 ## Data Flow
 
-### Discovery → Import → Enrichment → Analysis
+### Discovery → Import → Enrichment → Analysis → Publication
 
 1. **Discovery**: Use `show` tasks to explore available works
 2. **Import**: Use `populate` tasks to bring works into local database  
 3. **Enrichment**: Use `work_labels`, `viaf`, `signal*` tasks to add metadata
 4. **Analysis**: Use `measure`, `describe`, `connect` tasks to analyze corpus
-5. **Quality**: Use `expunge`, `order2` tasks to refine the corpus
+5. **Quality**: Use `expunge` to refine the corpus
+6. **Publication**: Use `order2[version]` or `metric:publish[Work,version]` to promote an eligible run
 
 ## Integration Points
 

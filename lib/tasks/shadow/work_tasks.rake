@@ -492,30 +492,16 @@ begin
         end
       end
 
-      desc "SPARQLy textual investigations (of the order2ing variety)"
-      task order2: :environment do
-        Shadow.none
+      desc "Publish an explicitly selected completed Work canonicity run"
+      task :order2, [:version] => :environment do |_task, args|
+        raise ArgumentError, "order2 requires an explicit Work run version; use metric:publish[Work,version]" if args[:version].blank?
 
-        # Update measure_pos based on current measure values in shadow table
-        works = Work.order('measure desc').group(:measure)
-        work_groupings = works.count
-        num_work_blocks = work_groupings.length
-        bar = progress_bar(num_work_blocks, FORCE, 'groups of records')
-        work_groupings.each_with_index do |measure, idx|
-          Work.where(measure: measure[0]).update_all(measure_pos: idx+1)
-          update_progress(bar)
-        end
-
-        # Also update measure_pos in latest snapshots for each work
-        puts "Updating measure_pos in metric snapshots..."
-        snapshot_bar = progress_bar(Work.count, FORCE, '', 'updating snapshots')
-        Work.find_each do |work|
-          latest_snapshot = work.metric_snapshots.where(metric_run_id: nil).order(calculated_at: :desc).first
-          if latest_snapshot && latest_snapshot.measure_pos != work.measure_pos
-            latest_snapshot.update(measure_pos: work.measure_pos)
-          end
-          update_progress(snapshot_bar)
-        end
+        run = MetricRun.find_by!(subject_type: "Work", version: args[:version])
+        service = Canonicity::Publication.new(run: run)
+        warning = service.eligibility.dependency_warning
+        puts "WARNING: #{warning}" if warning
+        publication = service.call
+        puts "Published Work run #{run.version} (ID #{run.id}) as publication #{publication.id}"
       end
 
       desc "Capture Work inputs and calculate a controlled canonicity run"

@@ -82,6 +82,7 @@ CorpusBuilder::Application.routes.draw do
 
 	get 'canonicity/runs/:id' => 'canonicity#show', as: :canonicity_run
 	post 'canonicity/runs/:id/replay' => 'canonicity#replay', as: :replay_canonicity_run
+	post 'canonicity/runs/:id/publish' => 'canonicity#publish', as: :publish_canonicity_run
 	get 'canonicity' => 'canonicity#index', as: :canonicity
 
 	resources :resources

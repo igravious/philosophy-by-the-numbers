@@ -47,7 +47,7 @@ The algorithm uses configurable weights stored in the `canonicity_weights` table
 | `all_bonus` | 0.08 | Bonus for having any authoritative sources |
 | `runes` | NULL | Philosophy Dictionary (inactive legacy source) |
 
-**Total Active Bitset Weight**: 1.000000, including `all_bonus`. All active weights are stored directly at two decimal places. Original `2.0` weights are preserved separately for compatibility; normalized `2.1` is the Philosopher default.
+**Total Active Bitset Weight**: 1.000000, including `all_bonus`. All active weights are stored directly at two decimal places. Original `2.0` is retained for historical replay only because its source weights can exceed 1; normalized `2.1` is the Philosopher default. Configuration `2.2` copies `2.1` with Routledge changed from `0.17` to `0.16`, preserving the original weight set for controlled comparison.
 
 ### Weight Determination Methodology
 
@@ -83,26 +83,40 @@ Where:
 - Scale_Factor = 10,000,000 (for user-friendly display)
 ```
 
-## Edge Case Handling
+## Zero Scores and Edge Cases
 
-### Zero Mentions
-- Philosophers with `mention = 0` get `Citation_Authority = 0`
-- Results in canonicity score of 0 (appropriate for uncited figures)
+A zero measure means **no positive score under the current canonicity inputs and derivation rules**. It does not mean that an entity is not a philosopher or not a philosophical work, and it is not a reason by itself to remove or reclassify that entity. Zero-valued inputs and missing inputs must be audited separately.
 
-### Missing Web Authority  
-- Philosophers with `danker = nil` get `Web_Authority = min_rank / 2`
-- Provides minimal but non-zero authority score
+### Mention and Role Suppression
 
-### No Source Coverage
-- Philosophers not in any authoritative source get `Source_Coverage = 0`
-- `all_bonus` only applies if philosopher appears in at least one source
-- Results in canonicity score of 0
+Philosophers with raw `mention = 0` have zero citation authority and therefore zero measure. A missing philosophy mention is also an input-quality warning: it may indicate limited source text, scraping or classification problems, or genuinely absent terminology, rather than insignificance. Positive raw mentions can also become zero through the pinned legacy role-suppression rule when more than one configured capacity matches. Work differs deliberately: nil or zero Work mentions default to `0.5` before normalization.
+
+### Missing and Zero Danker Values
+
+Philosopher `danker = nil` uses the run's frozen `min_rank` fallback. That context is calculated as half the minimum captured rank, including zero, so it can itself be `0.0`; a missing value does not guarantee a nonzero score. Work excludes both zero and NULL when selecting its ranked minimum, so its fallback is normally positive, but an explicit raw `danker = 0.0` remains zero. Danker imports preserve omitted entities as `nil`; they never coerce omission to numeric zero.
+
+### Source Coverage and Author Adjustment
+
+No active Philosopher source coverage produces a zero source factor. Work gives zero source coverage a `0.1` fallback, but the legacy author adjustment can cancel that coverage when all linked authors have zero measures. Work applies genre exactly once and guards zero denominators before deriving either output.
+
+### Published Zero-Score Audit
+
+The currently published runs, Philosopher `0.10.0` and Work `0.7.2`, contain 3,358 zero-measure philosophers and 9 zero-measure Works:
+
+- 3,354 philosophers have raw `mention = 0`.
+- 4 philosophers have positive raw mentions suppressed by the role rule.
+- 9 Works have positive source coverage cancelled by the all-zero-author adjustment.
+- No zero-measure philosopher or Work has a zero Danker factor.
+
+Before genuine-input restoration, 277 philosophers and 626 Works had stored `danker = 0.0` even though all of them were absent from the genuine 2019 artifact. Historical import code coerced those missing values to numeric zero; they were not genuine source zeros. Restoration changed them to `nil`, moving 210 philosophers and all 626 Works off zero. The other 67 philosophers remained zero because of raw zero mention, and the 9 Works remained zero through the author adjustment.
+
+Recheck the cause breakdown after every capture and before every publication. Distinguish genuine numeric zero, missing `nil`, and derived zero, and never treat the count alone as a philosophical classification.
 
 ### Mathematical Safety
-- Division by zero protection for `max_mention = 0` or `max_rank = 0`
-- Returns 0.0 for edge cases rather than NaN or infinity
-- `Canonicity::Normalization.product` enforces the normalized formula shape `S₀ × S₁ × S₂ × … × Sₙ`
-- Every scalar, bitset-coverage, genre, and derived factor must be finite and within `[0, 1]`; violations raise `Canonicity::NormalizationError` naming the offending component rather than returning an invalid measure
+
+- Division by zero protection for `max_mention = 0` or `max_rank = 0` returns 0.0 rather than NaN or infinity.
+- `Canonicity::Normalization.product` enforces the normalized formula shape `S₀ × S₁ × S₂ × … × Sₙ`.
+- Every scalar, bitset-coverage, genre, and derived factor must be finite and within `[0, 1]`; violations raise `Canonicity::NormalizationError` naming the offending component rather than returning an invalid measure.
 
 Scalar signals use extrema fixed for the run. Bitset signals sum weighted on/off flags, including any bonus, and their total factor cannot exceed 1. Genre, role suppression, missing-value fallbacks, and author adjustments are derived rules rather than additional raw signal types.
 
@@ -139,29 +153,21 @@ Two numerical defects are corrected:
 - Work's rake task no longer applies the genre multiplier twice.
 - Work's zero-denominator guard runs before either normalized or display-scaled output is derived, preventing non-finite measures.
 
-## Metric Run Infrastructure (Phases 1–3)
+## Controlled Runs and Publication (Phases 1–5)
 
-The controlled canonicity architecture now includes:
+The architecture includes immutable input datasets/records, subject-scoped metric runs, descriptive signal metadata, typed source events, and append-only publications. Run-linked snapshots preserve nullable inputs, explanatory calculation context, and frozen run weights. Entity deletion does not erase evidence, and ready datasets, completed runs, and publications are mutation-protected. `signal_config` is descriptive fingerprint evidence, not an executable calculator argument.
 
-- `metric_input_datasets` and `metric_input_records` for immutable populations, normalization contexts, primitive payloads, provenance, and dependencies.
-- `metric_runs` for subject-scoped versions, calculator/configuration identities, frozen weights, executable signal configuration, and run status.
-- `canonicity_signals` for descriptive input-signal metadata, including time-varying and unused inputs.
-- `source_events` for typed old/new source values and atomic import provenance.
-- `publications` for append-only publication history, with the latest ID per subject type identifying the current publication.
+Danker and reference-flag imports update inputs and source events atomically under the re-entrant cross-process lock. Danker validation streams and checksums the complete artifact before the transaction. Every omitted entity receives `nil`, never a coerced zero. Model calculations do not create unlinked snapshots.
 
-Run-linked snapshots preserve nullable primitive inputs and explanatory `calculation_context`, and read weights from their frozen run configuration. Legacy snapshots retain live-weight compatibility. Entity deletion no longer destroys snapshot evidence; ready datasets, completed runs, and publications are protected from mutation.
+Capture freezes selected and normalisation IDs, their primitive inputs, extrema, provenance, and any completed Philosopher dependency in one transaction. Selected IDs must be contained in normalisation IDs. Work capture requires a completed Philosopher run and freezes linked-author snapshot IDs and measures. Missing entities or authors invalidate capture without partial records; interrupted captures and runs are reconciled when the lock is next acquired. `Canonicity::CalculatorInput` uses required-key fetches so absent payload keys cannot silently become fallbacks.
 
-Phase 2 adds atomic Danker and reference-flag imports using the re-entrant cross-process metric operation lock. Danker validation streams and checksums the artifact in one pass, retaining only scores for the subject population instead of loading the full Wikidata file. Every import records typed old/new values with source provenance. Danker entities missing from an artifact receive `nil`, never a coerced zero. Model calculations no longer create unlinked snapshots.
+Calculation pre-flight rejects cross-subject configurations and source weights above 1 before allocating a run version. Work's check covers Borchert, Cambridge, Routledge, PhilPapers, and `all_bonus`, excluding genre multipliers. Completed runs verify exact selected coverage, finite measures, and dense ranks. Replay recomputes all of these read-only and reports every mismatch without repairing it.
 
-Dataset capture reads its IDs and provenance in the same transaction as its primitive records. It freezes selected and normalization populations, their union of inputs, normalization context, provenance, and any completed Philosopher dependency. Captured values must agree with the latest relevant source events. Missing entities or author dependencies invalidate capture without leaving partial input records, early dependency failures leave visible invalid evidence, and missing authors are reported across all Works. Interrupted captures become invalid and interrupted runs become failed when the lock is next acquired.
+Publication revalidates that selected, normalisation, snapshot, and current subject populations are identical, then updates display measures and ranks with bound ActiveRecord writes in the same transaction as the history record. Republishing appends history, interruption rolls everything back, and dependency mismatches warn on the dashboard and CLI without blocking. `metric:compare` reports measure/rank movement, added/missing entities, population and normalisation differences, and calculator/configuration differences. Legacy `order2` and `new_order` tasks only delegate to explicit publication.
 
-`Canonicity::CalculatorInput` adapts database-round-tripped JSON payloads to the symbol-keyed V2 contracts using required-key fetches. This prevents missing keys from silently becoming fallback values during calculation or replay.
+The `/canonicity` dashboard exposes all of this state. Run snapshots are paginated 100 at a time, and index eligibility batches current-population and snapshot queries rather than issuing them independently for every run.
 
-Phase 3 adds controlled calculation and recalculation over ready datasets. Each run records a subject-scoped semantic version, calculator and configuration identities, a configuration fingerprint, frozen weights and signals, and provenance. Runs complete only after selected-population coverage, finite measures, and dense ranks are verified; failures retain evidence without partial snapshots. Philosopher and Work versions begin independently at 0.7.0. Recalculation reuses the dataset and applies patch, minor, or major bumps according to input/configuration/calculator changes.
-
-Read-only replay uses only the frozen run and dataset to recompute exact measures, population, normalization context, and dense ranks. It reports added/missing entities and measure, rank, or normalization mismatches without repairing them or writing anything.
-
-The `/canonicity` dashboard exposes calculator identities, configuration, signal definitions, dataset status/populations/provenance/dependencies/failures, source events, run identities, snapshots, and replay results for UAT as later phases add comparison and publication.
+Real-data verification includes configuration `2.2` and small run `0.9.0`, which left `2.1` unchanged. A later synthetic scenario contaminated four live inputs and produced Work run `0.7.1`; that immutable run remains technically publish-eligible but is permanently quarantined and must never be published. The genuine 2019 artifact was then re-imported atomically for both subjects, restoring all four values and converting 903 legacy coerced zeros to `nil`. Full-population Philosopher run `0.10.0` and Work run `0.7.2` replayed exactly and are the current publications, with zero display mismatches and no dependency warning. Default Work capture now selects the latest completed full-population Philosopher run rather than a newer partial experiment.
 
 ## Usage Examples
 
@@ -183,7 +189,7 @@ score = philosopher.calculate_canonicity_measure(algorithm_version: '2.1')
 ### With Danker Data Context
 ```ruby
 score = philosopher.calculate_canonicity_measure(
-  algorithm_version: '2.0',
+  algorithm_version: '2.1',
   danker_info: { 
     version: '2024-10-04', 
     file: '2024-10-04.all.links.c.alphanum.csv' 
@@ -195,7 +201,7 @@ score = philosopher.calculate_canonicity_measure(
 
 - **Method Return**: Normalized score (0.0 to 1.0) for algorithmic analysis
 - **Database Storage**: Scaled score (`measure` field) for user display and ranking  
-- **Snapshot Creation**: Automatic audit trail with exact configuration used
+- **Snapshot Creation**: Controlled runs create run-linked snapshots with frozen configuration; model calculations do not automatically create unlinked snapshots
 
 ## Performance Considerations
 

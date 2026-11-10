@@ -77,20 +77,52 @@ class CanonicityMetricRunCalculatorTest < ActiveSupport::TestCase
     end
   end
 
-  test "per-entity failure marks the run failed without partial snapshots" do
-    partial_dataset = Canonicity::DatasetCapture.new(
-      subject_type: "Philosopher", selected_entity_ids: [@first.id], normalization_entity_ids: [@second.id]
-    ).call
+  test "rejects Philosopher weights that can exceed one before allocating a run version" do
+    CanonicityWeights.where(algorithm_version: "2.0").update_all(active: false)
+    seed_weights("2.0", routledge: 0.8, stanford: 0.8, all_bonus: 0.08)
 
-    error = assert_raises(Canonicity::NormalizationError) do
-      Canonicity::MetricRunCalculator.new(dataset: partial_dataset).call
+    assert_no_difference "MetricRun.count" do
+      error = assert_raises(ArgumentError) do
+        Canonicity::MetricRunCalculator.new(dataset: @dataset, configuration_version: "2.0").call
+      end
+      assert_match(/historical-only/, error.message)
+      assert_match(/1.68/, error.message)
+    end
+  end
+
+  test "per-entity failure marks the run failed without partial snapshots" do
+    error = assert_raises(KeyError) do
+      Canonicity::MetricRunCalculator.new(dataset: @dataset, calculator_identity: "missing-calculator").call
     end
 
-    assert_match(/mention/, error.message)
+    assert_match(/missing-calculator/, error.message)
     run = MetricRun.order(:id).last
     assert_equal "failed", run.status
     assert_equal 0, run.metric_snapshots.count
     assert_equal "0.7.0", run.version
+  end
+
+  test "rejects Work source weights above one before allocating a run version" do
+    philosopher_run = Canonicity::MetricRunCalculator.new(dataset: @dataset).call
+    work = create_test_work(entity_id: 44, mention: 100, danker: 1.0)
+    work_dataset = Canonicity::DatasetCapture.new(
+      subject_type: "Work", selected_entity_ids: [work.id], normalization_entity_ids: [work.id], input_run_id: philosopher_run.id
+    ).call
+    {
+      "borchert" => 0.8, "cambridge" => 0.2, "routledge" => 0.25,
+      "philpapers" => 0.2, "all_bonus" => 0.1,
+      "genre_philosophical" => 1.0, "genre_other" => 0.5
+    }.each do |source, weight|
+      CanonicityWeights.create!(algorithm_version: "2.1-work", source_name: source, weight_value: weight, active: true)
+    end
+
+    assert_no_difference "MetricRun.count" do
+      error = assert_raises(ArgumentError) do
+        Canonicity::MetricRunCalculator.new(dataset: work_dataset, configuration_version: "2.1-work").call
+      end
+      assert_match(/Work source weights total 1.55/, error.message)
+      assert_match(/invalid/, error.message)
+    end
   end
 
   test "Work calculation uses its independent version sequence and frozen author dependency" do

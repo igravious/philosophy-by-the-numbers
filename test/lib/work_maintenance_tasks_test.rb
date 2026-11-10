@@ -156,7 +156,7 @@ class WorkMaintenanceTasksTest < ActiveSupport::TestCase
     refute @works.last.reload.obsolete
   end
 
-  test "position updates preserve immutable completed-run snapshots" do
+  test "order2 publishes only an explicitly selected completed Work run" do
     {"2.1" => {"routledge" => 0.17, "stanford" => 0.10, "all_bonus" => 0.08},
      "2.0-work" => {"borchert" => 0.25, "cambridge" => 0.20, "routledge" => 0.25,
                     "philpapers" => 0.20, "all_bonus" => 0.10, "genre_philosophical" => 1.0, "genre_other" => 0.5}}.each do |version, sources|
@@ -169,18 +169,34 @@ class WorkMaintenanceTasksTest < ActiveSupport::TestCase
     Canonicity::MetricRunCalculator.new(dataset: figures).call
     dataset = Canonicity::DatasetCapture.new(subject_type: "Work").call
     run = Canonicity::MetricRunCalculator.new(dataset: dataset).call
-    frozen_positions = run.metric_snapshots.order(:shadow_id).pluck(:shadow_id, :measure_pos)
-    with_task_progress(@receiver) { run_task("order2") }
-    assert_equal [1, 2], @works.map { |work| work.reload.measure_pos }
-    assert_equal frozen_positions, run.metric_snapshots.order(:shadow_id).pluck(:shadow_id, :measure_pos)
+    legacy_snapshot = MetricSnapshot.create_snapshot_for_work(@works.first, 123.0)
+    frozen_positions = run.metric_snapshots.order(:shadow_id).pluck(:shadow_id, :measure, :measure_pos)
+
+    output = run_task("order2", run.version)
+
+    assert_includes output, "Published Work run #{run.version}"
+    assert_includes output, "WARNING: Work run depends on Philosopher run #{figures.metric_runs.first.version}"
+    assert_includes output, "no currently published Philosopher run"
+    run.metric_snapshots.each do |snapshot|
+      work = Work.find(snapshot.shadow_id)
+      assert_equal snapshot.measure, work.measure
+      assert_equal snapshot.measure_pos, work.measure_pos
+    end
+    assert_equal frozen_positions, run.metric_snapshots.order(:shadow_id).pluck(:shadow_id, :measure, :measure_pos)
+    assert_nil legacy_snapshot.reload.measure_pos
+    assert_equal run, Publication.current_for("Work").metric_run
   end
 
-  test "position updates continue ranking legacy snapshots" do
+  test "order2 without an explicit version leaves current values and snapshots untouched" do
     snapshot = MetricSnapshot.create_snapshot_for_work(@works.first, @works.first.measure)
-    with_task_progress(@receiver) { run_task("order2") }
-    assert_equal 1, snapshot.reload.measure_pos
-    with_task_progress(@receiver) { run_task("order2") }
-    assert_equal 1, snapshot.reload.measure_pos
+    original_values = Work.order(:id).pluck(:id, :measure, :measure_pos)
+
+    error = assert_raises(ArgumentError) { run_task("order2") }
+
+    assert_match(/explicit Work run version/, error.message)
+    assert_equal original_values, Work.order(:id).pluck(:id, :measure, :measure_pos)
+    assert_nil snapshot.reload.measure_pos
+    assert_equal 0, Publication.count
   end
 
   private

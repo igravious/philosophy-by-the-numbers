@@ -25,6 +25,31 @@
   </details>
 </section>
 
+<section>
+  <h2>Publication</h2>
+  <p class="section-description">Publication copies this run’s display-scaled measures and verified dense ranks to the current Philosopher or Work records in one transaction. It never changes the run or its snapshots.</p>
+  <% if @publication_eligibility.eligible? %>
+    <p><strong>Eligible for publication.</strong></p>
+  <% else %>
+    <p><strong>Not eligible for publication:</strong></p>
+    <ul><% @publication_eligibility.reasons.each do |reason| %><li><%= reason %></li><% end %></ul>
+  <% end %>
+  <% if @publication_eligibility.dependency_mismatch? %>
+    <p class="dependency-warning"><strong>Dependency warning:</strong> <%= @publication_eligibility.dependency_warning %> Publication is allowed, but the displayed Work scores derive from different Philosopher measures.</p>
+  <% end %>
+  <% if @publication_eligibility.eligible? %>
+    <%= button_to "Publish this run", publish_canonicity_run_path(@run), method: :post %>
+  <% end %>
+  <% if @run.publications.any? %>
+    <h3>Publication history for this run</h3>
+    <ul>
+      <% @run.publications.order(id: :desc).each do |publication| %>
+        <li>Publication <%= publication.id %> at <%= publication.created_at %><%= " (current)" if Publication.current_for(@run.subject_type) == publication %></li>
+      <% end %>
+    </ul>
+  <% end %>
+</section>
+
 <% if @run.completed? %>
   <section>
     <h2>Replay</h2>
@@ -44,7 +69,7 @@
 <section>
   <h2>Snapshots</h2>
   <p class="section-description">These are the measures and dense ranks produced by the run. Equal measures share a rank, and the next distinct measure receives the next consecutive rank.</p>
-  <table class="table table-striped table-hover">
+  <table class="table table-striped table-hover snapshots">
     <thead>
       <tr><th>Shadow</th><th>Measure</th><th>Dense rank</th><th>Normalized measure</th><th>Calculation context</th></tr>
     </thead>
@@ -60,4 +85,5 @@
       <% end %>
     </tbody>
   </table>
+  <%= paginate @snapshots %>
 </section>

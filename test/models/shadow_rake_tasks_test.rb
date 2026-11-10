@@ -53,6 +53,32 @@ class ShadowRakeTasksTest < ActiveSupport::TestCase
     task&.reenable
   end
 
+  test "philosopher new_order publishes only an explicitly selected run" do
+    Philosopher.create!(entity_id: 9103, mention: 200, danker: 0.8, stanford: true)
+    Philosopher.create!(entity_id: 9104, mention: 50, danker: 0.2, routledge: true)
+    dataset = Canonicity::DatasetCapture.new(subject_type: "Philosopher").call
+    run = Canonicity::MetricRunCalculator.new(dataset: dataset).call
+    original_values = Philosopher.order(:id).pluck(:id, :measure, :measure_pos)
+    task = Rake::Task["shadow:philosopher:new_order"]
+
+    task.reenable
+    error = assert_raises(ArgumentError) { capture_io { task.invoke } }
+    assert_match(/explicit Philosopher run version/, error.message)
+    assert_equal original_values, Philosopher.order(:id).pluck(:id, :measure, :measure_pos)
+
+    task.reenable
+    output = capture_io { task.invoke(run.version) }.first
+    assert_includes output, "Published Philosopher run #{run.version}"
+    run.metric_snapshots.each do |snapshot|
+      philosopher = Philosopher.find(snapshot.shadow_id)
+      assert_equal snapshot.measure, philosopher.measure
+      assert_equal snapshot.measure_pos, philosopher.measure_pos
+    end
+    assert_equal run, Publication.current_for("Philosopher").metric_run
+  ensure
+    task&.reenable
+  end
+
   test "danker imports update current values and source events without snapshots" do
     test_phil = Philosopher.create!(entity_id: 9102, mention: 100, danker: 0.5)
     file = Tempfile.new(["danker", ".csv"], Rails.root.join("tmp").to_s)

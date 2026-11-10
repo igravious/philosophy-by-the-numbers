@@ -1,12 +1,21 @@
 # Plan CFP-A: Canonicity Metric Runs
 
-**Status:** Phases 0–3 complete, including controlled runs and exact replay; Phase 4 is next.
+**Status:** COMPLETE — genuine inputs restored and Phases 0–5 verified with corrected full-population publications on 2026-11-10.
 **Series:** CFP-A; outside the numerical modernisation sequence.
 **Pillar:** 1 — `philosophy-by-the-numbers`.
 **Three-pillar programme:** [CFP planning and research-programme structure](../wip/dh2027-cfp-planning.md#research-programme-structure)
 **Scope:** `philosophy-by-the-numbers`, including immutable input datasets, controlled canonicity experiments, replay, dependencies, retention, and publication.
 **Starting run version:** `0.7.0` independently for each subject type.
 **Compatibility rule:** Existing records, weights, snapshots, and current displayed measures remain unchanged unless explicitly published from a completed run.
+
+| Phase | Status | Verification |
+|---|---|---|
+| 0 — Pure calculators | Complete | Characterization and calculator tests |
+| 1 — Schemas and retention | Complete | Model, retention, and schema tests |
+| 2 — Imports and capture | Complete | Atomic import and coherent capture tests |
+| 3 — Calculate and replay | Complete | Controlled runs and exact replay |
+| 4 — Publication and comparison | Complete | 1,137 tests, exact replay, real publication and rollback |
+| 5 — Documentation and verification | Complete | 1,142 tests, genuine restoration, corrected publications |
 
 ## 1. Objective
 
@@ -26,13 +35,25 @@ Operations are distinct:
 
 The intended formula is retained. Work's duplicate genre application is treated as a defect, not a second formula.
 
+### Identifier glossary
+
+| Identifier | Example | Changes when |
+|---|---|---|
+| Calculator | `philosopher-v2` | The formula implementation or derivation rules change |
+| Configuration | `2.1` | A new weight set is created |
+| Run | `0.8.1` | Every calculation attempt, including a failed attempt |
+| Payload schema | `1.0` | The primitive input-record shape changes |
+
+Always prefix a version with its kind in prose: calculator `philosopher-v2`, configuration `2.1`, run `0.8.1`, or payload schema `1.0`. A bare `2.0` is ambiguous and should not be used.
+
 ## 2. Decisions
 
 - No meaningful run names or manually maintained labels.
 - Run identity comprises `subject_type`, `version`, `started_at`, and `completed_at`.
-- Versions use `major.minor.patch` **independently for each subject type**, beginning with both Philosopher and Work at `0.7.0`.
+- Versions use `major.minor.patch` **independently for each subject type**, beginning with both Philosopher and Work at run `0.7.0`.
 - Run, calculator, configuration, dataset, and publication identities are distinct.
 - Existing algorithm versions and historical snapshots are not renumbered.
+- Philosopher configuration `2.0` is historical-only: its source weights can total more than 1 and new calculations reject it before allocating a run version.
 - The canonical Work formula applies genre exactly once.
 - `linkcount` is available and time-varying but unused in the current formula.
 - Failed runs retain evidence and consume version numbers within their subject sequence.
@@ -42,27 +63,27 @@ The intended formula is retained. Work's duplicate genre application is treated 
 - Publication history is append-only; the latest publication ID for each subject type identifies the current publication. No separate current-publication table exists.
 - A completed Philosopher run is required before capturing any Work dataset; there is no legacy-author fallback.
 
-## 3. Current gaps and defects
+## 3. Defect disposition
 
-The following must be repaired or explicitly accounted for:
-
-1. Work's rake task applies genre a second time (`lib/tasks/shadow/work_tasks.rake:563`). For `genre = false`, the snapshot applies `0.50`, while the displayed value applies it twice and is therefore `0.25` of the unscaled contribution rather than `0.50`.
-2. Work author adjustment reads live `Philosopher#measure`, which is stale because the Philosopher metric task creates snapshots without updating it. Any author's `nil` measure also raises `TypeError` during summation.
-3. Both calculation methods mix live input gathering, extrema queries, relationships, and snapshot writes.
-4. Existing snapshots coalesce `danker = nil` to `0.0`; schema columns `danker_score`, `linkcount`, and `mention_count` are also `null: false`.
-5. Work computes `raw_measure` before guarding zero denominators and can persist non-finite output.
-6. Input capture lacks a coherent database-state and population contract.
-7. Per-entity exceptions can be rescued while the task still reports completion.
-8. Latest-result scopes can return unfinished or failed data.
-9. Snapshot weights are read live rather than from frozen configuration.
-10. Independent ranking tasks rewrite the latest snapshot.
-11. Encyclopedia-flag imports are hidden in the Work calculation task.
-12. Work provenance uses placeholder text, and role exclusions are hardcoded.
-13. Danker import writes invalid snapshot attributes while its current-value update is commented out.
-14. Publication requirements are undefined for partial populations, interruptions, republishing, and concurrent publication.
-15. `dependent: :destroy` allows entity deletion to remove snapshot evidence; insertion and reassignment also need retention rules.
-16. Existing version, configuration, and run identities are insufficient to support controlled experiments.
-17. The existing `latest_measures_for_all_*` helpers have no callers; the actual display reads `shadows.measure` and `measure_pos` directly.
+| ID | Original defect | Disposition |
+|---|---|---|
+| 1 | Work applied genre twice | Fixed in Phase 0; genre is applied once |
+| 2 | Work read stale or nil live author measures | Fixed in Phases 0 and 2; frozen completed-run dependencies are mandatory |
+| 3 | Calculation mixed live inputs, extrema, relationships, and writes | Fixed in Phases 0–3; capture, pure calculation, and run persistence are separate |
+| 4 | Null primitive inputs were coerced or rejected | Fixed in Phase 1; null and numeric zero remain distinct |
+| 5 | Work could calculate non-finite output before guarding denominators | Fixed in Phase 0; both outputs are guarded and checked |
+| 6 | Capture lacked a coherent population contract | Fixed in Phase 2; selected IDs must be contained in normalisation IDs |
+| 7 | Entity errors could still report completion | Fixed in Phases 2 and 3; captures and runs fail atomically |
+| 8 | Latest-result scopes included unfinished data | Fixed in Phase 3; completed status is required positively |
+| 9 | Snapshots read live weights | Fixed in Phases 1 and 3; run-linked snapshots read frozen weights |
+| 10 | Ranking tasks rewrote snapshots and display ranks | Fixed in Phase 4; legacy entry points only delegate to explicit publication |
+| 11 | Flag imports were hidden in Work calculation | Fixed in Phase 2; imports are separate atomic source events |
+| 12 | Provenance was placeholder-only and role exclusions implicit | Fixed in Phase 2; provenance and calculator derivation rules are frozen descriptively |
+| 13 | Danker import wrote invalid snapshots without updating inputs | Fixed in Phase 2; typed source events and current inputs update atomically |
+| 14 | Publication edge cases were undefined | Fixed in Phase 4; eligibility, locking, rollback, and republishing are specified and tested |
+| 15 | Entity deletion could erase evidence | Fixed in Phase 1; retention and reassignment safeguards are enforced |
+| 16 | Version identities could not support controlled experiments | Fixed in Phases 1 and 3; calculator, configuration, run, and schema identities are distinct |
+| 17 | Display values bypassed latest-snapshot helpers | Fixed in Phase 4; publication writes `shadows.measure` and `measure_pos` directly |
 
 ## 4. Phase 0: pure calculators and characterization
 
@@ -98,6 +119,20 @@ Calculators perform no database queries or writes. Strategies remain available f
   - Work: normalized measure × `1_000_000`.
 - The normalized value belongs in explanatory `calculation_context`, not in `measure`.
 - Do not apply another multiplier during publication.
+
+### Worked Philosopher example
+
+For one philosopher, suppose the frozen inputs are `mention = 100`, `danker = 1.0`, Routledge coverage, and Stanford coverage. The normalisation maxima are `max_mention = 200` and `max_rank = 2.0`. Under configuration `2.1`, the source contributions are Routledge `0.17`, Stanford `0.10`, and `all_bonus = 0.08`, giving source coverage `0.35`.
+
+```text
+mention factor  = 100 / 200 = 0.5
+Danker factor   = 1.0 / 2.0 = 0.5
+source coverage = 0.17 + 0.10 + 0.08 = 0.35
+normalized      = 0.5 × 0.5 × 0.35 = 0.0875
+display measure = 0.0875 × 10,000,000 = 875,000
+```
+
+Publication copies `875,000`; it does not scale the value again.
 
 ### Characterization tests
 
@@ -155,7 +190,9 @@ Each record contains:
 
 Add a unique index on `[metric_input_dataset_id, shadow_id]`.
 
-Extrema are calculated **only from normalisation IDs**, even when those IDs are a subset or superset of the selected IDs. Replay follows the same rule. Capturing the union permits normalisation to be recomputed rather than merely comparing stored maxima with themselves.
+Selected IDs must be a subset of normalisation IDs; capture rejects any selected entity outside the normalisation population. Normalisation may be a strict superset of selection. This guarantees that a selected entity's raw scalar cannot exceed the maximum used as its denominator. For example, scoring 50 philosophers while normalising against all 13,329 remains valid, while scoring Plato against only minor figures is rejected rather than producing a mention factor above 1.
+
+Extrema are calculated **only from normalisation IDs**, including when that population is a superset of the selected IDs. Replay follows the same rule. Capturing the union permits normalisation to be recomputed rather than merely comparing stored maxima with themselves.
 
 ### 5.3 Primitive payload contract
 
@@ -220,7 +257,7 @@ Create runs with:
 | `started_at` | Run kick-off timestamp |
 | `completed_at` | Successful completion timestamp |
 | `weights_config` | Exact frozen weights as serialized JSON text |
-| `signal_config` | Enabled signals and executable configuration, including role exclusions |
+| `signal_config` | Frozen descriptive record of calculator source lists and role exclusions |
 | `source_provenance` | Provenance specific to this calculation |
 | `failure_reason` | Optional failure information |
 | Rails timestamps | Record metadata |
@@ -239,15 +276,15 @@ This is the controlled experiment:
 
 ```text
 same selected entities + same primitive inputs + same author dependencies
-  + alternative weights or source selection
+  + alternative weights or reference-source selection
   → attributable output differences
 ```
 
 No live input refresh occurs during recalculation.
 
-Configuration edits create a new configuration version. A source omission requires a complete new weight set in `canonicity_weights`. Rows identified by `(algorithm_version, source_name)` are never updated in place after being used by a run.
+Configuration edits create a new configuration version. A reference-source omission requires a complete new weight set in `canonicity_weights`, with that source inactive or assigned zero weight. Rows identified by `(algorithm_version, source_name)` are never updated in place after being used by a run. Derived source terms are recomputed from the resulting weights, so conditional bonuses still follow the ordinary calculator rules.
 
-Disabled sources are removed **before** derived terms are computed, including Philosopher `has_sources`/`all_bonus` and Work `encyclopedia_sum`, `sourcey`, and the author adjustment. A disabled multiplicative signal contributes `1.0`; a disabled additive contribution contributes `0.0`; a disabled adjustment is omitted.
+`signal_config` is a frozen descriptive record used in the configuration fingerprint; it is not an executable calculator argument. Role exclusions and calculator source lists belong to calculator identity. Changing those derivation rules requires a new calculator and a major run-version bump. Disabling scalar mention or Danker signals independently is outside the current experiment model.
 
 ### 7.3 Snapshots and retention
 
@@ -305,8 +342,8 @@ Publication does not determine the default dependency: future Work datasets use 
 Distinguish:
 
 - **Calculator identity:** the pure implementation used for replay.
-- **Configuration version:** the named configuration family, currently `2.1` and `2.0-work`. Original `2.0` is preserved for compatibility.
-- **Configuration fingerprint:** stable checksum of canonical weight and executable signal configuration.
+- **Configuration version:** the named configuration family, currently `2.1` and `2.0-work`. Original `2.0` is preserved for historical replay only.
+- **Configuration fingerprint:** stable checksum of canonical weights and descriptive calculator signal configuration.
 - **Run version:** the execution label within a subject sequence.
 
 A new weight set using V2 therefore has a different configuration fingerprint without implying a new calculator.
@@ -320,7 +357,7 @@ Create `canonicity_signals` in Phase 1 as descriptive metadata with:
 - `used_in_formula`.
 - `active`.
 
-This table is required by the project's need to document which inputs change over time. Executable behaviour belongs to `signal_config`, not merely to registry metadata.
+This table documents which inputs change over time. The registry and `signal_config` are descriptive evidence; executable derivation rules belong to the identified calculator, while weights belong to the identified configuration.
 
 Create an empty fixture file for this and every other new table so Rails cannot leak development rows into tests.
 
@@ -377,7 +414,7 @@ The default publication population is **all records of the subject type**, match
 
 - It is completed.
 - Its selected IDs and snapshot coverage exactly match that population at publication time.
-- Its normalisation population is valid for that publication.
+- Its normalisation IDs equal its selected IDs, and both sets equal all current records of that subject type.
 - Every measure is finite and dense ranks are verified.
 
 Partial experimental runs are not publishable. New or missing entities make a previously complete run stale for publication until a fresh complete run is produced. If the population is unchanged, an older run remains publishable after input refreshes. There is no partial overlay and no mixing of ranks from different populations.
@@ -400,7 +437,9 @@ An interruption rolls back both current-value changes and the publication record
 
 The actual publication target is the `shadows` columns, not the currently uncalled `latest_measures_for_all_*` helpers. Those helpers may be retained for compatibility but are not a substitute for publishing current values.
 
-`shadow:work:order2` and the Philosopher ranking task are retired as independent snapshot-mutating tasks or limited strictly to publication.
+A Work run may depend on a Philosopher run other than the currently published one. Publication compares `metric_input_datasets.input_run_id` with the current Philosopher publication and shows a warning on `/canonicity` when they differ, including when no Philosopher run is published. This does not block Work publication: blocking would impose an unnecessary publication order and make republishing an older Philosopher run invalidate Work evidence.
+
+`shadow:work:order2` and `shadow:philosopher:new_order` require an explicit run version and delegate only to the publication service. They no longer rank live values independently or mutate snapshots.
 
 ## 14. Comparison and incremental UI
 
@@ -456,7 +495,7 @@ Write tests first for payload null/type preservation, dataset coverage, source-e
 
 Implement atomic Danker and flag imports, then coherent dataset capture with the cross-process lock and startup reconciliation. Stop the existing model methods from creating unlinked snapshots; wrapping only rake tasks is insufficient. Expose capture status, populations, provenance, dependencies, failures, and import events in the dashboard for UAT.
 
-Legacy ranking tasks still contain direct display-value writes. Their retirement or restriction to publication remains Phase 4 work; the measure tasks now use controlled capture and calculation.
+The measure tasks use controlled capture and calculation. The legacy ranking tasks retained direct display-value writes until Phase 4, where they became explicit publication wrappers.
 
 ### Phase 3: Calculate, recalculate, and replay
 
@@ -468,18 +507,35 @@ Implement controlled calculation over ready datasets, completion validation, den
 
 ### Phase 4: Publication and UI completion
 
-Implement eligibility, atomic publication, republishing, interruption rollback, and comparison. Complete the dashboard with publication eligibility, history, comparison, and controlled publication actions. Use the existing **Ruby 2.6** thread-error workarounds where applicable.
+**Status:** COMPLETE (2026-11-10). Publication eligibility, atomic updates, rollback, republishing, comparison, rake tasks, legacy wrappers, and dashboard controls were implemented test-first. Full Rails suite: 1,137 runs, 4,409 assertions, 0 failures, 0 errors, 0 skips. New Phase 4 service and test files pass StandardRB.
+
+- [x] Capture full Philosopher dataset 4: 13,329 selected and normalisation IDs.
+- [x] Complete and exactly replay Philosopher run `0.8.1` under configuration `2.1`: 13,329 snapshots.
+- [x] Capture full Work dataset 5 against Philosopher run `0.8.1`: 3,654 selected and normalisation IDs.
+- [x] Complete and exactly replay Work run `0.7.0` under configuration `2.0-work`: 3,654 snapshots.
+- [x] Reject selected IDs outside normalisation during capture.
+- [x] Reject Philosopher configurations whose source weights can exceed 1 before run allocation; configuration `2.0` is historical-only.
+- [x] Implement eligibility, atomic publication, republishing, interruption rollback, and comparison.
+- [x] Preserve exact floating-point measures through bound ActiveRecord updates; regression-tested against two real SQLite edge values.
+- [x] Publish Philosopher run `0.8.1` and Work run `0.7.0`, verify every current value and rank exactly, verify interruption rollback, and append republication history. Current publication IDs are 4 and 3 respectively.
+- [x] Restrict `shadow:work:order2` and `shadow:philosopher:new_order` to explicit publication.
+- [x] Complete the dashboard with eligibility, history, comparison, dependency warnings, and publication actions.
+- [x] Print dependency warnings from `metric:publish` and the Work compatibility wrapper.
+- [x] Paginate dashboard snapshots at 100 rows and batch index population/snapshot eligibility queries.
+- [x] Reject Work source weights above 1 before run allocation, excluding genre multipliers from that sum.
 
 ### Phase 5: Documentation and verification
 
+**Status:** COMPLETE (2026-11-10). All operating guides, controlled-configuration scenarios, genuine Danker restoration, corrected publications, zero-score semantics, dependency hardening, and final verification are complete.
+
 Update:
 
-- `docs/CANONICITY_ALGORITHM.md`
-- `app/ERD.md`
-- `docs/RAKE_TASKS.md`
-- `docs/DATA_REFRESH_GUIDE.md`
-- `docs/TESTING_STRATEGY.md`
-- `.ai-instructions.md` if project guidance or status changes
+- [x] `docs/CANONICITY_ALGORITHM.md`
+- [x] `app/ERD.md`
+- [x] `docs/RAKE_TASKS.md`
+- [x] `docs/DATA_REFRESH_GUIDE.md`
+- [x] `docs/TESTING_STRATEGY.md`
+- [x] `.ai-instructions.md` if project guidance or status changes
 
 Run:
 
@@ -488,18 +544,32 @@ bin/rake test
 bin/standardrb
 ```
 
-End-to-end scenario on a small real dataset:
+Current result: the full Rails suite passes with 1,142 runs and 4,438 assertions, 0 failures, 0 errors, and 0 skips. The repository-wide StandardRB command still reports 67,169 offences across the legacy codebase; all new and directly changed service, controller, task, and test files pass their focused StandardRB check. Both corrected runs replay exactly, current display values have zero mismatches, and the live dashboard shows Philosopher `0.10.0` and Work `0.7.2` as current.
 
-1. Capture a Philosopher dataset and complete run `0.7.0`.
+End-to-end evidence uses small real datasets for controlled experiments and full populations for dependency and publication checks:
+
+1. On a small dataset, capture a Philosopher dataset and complete run `0.7.0`.
 2. Recalculate from the same dataset with a new configuration version and confirm that only configuration-dependent outputs differ.
-3. Replay both runs and confirm exact measures, population, normalisation, and ranks.
-4. Capture a Work dataset using the completed Philosopher dependency and complete Work run `0.7.0`.
+3. Replay both small runs and confirm exact measures, population, normalisation, and ranks.
+4. Capture and run the full Philosopher population, then capture the full Work population against that completed dependency and complete Work run `0.7.0`; replay both exactly.
 5. Attempt to publish a partial run and confirm rejection.
 6. Create a new configuration version rather than editing immutable configuration.
 7. Import new Danker data, including a missing entity, and verify atomic current-value/event updates and unchanged Work minimum-rank behaviour.
-8. Confirm that earlier datasets, runs, and current display values remain unchanged.
-9. Publish a complete run, interrupt a second publication attempt, and verify rollback.
+8. Confirm that earlier datasets, runs, and current display values remain unchanged before publication.
+9. Publish a complete full-population run, interrupt a second publication attempt, and verify rollback.
 10. Republish the first run and verify append-only history and latest-ID current selection.
+
+Phase 5 real-data results:
+
+- Configuration `2.2` was created as a complete copy of `2.1` with only Routledge changed from `0.17` to `0.16`; `2.1` was verified unchanged. Run `0.9.0` reused dataset 3, replayed exactly, and differed from `0.8.0` only through configuration-dependent output.
+- Synthetic sorted Danker artifacts changed one positive score and omitted one different positive score for each subject. Imports committed 13,329 Philosopher and 3,654 Work source events atomically, preserved old/new types, and stored the omitted values as `nil`. Earlier runs and displayed values remained unchanged, but the synthetic values entered the live development inputs; this was an unsafe scenario design, not a successful no-side-effects check.
+- **PUBLICATION QUARANTINE:** Work dataset 6 and immutable Work run `0.7.1` contain those synthetic inputs and must never be published. Eligibility does not inspect provenance, so this run remains technically eligible; the explicit-version publication requirement and this permanent note are the safeguards. Any corrected Work publication must use a new dataset and run.
+- Real interruption rollback and append-only republication passed, as did the live dashboard HTTP check.
+- Default Work dependency was repaired test-first to select the latest completed Philosopher run whose selected IDs equal the current full population. The regression uses a newer partial run to prove it cannot be selected accidentally.
+- The genuine 2019 Danker artifact was re-imported for both subjects through the atomic import service. All four synthetic changes were reversed, all 277 philosopher and 626 Work coerced zeros became `nil`, and no `danker = 0.0` remains. Restoration committed another complete set of typed source events.
+- Philosopher dataset 7 produced run `0.10.0`; plain Work capture selected that full-population dependency and dataset 8 produced Work run `0.7.2`. Both replay exactly. Philosopher `0.10.0` was published as publication 5, followed by Work `0.7.2` as publication 6, with zero display mismatches and no dependency warning.
+
+Zero-measure interpretation is an audit requirement, not a philosophical classification. In the corrected current publications, 3,354 philosophers have raw zero mentions, 4 have positive mentions suppressed by roles, and 9 Works have source coverage cancelled by all-zero authors. No zero-measure entity has a zero Danker factor. Genuine restoration moved 210 philosophers and 626 Works off zero. The previous 277 philosopher and 626 Work raw Danker zeros were missing values coerced by historical import code, not genuine source zeros. See `docs/CANONICITY_ALGORITHM.md` for the full semantics and required pre-publication audit.
 
 ## 16. Acceptance criteria
 
@@ -519,12 +589,13 @@ The work is complete when all of the following hold:
 - Every new table has an empty fixture file.
 - Each phase exposes its new state through `/canonicity` for UAT and course correction before later phases proceed.
 - All new and existing tests pass, and StandardRB introduces no new offences.
-- The small real-data end-to-end check passes.
+- The small-dataset experiment checks and full-population dependency/publication checks pass.
 
 ## 17. Non-goals
 
 - Redesigning the intended canonicity formula.
 - Adding `linkcount` to the formula.
+- Disabling mention or Danker independently through `signal_config`; current source omissions are weight-based.
 - Manual run naming or curated labels.
 - A global semantic version sequence shared by both subject types.
 - Legacy fallback to stale `Philosopher#measure`.

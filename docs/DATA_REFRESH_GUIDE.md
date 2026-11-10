@@ -17,7 +17,7 @@
 The system uses:
 - **Shadow** model (STI base class for Philosopher/Work entities)
 - **Wikidata SPARQL queries** for data population
-- **Encyclopedia scraping** for cross-referencing
+- **Reference-work index and metadata leveraging** for cross-referencing
 - **Danker scores** (Wikipedia PageRank data)
 - **Configurable weight algorithms** for canonicity calculations
 
@@ -260,6 +260,8 @@ bin/rake "metric:import_danker[path/to/scores.csv,Philosopher,2026-11-06]"
 
 An explicit Work import uses `metric:import_danker[path,Work,version]`. Work reference flags use `metric:import_work_flags[works.json]`; they are no longer updated implicitly by `shadow:work:measure`.
 
+**Never treat a partial Danker file as an incremental overlay.** Every omitted entity is assigned `nil`, and every subject row receives an old/new source event even if its numeric score is unchanged. Generate or validate a complete sorted artifact before import, and deliberately check every numeric `0.0` and every NULL transition. Numeric zero is a source value; omission is missing data. Neither, by itself, determines whether an entity belongs in the philosophical corpus.
+
 ### Step 6.2: Update Philosophy/Philosopher Mention Scores
 ```bash
 # Count mentions in philosophical texts
@@ -357,8 +359,9 @@ The system uses configurable weights stored in the `canonicity_weights` table:
 **Note:** The `all_bonus` is conditional—it only applies if the philosopher appears in at least one active authoritative source. Oxford2 and Runes are inactive legacy sources with `NULL` weights; Oxford3 actively contributes.
 
 **Algorithm Versioning:**
-- Supports multiple algorithm and configuration versions
-- Run-linked snapshots read frozen configuration
+- Supports multiple algorithm and configuration versions; never edit a weight set already used by a run
+- Create a complete new configuration by copying an existing version and changing the intended weights
+- Run-linked snapshots read frozen configuration; original `2.0` is historical-only
 - Default calculators: `philosopher-v2` and `work-v2`
 
 ### Step 8.2: Capture Coherent Philosopher Inputs
@@ -370,7 +373,7 @@ bin/rake "metric:capture[Philosopher]"
 bin/rake "metric:capture[Philosopher,,5484|5485,5484|5485]"
 ```
 
-Capture freezes the selected and normalization populations, primitive payloads, normalization context, and source provenance. Missing entities invalidate capture without leaving partial records. Review status and evidence at `/canonicity`.
+Capture freezes the selected and normalization populations, primitive payloads, normalization context, and source provenance. Selected IDs must be contained in normalization IDs. Missing entities invalidate capture without leaving partial records. Review status and evidence at `/canonicity`.
 
 Calculate a controlled run after capture:
 
@@ -385,11 +388,11 @@ bin/rake "metric:recalculate[Philosopher,0.7.0,2.1]"
 bin/rake "metric:replay[Philosopher,0.7.0]"
 ```
 
-Run versions begin at `0.7.0` independently for Philosopher and Work. Recalculation reuses the dataset and frozen inputs. Current display values are not changed by calculation or replay; publication is separate. `shadow:philosopher:metric` and `shadow:work:measure` now use this same controlled capture/run pipeline.
+Run versions begin at `0.7.0` independently for Philosopher and Work. Recalculation reuses the dataset and frozen inputs. Cross-subject configurations and source weights above 1 are rejected before version allocation; Work's source check excludes genre multipliers. Current display values are not changed by calculation or replay. `shadow:philosopher:metric` and `shadow:work:measure` use this same controlled capture/run pipeline.
 
 ### Step 8.3: Capture Work Inputs After Philosopher Runs
 ```bash
-# Uses the latest completed Philosopher run by default
+# Uses the latest completed full-population Philosopher run by default
 bin/rake "metric:capture[Work]"
 
 # Or select an explicit dependency
@@ -397,6 +400,20 @@ bin/rake "metric:capture[Work,12]"
 ```
 
 A completed Philosopher run is mandatory. Work capture freezes linked-author snapshot IDs and measures from that run; missing author dependencies fail capture with an actionable error. Work reference flags are imported separately using `metric:import_work_flags[works.json]`.
+
+### Step 8.4: Compare, Audit Zeros, and Publish
+
+Compare candidate runs and replay them before publication:
+
+```bash
+bin/rake "metric:compare[Philosopher,0.8.0,0.9.0]"
+bin/rake "metric:replay[Philosopher,0.9.0]"
+bin/rake "metric:publish[Philosopher,0.8.1]"
+```
+
+Publication requires selected, normalization, snapshot, and current populations to be identical, with finite measures and verified dense ranks. It atomically updates current values and appends history. A Work/Philosopher dependency mismatch prints a warning but does not block.
+
+Before every publication, inspect the entities whose measure is `0.0` and break down the causes using frozen `calculation_context` and primitive payloads: raw zero mention, role-suppressed positive mention, raw zero Danker, missing Danker fallback, zero source coverage, or zero-author adjustment. A zero score is not a philosophical classification. Preserve the distinction between raw `0.0`, `nil`, and derived zero; investigate missing philosophy mentions as suspicious input evidence rather than automatic grounds for exclusion.
 
 ## Phase 9: Data Quality & Validation
 
@@ -457,24 +474,28 @@ bin/rails console
 > Shadow.where(type: 'Philosopher').order('measure desc').limit(10).each {|p| puts "#{p.measure_pos}. #{p.english} (#{p.measure})"}
 ```
 
-### Step 10.2: Validate Metric Snapshots
+### Step 10.2: Validate Runs, Snapshots, and Publications
 ```ruby
-# Check latest calculation snapshots
-> latest = MetricSnapshot.order(:calculated_at).last
-> puts "Latest calculation: #{latest.calculated_at}"
-> puts "Algorithm version: #{latest.algorithm_version}"
-> puts "Danker version: #{latest.danker_version}"
-> puts "Weights used: #{JSON.parse(latest.weights_config)}"
+> run = MetricRun.order(:id).last
+> puts "Run: #{run.subject_type} #{run.version} (#{run.status})"
+> puts "Configuration: #{run.configuration_version}"
+> puts "Snapshots: #{run.metric_snapshots.count}"
+> puts "Weights used: #{run.weights_config.inspect}"
+> puts "Current Philosopher publication: #{Publication.current_for('Philosopher')&.metric_run&.version}"
+> puts "Current Work publication: #{Publication.current_for('Work')&.metric_run&.version}"
 ```
 
+For run-linked snapshots, `weights_config` is already a deserialized Hash and does not need `JSON.parse`. Historical unlinked snapshots remain valid and read legacy live-weight configuration.
+
 ### Step 10.3: Historical Comparison
-```ruby
-# Compare with previous calculations
-> current = MetricSnapshot.order(:calculated_at).last
-> previous = MetricSnapshot.order(:calculated_at).offset(1).first
-> puts "Philosophers with biggest ranking changes:"
-> # Analysis code for ranking changes
+
+Use controlled comparison rather than comparing whichever snapshots happen to be latest:
+
+```bash
+bin/rake "metric:compare[Philosopher,0.8.0,0.9.0]"
 ```
+
+The report covers measure/rank movement, added and missing entities, population and normalization changes, and calculator/configuration differences. See `docs/CANONICITY_ALGORITHM.md` for the required zero-score cause audit before publication.
 
 ---
 

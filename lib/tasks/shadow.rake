@@ -1275,17 +1275,13 @@ begin
 				end
 			end
 
-			desc "SPARQLy philosophical investigations (of the order2ing variety)"
-			task new_order: :environment do
-				Shadow.none
-				phils = Philosopher.order('measure desc').group(:measure)
-				count_phils = phils.count
-				length_phils = count_phils.length
-				bar = progress_bar(length_phils, FORCE, 'groups of records')
-				count_phils.each_with_index do |measure, idx|
-					Philosopher.where(measure: measure[0]).update_all(measure_pos: idx+1)
-					update_progress(bar)
-				end
+			desc "Publish an explicitly selected completed Philosopher canonicity run"
+			task :new_order, [:version] => :environment do |_task, args|
+				raise ArgumentError, "new_order requires an explicit Philosopher run version; use metric:publish[Philosopher,version]" if args[:version].blank?
+
+				run = MetricRun.find_by!(subject_type: "Philosopher", version: args[:version])
+				publication = Canonicity::Publication.new(run: run).call
+				puts "Published Philosopher run #{run.version} (ID #{run.id}) as publication #{publication.id}"
 			end
 
 			desc "SPARQLy philosophical investigations (of the dbpedia measureful variety)"

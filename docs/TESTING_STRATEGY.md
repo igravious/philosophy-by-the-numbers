@@ -13,12 +13,13 @@ CorpusBuilder uses a comprehensive testing strategy that addresses the unique ch
 - **Integration tests** that verify end-to-end functionality
 
 ### Isolated Testing Approach
-Given the large production dataset and broken legacy fixtures, we use an **isolated testing strategy**:
+Given the large development dataset and legacy fixture constraints, tests use **isolated database state and explicitly created scenario data**:
 
-1. **Bypass Legacy Fixtures**: Disable automatic fixture loading to avoid constraint violations
-2. **Create Clean Test Data**: Generate minimal test data sets for specific test scenarios  
-3. **Use High Entity IDs**: Test philosophers use `entity_id > 9000` to avoid conflicts
-4. **Automatic Cleanup**: Comprehensive setup/teardown ensures test isolation
+1. **Use the declared fixtures**: `test/test_helper.rb` loads `fixtures :all`; do not disable them or assume the tables are empty
+2. **Create focused scenario data**: Generate only the additional entities needed for a test, using helpers such as `create_test_philosopher`, `create_test_work`, and `create_completed_metric_run`
+3. **Avoid identity conflicts**: Use high entity IDs where appropriate and account for fixture Philosophers and Works in full-population cases
+4. **Isolate the database**: Use the project's test database URL and never run tests against `db/development.sqlite3`
+5. **Automatic cleanup**: Transactions and setup/teardown preserve independence between tests
 
 ## Test Structure
 
@@ -33,16 +34,7 @@ Given the large production dataset and broken legacy fixtures, we use an **isola
 - Historical data retrieval and querying
 - Philosopher association integrity
 
-**Isolation Strategy**:
-```ruby
-# Disable fixtures entirely
-self.use_transactional_fixtures = false
-self.use_instantiated_fixtures = false
-
-def self.fixtures(*args)
-  # Do nothing to prevent fixture loading
-end
-```
+**Isolation Strategy**: Use the declared empty metric fixtures and create explicit run/input records as needed. Run-linked snapshots use `shadow_id` and `shadow_type`; historical unlinked snapshots remain valid.
 
 #### Pure V2 Calculator Tests (`test/lib/canonicity_philosopher_v2_test.rb` and `test/lib/canonicity_work_v2_test.rb`)
 **Purpose**: Verify exact calculator outputs independently of ActiveRecord, including normalized and display-scaled measures.
@@ -54,6 +46,17 @@ end
 - Work author adjustment and missing-author validation
 - Zero-denominator guards and finite outputs
 - Genre applied exactly once
+
+#### Controlled Run and Publication Tests
+
+- `test/lib/canonicity_dataset_capture_test.rb`: coherent inputs, selected/normalisation containment, source provenance, and Work dependencies
+- `test/lib/canonicity_metric_run_calculator_test.rb`: controlled calculation, dense ranks, failure recovery, subject/configuration validation, and Philosopher/Work source-weight pre-flight
+- `test/lib/canonicity_replay_test.rb`: exact read-only replay and mismatch reporting
+- `test/lib/canonicity_publication_test.rb`: full-population eligibility, exact float publication, rollback, republishing, and dependency warnings
+- `test/lib/canonicity_run_comparison_test.rb` and `test/lib/metric_tasks_test.rb`: movement reports and real rake-task behavior, including CLI warnings
+- `test/controllers/canonicity_controller_test.rb`: dashboard evidence, batched eligibility queries, comparison, publication, and 100-row snapshot pagination
+
+Zero-score tests must distinguish raw zero, missing `nil`, and derived zero. A zero measure is not a philosophical classification; audit its cause using the frozen payload and calculation context rather than asserting that an entity does or does not belong in the corpus.
 
 #### Philosopher Canonicity Tests (`test/models/philosopher_canonicity_test.rb`)
 **Purpose**: Verify the Linear Weighted Combination algorithm accuracy
@@ -67,12 +70,11 @@ end
 **Data Management**:
 ```ruby
 def setup
-  # Clean up any existing test data
-  MetricSnapshot.where("philosopher_id > 9000").delete_all
-  Philosopher.where("entity_id > 9000").delete_all
-  
-  # Seed algorithm weights if needed
-  seed_canonicity_weights unless CanonicityWeights.exists?(algorithm_version: '2.0')
+  philosophers = Philosopher.where("entity_id >= 9100 AND entity_id < 9200")
+  MetricSnapshot.where(shadow_id: philosophers.pluck(:id), shadow_type: "Philosopher").delete_all
+  philosophers.delete_all
+
+  seed_canonicity_weights unless CanonicityWeights.exists?(algorithm_version: "2.1")
 end
 ```
 
@@ -150,14 +152,14 @@ Ensure algorithm weights are available for testing:
 ```ruby
 def seed_canonicity_weights
   weights_v2 = [
-    { source_name: 'stanford', weight_value: 0.15, description: 'Stanford Encyclopedia of Philosophy' },
-    { source_name: 'routledge', weight_value: 0.25, description: 'Routledge Encyclopedia of Philosophy' },
+    { source_name: 'stanford', weight_value: 0.10, description: 'Stanford Encyclopedia of Philosophy' },
+    { source_name: 'routledge', weight_value: 0.17, description: 'Routledge Encyclopedia of Philosophy' },
     # ... other weights
   ]
   
   weights_v2.each do |weight|
     CanonicityWeights.create!(
-      algorithm_version: '2.0',
+      algorithm_version: '2.1',
       source_name: weight[:source_name], 
       weight_value: weight[:weight_value],
       description: weight[:description],
@@ -280,19 +282,29 @@ bin/rake test TEST=test/models/shadow_rake_tasks_test.rb
 bin/rake test TEST=test/models/danker_update_rake_task_test.rb
 ```
 
-### Full Canonicity Test Suite
+### Focused Canonicity Suite
+
+Repeated `TEST=` assignments do not select multiple files. Load multiple test files through one Ruby process instead:
+
 ```bash
-bin/rake test TEST=test/models/metric_snapshot_test.rb TEST=test/models/philosopher_canonicity_test.rb TEST=test/models/shadow_rake_tasks_test.rb TEST=test/models/danker_update_rake_task_test.rb
+RAILS_ENV=test DATABASE_URL=sqlite3:/tmp/corpusbuilder-coverage-tests.sqlite3 \
+  bin/bundle exec ruby -Itest -e 'ARGV.each { |file| require File.expand_path(file) }' \
+  test/models/metric_snapshot_test.rb \
+  test/models/philosopher_canonicity_test.rb \
+  test/lib/canonicity_metric_run_calculator_test.rb \
+  test/lib/canonicity_publication_test.rb \
+  test/lib/canonicity_run_comparison_test.rb \
+  test/controllers/canonicity_controller_test.rb
 ```
 
-### Test Environment Setup
+### Full Suite and Test Environment Setup
 ```bash
-# Prepare test database (includes migrations and schema)
-bin/rake db:test:prepare
-
-# Run tests with verbose output
+RAILS_ENV=test DATABASE_URL=sqlite3:/tmp/corpusbuilder-coverage-tests.sqlite3 bin/rake db:test:prepare
+RAILS_ENV=test DATABASE_URL=sqlite3:/tmp/corpusbuilder-coverage-tests.sqlite3 bin/rake test
 bin/rake test TEST=test/models/philosopher_canonicity_test.rb TESTOPTS="-v"
 ```
+
+Do not run separate test processes concurrently against the same SQLite database. Latest full verification: 1,142 runs, 4,438 assertions, 0 failures, 0 errors, 0 skips.
 
 ## Debugging Test Issues
 
@@ -300,7 +312,7 @@ bin/rake test TEST=test/models/philosopher_canonicity_test.rb TESTOPTS="-v"
 
 #### Fixture Conflicts
 **Symptom**: `UNIQUE constraint failed: fyles.URL`
-**Solution**: Ensure fixtures are disabled and test uses isolated data
+**Solution**: Account for declared fixtures and choose nonconflicting identities; do not assume fixtures are disabled or tables are empty
 
 #### Missing Algorithm Weights  
 **Symptom**: `NoMethodError: undefined method '[]' for nil:NilClass`
